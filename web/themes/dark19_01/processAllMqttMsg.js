@@ -508,9 +508,9 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			alp3 = getCol(csvData, 14);
 			alp4 = getCol(csvData, 15);
 			alp5 = getCol(csvData, 16);
-			alp6 = getCol(csvData, 17);
-			alp7 = getCol(csvData, 18);
-			alp8 = getCol(csvData, 19);
+			alph1 = getCol(csvData, 17);
+			alph2 = getCol(csvData, 18);
+			alph3 = getCol(csvData, 19);
 			initialread +=1 ;
 			checkgraphload();
 		}
@@ -1271,9 +1271,9 @@ function putgraphtogether() {
 		alp3 = getCol(csvData, 14);
 		alp4 = getCol(csvData, 15);
 		alp5 = getCol(csvData, 16);
-		alp6 = getCol(csvData, 17);
-		alp7 = getCol(csvData, 18);
-		alp8 = getCol(csvData, 19);
+		alph1 = getCol(csvData, 17);
+		alph2 = getCol(csvData, 18);
+		alph3 = getCol(csvData, 19);
 		initialread = 1 ;
 		checkgraphload();
 	}

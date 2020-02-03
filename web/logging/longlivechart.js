@@ -79,9 +79,9 @@ function loadgraph() {
 		alp3 = getCol(csvData, 6);
 		alp4 = getCol(csvData, 7);
 		alp5 = getCol(csvData, 8);
-		alp6 = getCol(csvData, 9);
-		alp7 = getCol(csvData, 10);
-		alp8 = getCol(csvData, 11);
+		alph1 = getCol(csvData, 9);
+		alph2 = getCol(csvData, 10);
+		alph3 = getCol(csvData, 11);
 		aspeicherl = getCol(csvData, 12);
 		aspeichersoc = getCol(csvData, 13);
 		asoc = getCol(csvData, 14);
@@ -97,9 +97,9 @@ function loadgraph() {
 		visibility(alp3,'hidelp3','Lp3',boolDisplayLp3);
 		visibility(alp4,'hidelp4','Lp4',boolDisplayLp4);
 		visibility(alp5,'hidelp5','Lp5',boolDisplayLp5);
-		visibility(alp6,'hidelp6','Lp6',boolDisplayLp6);
-		visibility(alp7,'hidelp7','Lp7',boolDisplayLp7);
-		visibility(alp8,'hidelp8','Lp8',boolDisplayLp8);
+		visibility(alph1,'hidelp6','Lp6',boolDisplayLp6);
+		visibility(alph2,'hidelp7','Lp7',boolDisplayLp7);
+		visibility(alph3,'hidelp8','Lp8',boolDisplayLp8);
 		visibility(aspeicherl,'hidespeicher','Speicherleistung',boolDisplaySpeicher);
 		visibility(aspeichersoc,'hidespeichersoc','Speicher SoC',boolDisplaySpeicherSoc);
 		visibility(asoc,'hidelp1soc','LP1 SoC',boolDisplayLp1Soc);
@@ -249,30 +249,30 @@ function loadgraph() {
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp5,
 		} , {
-			label: 'Lp6',
+			label: 'Ph1',
 			borderColor: "rgba(50, 50, 55, 0.7)",
 			backgroundColor: 'blue',
 			fill: false,
 			borderWidth: 2,
-			data: alp6,
+			data: alph1,
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp6,
 		} , {
-			label: 'Lp7',
+			label: 'Ph2',
 			borderColor: "rgba(50, 50, 55, 0.7)",
 			backgroundColor: 'blue',
 			fill: false,
 			borderWidth: 2,
-			data: alp7,
+			data: alph2,
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp7,
 		} , {
-			label: 'Lp8',
+			label: 'Ph3',
 			borderColor: "rgba(50, 50, 55, 0.7)",
 			backgroundColor: 'blue',
 			fill: false,
 			borderWidth: 2,
-			data: alp8,
+			data: alph3,
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp8,
 		}]
