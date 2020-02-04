@@ -486,9 +486,9 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			alp3 = getCol(csvData, 14);
 			alp4 = getCol(csvData, 15);
 			alp5 = getCol(csvData, 16);
-			alp6 = getCol(csvData, 17);
-			alp7 = getCol(csvData, 18);
-			alp8 = getCol(csvData, 19);
+			alph1 = getCol(csvData, 17);
+			alph2 = getCol(csvData, 18);
+			alph3 = getCol(csvData, 19);
 			initialread +=1 ;
 			checkgraphload();
 		}
@@ -513,9 +513,9 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				var lp3 = lines[i].split(",")[14];
 				var lp4 = lines[i].split(",")[15];
 				var lp5 = lines[i].split(",")[16];
-				var lp6 = lines[i].split(",")[17];
-				var lp7 = lines[i].split(",")[18];
-				var lp8 = lines[i].split(",")[19];
+				var lph1 = lines[i].split(",")[17];
+				var lph2 = lines[i].split(",")[18];
+				var lph3 = lines[i].split(",")[19];
 			}
 			myLine.data.labels.push(ldate.substring(0, ldate.length -3));
 			myLine.data.datasets[2].data.push(lbezug);
@@ -1072,9 +1072,9 @@ function putgraphtogether() {
 		alp3 = getCol(csvData, 14);
 		alp4 = getCol(csvData, 15);
 		alp5 = getCol(csvData, 16);
-		alp6 = getCol(csvData, 17);
-		alp7 = getCol(csvData, 18);
-		alp8 = getCol(csvData, 19);
+		alph1 = getCol(csvData, 17);
+		alph2 = getCol(csvData, 18);
+		alph3 = getCol(csvData, 19);
 		initialread = 1 ;
 		checkgraphload();
 	}

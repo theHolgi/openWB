@@ -571,6 +571,9 @@ if [[ $wattbezugmodul != "none" ]]; then
 	evua1=$(echo $evua1 | sed 's/\..*$//')
 	evua2=$(echo $evua2 | sed 's/\..*$//')
 	evua3=$(echo $evua3 | sed 's/\..*$//')
+	bezugw1=$(cat /var/www/html/openWB/ramdisk/bezugw1)
+	bezugw2=$(cat /var/www/html/openWB/ramdisk/bezugw2)
+	bezugw3=$(cat /var/www/html/openWB/ramdisk/bezugw3)
 	if ! [[ $evua1 =~ $re ]] ; then
 		evua1="0"
 	fi

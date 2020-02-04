@@ -36,9 +36,9 @@ var alp2 = new Array();
 var alp3 = new Array();
 var alp4 = new Array();
 var alp5 = new Array();
-var alp6 = new Array();
-var alp7 = new Array();
-var alp8 = new Array();
+var alph1 = new Array();
+var alph2 = new Array();
+var alph3 = new Array();
 var abezug = new Array();
 var aeinspeisung = new Array();
 var lp1soc;
@@ -321,9 +321,9 @@ function formdata(graphdata){
 	convertdata(csvData,'6',alp3,'hidelp3','Lp3','overalllp3','boolDisplayLp3');
 	convertdata(csvData,'12',alp4,'hidelp4','Lp4','overalllp4','boolDisplayLp4');
 	convertdata(csvData,'13',alp5,'hidelp5','Lp5','overalllp5','boolDisplayLp5');
-	convertdata(csvData,'14',alp6,'hidelp6','Lp6','overalllp6','boolDisplayLp6');
-	convertdata(csvData,'15',alp7,'hidelp7','Lp7','overalllp7','boolDisplayLp7');
-	convertdata(csvData,'16',alp8,'hidelp8','Lp8','overalllp8','boolDisplayLp8');
+	convertdata(csvData,'14',alph1,'hidelp6','Ph1','overalllp6','boolDisplayLp6');
+	convertdata(csvData,'15',alph2,'hidelp7','Ph2','overalllp7','boolDisplayLp7');
+	convertdata(csvData,'16',alph3,'hidelp8','Ph3','overalllp8','boolDisplayLp8');
 	convertdata(csvData,'8',averbraucher1i,'hideload1i','Verbraucher 1 I','overallload1i','boolDisplayLoad1i');
 	convertdata(csvData,'9',averbraucher1e,'hideload1e','Verbraucher 1 E','overallload1e','boolDisplayLoad1e');
 	convertdata(csvData,'10',averbraucher2i,'hideload2i','Verbraucher 2 I','overallload2i','boolDisplayLoad2i');
@@ -518,7 +518,7 @@ var lineChartData = {
 		backgroundColor: 'blue',
 		fill: false,
 		borderWidth: 2,
-		data: alp6,
+		data: alph1,
 		yAxisID: 'y-axis-1',
 		hidden: boolDisplayLp6,
 	} , {
@@ -527,7 +527,7 @@ var lineChartData = {
 		backgroundColor: 'blue',
 		fill: false,
 		borderWidth: 2,
-		data: alp7,
+		data: alph2,
 		yAxisID: 'y-axis-1',
 		hidden: boolDisplayLp7,
 	} , {
@@ -536,7 +536,7 @@ var lineChartData = {
 		backgroundColor: 'blue',
 		fill: false,
 		borderWidth: 2,
-		data: alp8,
+		data: alph3,
 		yAxisID: 'y-axis-1',
 		hidden: boolDisplayLp8,
 	} , {

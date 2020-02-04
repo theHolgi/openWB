@@ -37,11 +37,11 @@ if ! [ -x "$(command -v apachectl)" ]; then
 	sleep 1
 	apt-get -qq install -y php-gd
 	sleep 1
-	apt-get -qq install -y php7.0-xml
+	apt-get -qq install -y php7.3-xml
 	sleep 2
         apt-get -qq install -y php-curl
 	sleep 1	
-	apt-get -qq install -y libapache2-mod-php7.0
+	apt-get -qq install -y libapache2-mod-php7.3
 	sleep 2
 	apt-get -qq install -y jq
 	sleep 2
