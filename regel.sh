@@ -371,15 +371,15 @@ mindestuberschussphasen=$(echo "($mindestuberschuss*$anzahlphasen)" | bc)
 wattkombiniert=$(echo "($ladeleistung+$uberschuss)" | bc)
 abschaltungw=$(echo "(($abschaltuberschuss-1320)*-1*$anzahlphasen)" | bc)
 #PV Regelmodus
-if [[ $pvbezugeinspeisung == "0" ]]; then
+if [[ $pvbezugeinspeisung == "0" ]]; then   # Einspeisung
 	pvregelungm="0"
         schaltschwelle=$(echo "(230*$anzahlphasen)" | bc)
 fi
-if [[ $pvbezugeinspeisung == "1" ]]; then
+if [[ $pvbezugeinspeisung == "1" ]]; then   # Bezug
 	pvregelungm=$(echo "(230*$anzahlphasen*-1)" | bc)
 	schaltschwelle="0"
 fi
-if [[ $pvbezugeinspeisung == "2" ]]; then
+if [[ $pvbezugeinspeisung == "2" ]]; then   # Manueller offset
 	pvregelungm=$offsetpv
 	schaltschwelle=$((schaltschwelle + offsetpv))
 fi

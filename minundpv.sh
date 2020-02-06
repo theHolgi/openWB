@@ -21,6 +21,7 @@ minundpvlademodus(){
 				#runs/set-current.sh $llneu all 
 			else
 				if (( uberschuss < pvregelungm )); then
+				        # Herunterregeln
 					if (( llalt > minimalampv )); then
 						#llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
 						llneu=$(( llalt - 1 + ( (uberschuss - pvregelungm) / 230 / anzahlphasen)))
@@ -35,6 +36,7 @@ minundpvlademodus(){
 					llneu=$llalt
 				fi
 				if (( uberschuss > schaltschwelle )); then
+				        # Hochregeln
 					llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
 				fi
 			fi
@@ -46,9 +48,9 @@ minundpvlademodus(){
 		if (( llneu > maximalstromstaerke )); then
 			llneu=$maximalstromstaerke
 		fi
-		runs/set-current.sh $llneu all
 		if (( llalt != llneu )); then
 			echo "$date alle Ladepunkte, Lademodus Min und PV. Ändere Ladeleistung auf $llneu Ampere" >> ramdisk/ladestatus.log
+			runs/set-current.sh $llneu all
 		fi
 	else
 		runs/set-current.sh 0 all
