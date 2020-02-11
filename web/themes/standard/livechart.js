@@ -143,7 +143,7 @@ function loadgraph() {
 			backgroundColor: 'blue',
 			fill: false,
 			borderWidth: 2,
-			data: bezugw1,
+			data: alph1,
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp6,
 		} , {
@@ -152,7 +152,7 @@ function loadgraph() {
 			backgroundColor: 'blue',
 			fill: false,
 			borderWidth: 2,
-			data: bezugw2,
+			data: alph2,
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp7,
 		} , {
@@ -161,7 +161,7 @@ function loadgraph() {
 			backgroundColor: 'blue',
 			fill: false,
 			borderWidth: 2,
-			data: bezugw3,
+			data: alph3,
 			yAxisID: 'y-axis-1',
 			hidden: boolDisplayLp8,
 		}]
