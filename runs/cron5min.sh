@@ -5,18 +5,15 @@ dailyfile="/var/www/html/openWB/web/logging/data/daily/$(date +%Y%m%d)"
 bezug=$(</var/www/html/openWB/ramdisk/bezugkwh)
 einspeisung=$(</var/www/html/openWB/ramdisk/einspeisungkwh)
 pv=$(</var/www/html/openWB/ramdisk/pvkwh)
-ll1=$(</var/www/html/openWB/ramdisk/llkwh)
-ll2=$(</var/www/html/openWB/ramdisk/llkwhs1)
-ll3=$(</var/www/html/openWB/ramdisk/llkwhs2)
+ladeleistunglp1=$(</var/www/html/openWB/ramdisk/llaktuell)
+ladeleistunglp2=$(</var/www/html/openWB/ramdisk/llaktuells1)
+ladeleistunglp3=$(</var/www/html/openWB/ramdisk/llaktuells2)
 llg=$(</var/www/html/openWB/ramdisk/llkwhges)
 soc=$(</var/www/html/openWB/ramdisk/soc)
 soc1=$(</var/www/html/openWB/ramdisk/soc1)
 speicheri=$(</var/www/html/openWB/ramdisk/speicherikwh)
 speichere=$(</var/www/html/openWB/ramdisk/speicherekwh)
 speichersoc=$(</var/www/html/openWB/ramdisk/speichersoc)
-ll1=$(echo "$ll1 * 1000" | bc)
-ll2=$(echo "$ll2 * 1000" | bc)
-ll3=$(echo "$ll3 * 1000" | bc)
 llg=$(echo "$llg * 1000" | bc)
 verbraucher1=$(</var/www/html/openWB/ramdisk/verbraucher1_wh)
 verbraucher2=$(</var/www/html/openWB/ramdisk/verbraucher2_wh)
@@ -33,7 +30,7 @@ ll5=$(echo "$ll5 * 1000" | bc)
 ll6=$(echo "$ll6 * 1000" | bc)
 ll7=$(echo "$ll7 * 1000" | bc)
 ll8=$(echo "$ll8 * 1000" | bc)
-echo $(date +%H%M),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$speicheri,$speichere,$verbraucher1,$verbrauchere1,$verbraucher2,$verbrauchere2,$verbraucher3,$ll4,$ll5,$ll6,$ll7,$ll8,$speichersoc,$soc,$soc1 >> $dailyfile.csv
+echo $(date +%H%M),$bezug,$einspeisung,$pv,$ladeleistunglp1,$ladeleistunglp2,$ladeleistunglp3,$llg,$speicheri,$speichere,$verbraucher1,$verbrauchere1,$verbraucher2,$verbrauchere2,$verbraucher3,$ll4,$ll5,$ll6,$ll7,$ll8,$speichersoc,$soc,$soc1 >> $dailyfile.csv
 
 netzabschaltunghz=0
 if (( netzabschaltunghz == 1 )); then
