@@ -1,13 +1,14 @@
 #!/usr/bin/python3
+import sys
 import urllib3
 import json
 
-host = 'https://sma.garnix.de'
+host = str(sys.argv[1]) 
 valueURL = '/dyn/getDashValues.json'
 
 urllib3.disable_warnings()
 http = urllib3.PoolManager(cert_reqs='CERT_NONE')
-r = http.request('GET', host + valueURL)
+r = http.request('GET', 'https://' + host + valueURL)
 if r.status == 200:
    content = json.loads(r.data.decode('utf-8'))
    for unitName, unitResult in content['result'].items():
@@ -17,5 +18,7 @@ if r.status == 200:
       if generation is None:
          generation = 0
       else:
-         generation = int(generation)
-      print(generation)
+         generation = -int(generation) # generation is negative
+      with open('/var/www/html/openWB/ramdisk/pvwatt', 'w') as f:
+         f.write(str(generation))
+      # /var/www/html/openWB/ramdisk/pvkwh

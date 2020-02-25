@@ -1,5 +1,8 @@
 #!/bin/bash
-. /var/www/html/openWB/openwb.conf
+BASEDIR=$(dirname "$0")
+RAMDISK=$BASEDIR/../../ramdisk
+
+. $BASEDIR/../../openwb.conf
 
 if [[ $wrsmawebbox == "1" ]]; then
 	rekwh='^[-+]?[0-9]+\.?[0-9]*$'
@@ -10,10 +13,10 @@ if [[ $wrsmawebbox == "1" ]]; then
 		pvkwh=$(echo $boxout | jq -r '.result.overview[2].value ')
 		pvwh=$(echo "scale=0;$pvkwh * 1000" |bc)
 		if [[ $pvwh =~ $rekwh ]]; then
-			echo $pvwh > /var/www/html/openWB/ramdisk/pvkwh
+			echo $pvwh > $RAMDISK/pvkwh
 		fi
 		if [[ $pvkwh =~ $rekwh ]]; then
-			echo $pvwatt > /var/www/html/openWB/ramdisk/pvwatt
+			echo $pvwatt > $RAMDISK/pvwatt
 		fi
 	fi
 
@@ -22,15 +25,15 @@ if [[ $wrsmawebbox == "1" ]]; then
 
 else
 	if [[ $wrsma2ip != "none" ]] && [[ $wrsma3ip != "none" ]] && [[ $wrsma4ip != "none" ]]; then
-		sudo python /var/www/html/openWB/modules/wr_tripower9000/tri90004.py $tri9000ip $wrsma2ip $wrsma3ip $wrsma4ip
+		python $BASEDIR/tri90004.py $tri9000ip $wrsma2ip $wrsma3ip $wrsma4ip
 	else
 		if  [[ $wrsma2ip != "none" ]] && [[ $wrsma3ip != "none" ]]; then
-			sudo python /var/www/html/openWB/modules/wr_tripower9000/tri90003.py $tri9000ip $wrsma2ip $wrsma3ip 
+			python $BASEDIR/tri90003.py $tri9000ip $wrsma2ip $wrsma3ip 
 		else
 			if  [[ $wrsma2ip != "none" ]]; then
-				sudo python /var/www/html/openWB/modules/wr_tripower9000/tri90002.py $tri9000ip $wrsma2ip 
+				python $BASEDIR/tri90002.py $tri9000ip $wrsma2ip 
 			else
-				sudo python /var/www/html/openWB/modules/wr_tripower9000/tri9000.py $tri9000ip
+				python3 $BASEDIR/read.py $tri9000ip
 			fi
 		fi
 	fi
@@ -39,13 +42,13 @@ fi
 
 
 
-pvwatt=$(</var/www/html/openWB/ramdisk/pvwatt)
+pvwatt=$(<$RAMDISK/pvwatt)
 echo $pvwatt
-ekwh=$(</var/www/html/openWB/ramdisk/pvkwh)
+ekwh=$(<$RAMDISK/pvkwh)
 
 
 pvkwhk=$(echo "scale=3;$ekwh / 1000" |bc)
-echo $pvkwhk > /var/www/html/openWB/ramdisk/pvkwhk
+echo $pvkwhk > $RAMDISK/pvkwhk
 
 
 
