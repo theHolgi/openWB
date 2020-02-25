@@ -202,10 +202,14 @@ var thevalues = [
 	["openWB/lp/8/ADirectModeAmps", "#"]
 ];
 
-function getCol(matrix, col){
+function getCol(matrix, col, sign=false){
 	var column = [];
 	for(var i=0; i<matrix.length; i++){
-		column.push(matrix[i][col]);
+		if (sign) {
+			 column.push(-matrix[i][col]);
+		} else {
+			column.push(matrix[i][col]);
+		}
 	}
 	return column;
 }
@@ -471,7 +475,7 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			});
 			atime = splittime;
 	 		//atime = getCol(csvData, 0);
-			abezug = getCol(csvData, 1);
+			abezug = getCol(csvData, 1, true);
 			alpa = getCol(csvData, 2);
 			apv = getCol(csvData, 3);
 			alp1 = getCol(csvData, 4);

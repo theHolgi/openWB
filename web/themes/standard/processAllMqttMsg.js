@@ -239,10 +239,14 @@ var thevalues = [
 var clientuid = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
 var client = new Messaging.Client(location.host, 9001, clientuid);
 
-function getCol(matrix, col){
+function getCol(matrix, col, sign=false){
 	var column = [];
 	for(var i=0; i<matrix.length; i++){
-		column.push(matrix[i][col]);
+		if (sign) {
+				column.push(-matrix[i][col]);
+		} else {
+			column.push(matrix[i][col]);
+		}
 	}
 	return column;
 }
@@ -491,7 +495,7 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			});
 			atime = splittime;
 			//atime = getCol(csvData, 0);
-			abezug = getCol(csvData, 1);
+			abezug = getCol(csvData, 1, true);
 			alpa = getCol(csvData, 2);
 			apv = getCol(csvData, 3);
 			alp1 = getCol(csvData, 4);
@@ -1254,7 +1258,7 @@ function putgraphtogether() {
 		});
 		atime = splittime;
 		//atime = getCol(csvData, 0);
-		abezug = getCol(csvData, 1);
+		abezug = getCol(csvData, 1, true);
 		alpa = getCol(csvData, 2);
 		apv = getCol(csvData, 3);
 		alp1 = getCol(csvData, 4);
