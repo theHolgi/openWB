@@ -8,6 +8,14 @@ for v in "${maxll[@]}"; do
 	if (( v > maxllvar )); then maxllvar=$v; fi;
 done
 llalt=$maxllvar
+if [[ $schieflastaktiv == "1" ]]; then
+	if [[ $u1p3paktiv == "1" ]]; then
+		u1p3pstat=$(<ramdisk/u1p3pstat)
+		if [[ $u1p3pstat == "1" ]]; then
+			maximalstromstaerke=$schieflastmaxa
+		fi
+	fi
+fi
 if [[ $lastmanagement == "0" ]]; then
 	if [[ $socmodul != "none" ]]; then
 		if (( soc < minnurpvsoclp1 )); then
@@ -67,6 +75,7 @@ if grep -q 0 "/var/www/html/openWB/ramdisk/ladestatus"; then
 			fi
 			echo 0 > /var/www/html/openWB/ramdisk/pvcounter
 			echo 0 > /var/www/html/openWB/ramdisk/pvecounter
+			echo 20000 > /var/www/html/openWB/ramdisk/soctimer
 			exit 0
 		fi
 	else

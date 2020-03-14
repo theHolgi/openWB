@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="de">
+	<head>
+		<title>Autolock</title>
+	</head>
+	<body>
 <?php
 
 	// writes settings from autolock-page via POST-request to config file
@@ -16,13 +22,16 @@
 
 		// convert lines to key/value array for faster manipulation
 		foreach($settingsFile as $line) {
-			// split line at char '='
-			$splitLine = explode('=', $line);
-			// trim parts
-			$splitLine[0] = trim($splitLine[0]);
-			$splitLine[1] = trim($splitLine[1]);
-			// push key/value pair to new array
-			$settingsArray[$splitLine[0]] = $splitLine[1];
+			// check for comment-lines in older config files and don't process them
+			if ( strlen(trim($line)) > 3 && $line[0] != "#" ) {
+				// split line at char '='
+				$splitLine = explode('=', $line, 2);
+				// trim parts
+				$splitLine[0] = trim($splitLine[0]);
+				$splitLine[1] = trim($splitLine[1]);
+				// push key/value pair to new array
+				$settingsArray[$splitLine[0]] = $splitLine[1];
+			}
 		}
 		// now values can be accessed by $settingsArray[$key] = $value;
 
@@ -50,20 +59,21 @@
 		}  // end foreach POST value
 
 		// write config to file
-  		$fp = fopen($myConfigFile, "w");
+		$fp = fopen($myConfigFile, "w");
 		if ( !$fp ) {
 			throw new Exception('Konfigurationsdatei konnte nicht geschrieben werden.');
-  		}
+		}
 		foreach($settingsArray as $key => $value) {
 			fwrite($fp, $key.'='.$value."\n");
 		}
-  		// send success write to config
+		// send success write to config
 	} catch ( Exception $e ) {
 		$msg = $e->getMessage();
-  		echo "<script type='text/javascript'>alert('$msg');</script>";
-    } finally {
+		echo "<script>alert('$msg');</script>";
+	} finally {
 		fclose($fp);
-	 	echo "<script>window.location.href='../index.php';</script>";
+		echo "<script>window.location.href='../index.php';</script>";
 	}
-
 ?>
+	</body>
+</html>

@@ -8,6 +8,14 @@ minundpvlademodus(){
 		if (( v > maxllvar )); then maxllvar=$v; fi;
 	done
 	llalt=$maxllvar
+	if [[ $schieflastaktiv == "1" ]]; then
+		if [[ $u1p3paktiv == "1" ]]; then
+			u1p3pstat=$(<ramdisk/u1p3pstat)
+			if [[ $u1p3pstat == "1" ]]; then
+				maximalstromstaerke=$schieflastmaxa
+			fi
+		fi
+	fi
 	if (( speichersoc >= speichersocminpv )); then
 		if (( ladestatus == 0 )); then
 			runs/set-current.sh $minimalampv all
@@ -21,7 +29,7 @@ minundpvlademodus(){
 				#runs/set-current.sh $llneu all 
 			else
 				if (( uberschuss < pvregelungm )); then
-				        # Herunterregeln
+				    # Herunterregeln
 					if (( llalt > minimalampv )); then
 						#llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
 						llneu=$(( llalt - 1 + ( (uberschuss - pvregelungm) / 230 / anzahlphasen)))
@@ -36,8 +44,23 @@ minundpvlademodus(){
 					llneu=$llalt
 				fi
 				if (( uberschuss > schaltschwelle )); then
-				        # Hochregeln
-					llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
+				    # Hochregeln
+					if [[ $pvbezugeinspeisung == "0" ]]; then
+						llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
+
+					else
+						if (( llalt == minimalampv )); then
+							llneu=$(( llalt + 1 ))
+						else
+							llneu=$(( llalt + ( (uberschuss - schaltschwelle) / 230 / anzahlphasen)))
+						fi
+					fi
+					if (( llneu > maximalstromstaerke )); then
+						llneu=$maximalstromstaerke
+					fi
+					if (( llalt < minimalampv )); then
+						llneu=$minimalampv
+					fi
 				fi
 			fi
 		fi
