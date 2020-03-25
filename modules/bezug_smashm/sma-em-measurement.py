@@ -54,6 +54,7 @@ signal.signal(signal.SIGINT, abortprogram)
 #parser = ConfigParser()
 #default values
 smaserials = sys.argv[1] if len(sys.argv) > 1 else None
+#ipbind = '192.168.7.72'
 ipbind = '0.0.0.0'
 MCAST_GRP = '239.12.255.254'
 MCAST_PORT = 9522
@@ -102,6 +103,7 @@ while True:
         writeToFile(basepath + 'wattbezug', watt)
         writeToFile(basepath + 'einspeisungkwh', emparts['psupplycounter'] * 1000)
         writeToFile(basepath + 'bezugkwh', emparts['pconsumecounter'] * 1000)
+        # print("Bezug: %i Einspeisung: %i" % (emparts['pconsume'], emparts['psupply']))
         for phase in [1,2,3]:
             power = int(emparts['p%iconsume' % phase])
             if power < 5:

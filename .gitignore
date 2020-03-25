@@ -2,3 +2,5 @@ web/ladelog
 *.csv
 *.log
 ramdisk/
+*.pyc
+__pycache__

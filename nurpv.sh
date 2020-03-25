@@ -51,6 +51,7 @@ if grep -q 0 "/var/www/html/openWB/ramdisk/ladestatus"; then
 		runs/set-current.sh 0 all
 		echo "$date alle Ladepunkte, Lademodus NurPV. Ladung gestoppt" >> ramdisk/ladestatus.log
 	fi
+	echo "Überschuss $uberschuss; mindestens $mindestuberschussphasen"
 	if (( mindestuberschussphasen <= uberschuss )); then
 		pvecounter=$(cat /var/www/html/openWB/ramdisk/pvecounter)
 		if (( pvecounter < einschaltverzoegerung )); then
@@ -291,7 +292,7 @@ else
 					fi
 				else
 					runs/set-current.sh 0 all
-					echo "$date alle Ladepunkte, Lademodus NurPV. Ladung gestoppt zu wenig PV Leistung" >>  ramdisk/ladestatus.log
+					echo "$date alle Ladepunkte, Lademodus NurPV. Ladung gestoppt zu wenig PV Leistung: $wattbezugint" >>  ramdisk/ladestatus.log
 					if [[ $debug == "1" ]]; then
 						echo "pv ladung beendet"
 					fi

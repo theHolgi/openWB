@@ -24,19 +24,7 @@ if [[ $wrsmawebbox == "1" ]]; then
 
 
 else
-	if [[ $wrsma2ip != "none" ]] && [[ $wrsma3ip != "none" ]] && [[ $wrsma4ip != "none" ]]; then
-		python $BASEDIR/tri90004.py $tri9000ip $wrsma2ip $wrsma3ip $wrsma4ip
-	else
-		if  [[ $wrsma2ip != "none" ]] && [[ $wrsma3ip != "none" ]]; then
-			python $BASEDIR/tri90003.py $tri9000ip $wrsma2ip $wrsma3ip 
-		else
-			if  [[ $wrsma2ip != "none" ]]; then
-				python $BASEDIR/tri90002.py $tri9000ip $wrsma2ip 
-			else
-				python3 $BASEDIR/read.py $tri9000ip
-			fi
-		fi
-	fi
+	python $BASEDIR/tri9000.py $tri9000ip $wrsma2ip $wrsma3ip $wrsma4ip
 fi
 
 
