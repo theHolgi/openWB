@@ -522,7 +522,7 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			var lines = mqttpayload.split("\n");
 			for (var i = 0; i < lines.length; i++) {
 				var ldate = lines[i].split(",")[0];
-				var lbezug = lines[i].split(",")[1];
+				var lbezug = -lines[i].split(",")[1];
 				var lpv = lines[i].split(",")[3];
 				var llp2 = lines[i].split(",")[5];
 				var lspeicherl = lines[i].split(",")[7];

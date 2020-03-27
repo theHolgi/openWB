@@ -226,10 +226,14 @@ var thevalues = [
 var clientuid = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
 var client = new Messaging.Client(location.host, 9001, clientuid);
 
-function getCol(matrix, col){
+function getCol(matrix, col, sign=false){
 	var column = [];
 	for(var i=0; i<matrix.length; i++){
-		column.push(matrix[i][col]);
+		if (sign) {
+				column.push(-matrix[i][col]);
+		} else {
+			column.push(matrix[i][col]);
+		}
 	}
 	return column;
 }
@@ -477,7 +481,7 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			});
 			atime = splittime;
 			//atime = getCol(csvData, 0);
-			abezug = getCol(csvData, 1);
+			abezug = getCol(csvData, 1, true);
 			alpa = getCol(csvData, 2);
 			apv = getCol(csvData, 3);
 			alp1 = getCol(csvData, 4);
@@ -492,9 +496,9 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			alp3 = getCol(csvData, 14);
 			alp4 = getCol(csvData, 15);
 			alp5 = getCol(csvData, 16);
-			alp6 = getCol(csvData, 17);
-			alp7 = getCol(csvData, 18);
-			alp8 = getCol(csvData, 19);
+			alph1 = getCol(csvData, 17);
+			alph2 = getCol(csvData, 18);
+			alph3 = getCol(csvData, 19);
 			initialread +=1 ;
 			checkgraphload();
 		}
@@ -504,7 +508,7 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			var lines = mqttpayload.split("\n");
 			for (var i = 0; i < lines.length; i++) {
 				var ldate = lines[i].split(",")[0];
-				var lbezug = lines[i].split(",")[1];
+				var lbezug = -lines[i].split(",")[1];
 				var lpv = lines[i].split(",")[3];
 				var llp2 = lines[i].split(",")[5];
 				var lspeicherl = lines[i].split(",")[7];
@@ -664,7 +668,6 @@ function processHousebatteryMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 		// Gauge mit Rückgabewert und Text erneuern, symmetrische Gauge Min-Max, kein AutoRescale
 		updateGaugeValue(gaugeBatt, anzeigeWert, anzeigeText, true, true, false);
 	}
-
 	else if ( mqttmsg == "openWB/housebattery/%Soc" ) {
 		// ProgressBar mit Rückgabewert erneuern
 		progressBarSoC.value = parseInt(mqttpayload, 10);
