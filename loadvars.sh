@@ -304,6 +304,9 @@ if [[ $pvwattmodul != "none" ]]; then
 else
 	pvwatt=$(</var/www/html/openWB/ramdisk/pvwatt)
 fi
+pvwatt1=$(</var/www/html/openWB/ramdisk/pvwatt1)
+pvwatt2=$(</var/www/html/openWB/ramdisk/pvwatt2)
+pvwatt3=$(</var/www/html/openWB/ramdisk/pvwatt3)
 
 #Speicher werte
 if [[ $speichermodul != "none" ]] ; then
@@ -780,7 +783,7 @@ fi
 tempPubList=""
 
 if [[ "$opvwatt" != "$pvwatt" ]]; then
-	tempPubList="${tempPubList}\nopenWB/pv/W=${pvwatt}"
+	tempPubList="${tempPubList}\nopenWB/pv/W=${pvwatt}\nopenWB/pv1/W=${pvwatt1}\nopenWB/pv2/W=${pvwatt2}\nopenWB/pv3/W=${pvwatt3}"
 	echo $pvwatt > ramdisk/mqttpvwatt
 fi
 if [[ "$owattbezug" != "$wattbezug" ]]; then

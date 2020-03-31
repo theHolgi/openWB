@@ -124,7 +124,7 @@
 
 		<div class="row justify-content-center">
 			<div class="col-sm-6 pvInfoStyle" style="background-color:#befebe;">
-				PV: <span id="pvdiv"></span>
+				PV: <span id="pvdiv"></span> (<span id="pv1div"></span>+<span id="pv2div"></span>) <!-- span id="pv3div"></span -->
 			</div>
 			<div id="evudiv" class="col-sm-6 pvInfoStyle" style="background-color:#febebe;" >
 				EVU: <span id="bezugdiv"></span>

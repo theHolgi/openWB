@@ -103,6 +103,9 @@ var thevalues = [
 	["openWB/evu/W", "#bezugdiv"],
 	["openWB/global/WHouseConsumption", "#"],
 	["openWB/pv/W", "#"],
+	["openWB/pv1/W", "#"],
+	["openWB/pv2/W", "#"],
+	["openWB/pv3/W", "#"],
 	["openWB/lp/1/%Soc", "#"],
 	["openWB/lp/2/%Soc", "#"],
 	// heute geladene kWh ... nicht benutzt im Theme
@@ -258,7 +261,7 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	else if ( mqttmsg.match( /^openwb\/global\//i) ) { processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/housebattery\//i) ) { processHousebatteryMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/system\//i) ) { processSystemMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
-	else if ( mqttmsg.match( /^openwb\/pv\//i) ) { processPvMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
+	else if ( mqttmsg.match( /^openwb\/pv.?\//i) ) { processPvMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/verbraucher\//i) ) { processVerbraucherMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/set\//i) ) { processSetMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/lp\//i) ) { processLpMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
@@ -513,6 +516,9 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			alph1 = getCol(csvData, 17);
 			alph2 = getCol(csvData, 18);
 			alph3 = getCol(csvData, 19);
+			apv1  = getCol(csvData, 20);
+			apv2  = getCol(csvData, 21);
+			apv3  = getCol(csvData, 22);
 			initialread +=1 ;
 			checkgraphload();
 		}
@@ -741,32 +747,40 @@ function processSystemMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	// called by handlevar
 }
 
+function pv2str(power) {
+	if (power > 0 ) {
+		// if pv-power is positive, adjust to 0
+		// since pv cannot consume power
+		power = 0;
+	}
+	// convert raw number for display
+	if ( power <= 0){
+		// production is negative for calculations so adjust for display
+		power = power * -1;
+		pvwattarrow = power;
+		// adjust and add unit
+		if (power > 999) {
+			powerStr = (power / 1000).toFixed(2) + " kW";
+		} else {
+			powerStr = power + " W";
+		}
+	}
+	return powerStr
+}
 function processPvMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	// processes mqttmsg for topic openWB/pv
 	// called by handlevar
 	if ( mqttmsg == "openWB/pv/W") {
-		var pvwatt = parseInt(mqttpayload, 10);
-		if ( pvwatt > 0 ) {
-			// if pv-power is positive, adjust to 0
-			// since pv cannot consume power
-			pvwatt = 0;
-		}
-		// convert raw number for display
-		if ( pvwatt <= 0){
-			// production is negative for calculations so adjust for display
-			pvwatt = pvwatt * -1;
-			// adjust and add unit
-			if (pvwatt > 999) {
-				var pvwattStr = (pvwatt / 1000).toFixed(2) + " kW";
-			} else {
-				var pvwattStr = pvwatt + " W";
-			}
-			// only if production
-			if (pvwatt > 0) {
-				pvwattStr += " Erzeugung";
-			}
-		}
-		$("#pvdiv").html(pvwattStr);
+		$("#pvdiv").html(pv2str(parseInt(mqttpayload, 10)) + " Erzeugung");
+	}
+	else if ( mqttmsg == "openWB/pv1/W") {
+		$("#pv1div").html(pv2str(parseInt(mqttpayload, 10)));
+	}
+	else if ( mqttmsg == "openWB/pv2/W") {
+		$("#pv2div").html(pv2str(parseInt(mqttpayload, 10)));
+	}
+	else if ( mqttmsg == "openWB/pv3/W") {
+		$("#pv3div").html(pv2str(parseInt(mqttpayload, 10)));
 	}
 }
 
@@ -1276,6 +1290,9 @@ function putgraphtogether() {
 		alph1 = getCol(csvData, 17);
 		alph2 = getCol(csvData, 18);
 		alph3 = getCol(csvData, 19);
+		apv1  = getCol(csvData, 20);
+		apv2  = getCol(csvData, 21);
+		apv3  = getCol(csvData, 22);
 		initialread = 1 ;
 		checkgraphload();
 	}

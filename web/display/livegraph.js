@@ -25,7 +25,7 @@ var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
 valueAxis2.renderer.opposite = true;
 valueAxis2.title.text = "% SoC";
 valueAxis2.renderer.grid.template.disabled = true;
-var series1 = chart.series.push(new am4charts.LineSeries());
+var series1 = chart.series.push(new am4charts.LineSeries());  // wattbezugint
 series1.dataFields.valueY = "col1";
 series1.dataFields.categoryX = "col0";
 series1.name = "Bezug";
@@ -36,7 +36,7 @@ series1.strokeWidth = 1.5;
 series1.fillOpacity = 0.3;
 
 
-var series2 = chart.series.push(new am4charts.LineSeries());
+var series2 = chart.series.push(new am4charts.LineSeries());   // ladeleistung
 series2.dataFields.valueY = "col2";
 series2.dataFields.categoryX = "col0";
 series2.name = "LL Gesamt";
@@ -45,7 +45,7 @@ series2.strokeWidth = 1.5;
 series2.fill = am4core.color("#4074c9");
 series2.fillOpacity = 0.3;
 
-var series4 = chart.series.push(new am4charts.LineSeries());
+var series4 = chart.series.push(new am4charts.LineSeries());   // pvgraph
 series4.dataFields.valueY = "col3";
 series4.dataFields.categoryX = "col0";
 series4.name = "PV";
@@ -54,7 +54,7 @@ series4.strokeWidth = 1.5;
 series4.fill = am4core.color("#00ff00");
 series4.fillOpacity = 0.3;
 
-var series5 = chart.series.push(new am4charts.LineSeries());
+var series5 = chart.series.push(new am4charts.LineSeries());   // ladeleistunglp1
 series5.dataFields.valueY = "col4";
 series5.dataFields.categoryX = "col0";
 series5.name = "LP 1";

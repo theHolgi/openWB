@@ -217,6 +217,31 @@ function getCol(matrix, col, sign=false){
 var clientuid = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
 var client = new Messaging.Client(location.host, 9001, clientuid);
 
+function watt2str(power, canPositive) {
+	if ( !canPositive && power > 0 ) {
+		// if pv-power is positive, adjust to 0
+		// since pv cannot consume power
+		power = 0;
+	}
+	// convert raw number for display
+	if ( power <= 0){
+		// production is negative for calculations so adjust for display
+		power = power * -1;
+		pvwattarrow = power;
+		// adjust and add unit
+		if (power > 999) {
+			powerStr = (power / 1000).toFixed(2) + " kW";
+		} else {
+			powerStr = power + " W";
+		}
+		// only if production
+		if (power > 0) {
+			powerStr += " Erzeugung";
+		}
+	}
+	return powerStr
+}
+
 function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 //console.log('new mqttmsg...');
 //console.log('mqttmsg: '+mqttmsg+'--endmessage');
@@ -502,7 +527,7 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			var lines = mqttpayload.split("\n");
 			for (var i = 0; i < lines.length; i++) {
 				var ldate = lines[i].split(",")[0];
-				var lbezug = lines[i].split(",")[1];
+				var lbezug = -lines[i].split(",")[1];
 				var lpv = lines[i].split(",")[3];
 				var llp2 = lines[i].split(",")[5];
 				var lspeicherl = lines[i].split(",")[7];
@@ -629,28 +654,17 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	}
 	else if ( mqttmsg == "openWB/pv/W") {
 		pvwatt = parseInt(mqttpayload, 10);
-		if ( pvwatt > 0 ) {
-			// if pv-power is positive, adjust to 0
-			// since pv cannot consume power
-			pvwatt = 0;
-		}
-		// convert raw number for display
-		if ( pvwatt <= 0){
-			// production is negative for calculations so adjust for display
-			pvwatt = pvwatt * -1;
-			pvwattarrow = pvwatt;
-			// adjust and add unit
-			if (pvwatt > 999) {
-				pvwattStr = (pvwatt / 1000).toFixed(2) + " kW";
-			} else {
-				pvwattStr = pvwatt + " W";
-			}
-			// only if production
-			if (pvwatt > 0) {
-				pvwattStr += " Erzeugung";
-			}
-		}
-		$("#pvdiv").html(pvwattStr);
+		pvwattarrow = pvwatt
+		$("#pvdiv").html(watt2str(pvwatt, false));
+	}
+	else if ( mqttmsg == "openWB/pv1/W") {
+		$("#pv1div").html(watt2str(parseInt(mqttpayload, 10), false));
+	}
+	else if ( mqttmsg == "openWB/pv2/W") {
+		$("#pv2div").html(watt2str(parseInt(mqttpayload, 10), false));
+	}
+	else if ( mqttmsg == "openWB/pv3/W") {
+		$("#pv3div").html(watt2str(parseInt(mqttpayload, 10), false));
 	}
 	else if ( mqttmsg.match( /^openwb\/lp\/[1-9][0-9]*\/w$/i ) ) {
 		// matches to all messages containing "openwb/lp/#/w"

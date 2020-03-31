@@ -229,6 +229,9 @@ echo 0 > /var/www/html/openWB/ramdisk/pvwatt1
 # Leistung AC PV-Module WR 2
 touch /var/www/html/openWB/ramdisk/pvwatt2
 echo 0 > /var/www/html/openWB/ramdisk/pvwatt2
+# Leistung AC PV-Module WR 3
+touch /var/www/html/openWB/ramdisk/pvwatt3
+echo 0 > /var/www/html/openWB/ramdisk/pvwatt3
 # Gesamtertrag in Wattstunden WR 1 + 2
 touch /var/www/html/openWB/ramdisk/pvkwh
 echo 0 > /var/www/html/openWB/ramdisk/pvkwh
