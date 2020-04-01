@@ -109,7 +109,7 @@ def on_message(client, userdata, msg):
             f.write("1")
             f.close()
     if (msg.topic == "openWB/set/ChargeMode"):
-        if (int(msg.payload) >= 0 and int(msg.payload) <=4):
+        if (int(msg.payload) >= 0 and int(msg.payload) <=5):
             f = open('/var/www/html/openWB/ramdisk/lademodus', 'w')
             f.write(msg.payload.decode("utf-8"))
             f.close()

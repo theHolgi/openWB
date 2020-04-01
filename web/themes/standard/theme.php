@@ -262,14 +262,20 @@
 		<!-- too many cols per row so bootstrap will linebreak -->
 		<!-- and change to appropriate button layout -->
 		<div class="row no-gutters justify-content-center">
-			<div class="col-sm-5 py-1">
+			<div class="col-sm-3 py-1">
 				<button id="sofortBtn" type="button" class="btn btn-lg btn-block btn-red myButtonStyle" onclick="chargeModeBtnClick(this.value)" value="0">Sofortladen</button>
 			</div>
 			<div class="d-none d-sm-block">
 				&nbsp;
 			</div>
-			<div class="col-sm-5 py-1">
+			<div class="col-sm-4 py-1">
 				<button id="minUndPvBtn" type="button" class="btn btn-lg btn-block btn-red myButtonStyle" onclick="chargeModeBtnClick(this.value)" value="1">Min + PV</button>
+			</div>
+			<div class="d-none d-sm-block">
+				&nbsp;
+			</div>
+			<div class="col-sm-3 py-1">
+				<button id="maxPvBtn" type="button" class="btn btn-lg btn-block btn-red myButtonStyle" onclick="chargeModeBtnClick(this.value)" value="5">Max-PV</button>
 			</div>
 		</div>
 		<div class="row no-gutters justify-content-center">

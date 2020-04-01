@@ -9,6 +9,7 @@ ladestatus=$(<ramdisk/ladestatus)
 #2 nur pv
 #3 stop
 #4 standby
+#5 Max pv
 ledrunning=$(ps aux |grep '[l]eds.py' | awk '{print $2}')
 if (( ladestatus == 1 ));then
 	if (( lademodus == 0 )); then

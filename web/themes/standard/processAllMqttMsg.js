@@ -664,6 +664,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#pvBtn').addClass("btn-red").removeClass("btn-green");
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
+				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
 				break;
 			case "1":
 				// mode min+pv
@@ -673,6 +674,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#pvBtn').addClass("btn-red").removeClass("btn-green");
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
+				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
 				break;
 			case "2":
 				// mode pv
@@ -682,6 +684,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#pvBtn').addClass("btn-green").removeClass("btn-red");
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
+				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
 				break;
 			case "3":
 				// mode stop
@@ -691,6 +694,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#pvBtn').addClass("btn-red").removeClass("btn-green");
 				$('#stopBtn').addClass("btn-green").removeClass("btn-red");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
+				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
 				break;
 			case "4":
 				// mode standby
@@ -700,6 +704,18 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#pvBtn').addClass("btn-red").removeClass("btn-green");
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-green").removeClass("btn-red");
+				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
+				break;
+			case "5":
+				// mode max-PV
+				$('#targetChargingProgressDiv').hide();
+				$('#sofortBtn').addClass("btn-red").removeClass("btn-green");
+				$('#minUndPvBtn').addClass("btn-red").removeClass("btn-green");
+				$('#pvBtn').addClass("btn-red").removeClass("btn-green");
+				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
+				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
+				$('#maxPvBtn').addClass("btn-green").removeClass("btn-red");
+				break;
 		}
 		loaddivs();
 	}
