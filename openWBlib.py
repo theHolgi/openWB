@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import sys
 import unittest
+import subprocess
 
 basepath = '/var/www/html/openWB/'
 
@@ -53,6 +54,7 @@ class openWBValues:
 def log(message):
    print(message)
 
+
 def debug(message):
    if openWBconfig()['debug'] == 1 or True:
       print(message)
@@ -64,11 +66,12 @@ def setCurrent(req):
    - all
    - lp<n>
    """
-   cmd = 'runs/set-current.sh'
    mapping = { 'all': 'all', 'lp1': 'm', 'lp2': 's1', 'lp3': 's2'}  # remap the key for set-current.sh
    if req is None: return
-   for key, current in req:
-      subprocess.run(cmd, current, mapping[key])
+   for key, current in req.iteritems():
+      cmd = './runs/set-current.sh %s %s'  % (current, mapping[key])
+      debug("Exec: " + cmd)
+      subprocess.call(cmd, shell=True)
 
 class TestWBlib(unittest.TestCase):
    def test_config(self):

@@ -31,7 +31,7 @@ class NurPVModus:
       config = self.config
       llsoll = values['llsoll']   # TODO: max from loadvars
       uberschuss = -values['wattbezug']  # TODO: Glättung
-      mindestuberschussphasen = uberschuss * values['anzahlphasen']
+      mindestuberschussphasen = config['mindestuberschuss'] * values['anzahlphasen']
       if config['lastmanagement'] == 0 and config['socmodul'] != "none":
          if values['soc'] < config['minnurpvsoclp1']:
             if values['ladestatus'] == 0:
@@ -225,9 +225,58 @@ class NurPVModus:
 
 class MaxPVModus:
    def __init__(self, values, config):
-      pass
+      self.values = values
+      self.config = config
+
    def run(self):
-      pass
+      req = {}
+      values = self.values
+      config = self.config
+      llsoll = values['llsoll']   # TODO: max from loadvars
+      uberschuss = -values['wattbezug']  # TODO: Glättung
+      if values['ladestatus'] == 0:
+         if  uberschuss > config['maxuberschuss']:
+            values['pvecounter'] += 10
+            if values['pvecounter'] >= config['einschaltverzoegerung']:
+               debug("max-PV ladung auf %i starten" % config['minimalapv'])
+               values['pvcounter'] = 0
+               values['pvecounter'] = 0
+               values['soctimer'] = 20000
+               log('Lademodus MaxPV. Ladung gestartet')
+               req['all'] = config['minimalapv']
+         else:
+            values['pvcounter'] = 0
+         return req
+      ladeleistung = values['mqttladeleistung']  # schon aufsummiert über alle Ladepunkte
+      if ladeleistung < 300:
+         debug("Max-PV: Warte auf ladestrom (%i A)" % ladeleistung)
+      elif uberschuss > config['maxuberschuss'] and llsoll < config['maximalstromstaerke']:
+         values['pvecounter'] += 10
+         debug('O-o: Überschuss. Counter %i' % values['pvecounter'])
+         if values['pvecounter'] >= config['einschaltverzoegerung']:
+            llneu = llsoll+1
+            req['all'] = llneu
+            log("Max-PV: Ladestrom auf %i A erhöht" % llneu)
+            debug("PV ladung auf  %i erhöht" % llneu)
+            values['pvecounter'] = 0
+         
+      if uberschuss < config['maxuberschuss'] - (230 * values['anzahlphasen']) and llsoll > config['minimalapv']:
+         values['pvcounter'] += 10
+         if values['pvcounter'] >= config['abschaltverzoegerung']:
+            llneu = llsoll-1
+            log("Max-PV: Ladestrom auf %i A verringert" % llneu)
+            debug("PV ladung auf %i A reduziert" % llneu)
+            values['pvcounter'] = 0
+            req['all'] = llneu
+      elif uberschuss < config['maxuberschuss'] - (230 * values['anzahlphasen'] * config['minimalapv']) and llsoll == config['minimalapv']:
+         values['pvcounter'] += 10
+         if values['pvcounter'] >= config['abschaltverzoegerung']:
+            log("Max-PV: Ladung beendet")
+            req['all'] = 0
+      else:
+         values['pvcounter'] = 0
+      return req
+
 
 class TestStringMethods(unittest.TestCase):
    def test_nurPV(self):
@@ -248,7 +297,7 @@ if __name__ == '__main__':
    mode = int(sys.argv[1])
    config = openWBconfig()
    values = openWBValues()
-   if mode == 3:  # Nur-PV
+   if mode == 2:  # Nur-PV
       controller = NurPVModus(values, config)
    elif mode == 5: # Max-PV
       controller = MaxPVModus(values, config)

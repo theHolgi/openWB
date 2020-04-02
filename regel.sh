@@ -440,5 +440,5 @@ if (( lademodus == 4 )); then
 fi
 
 if (( lademodus == 5 )); then
-	lademodus.py $lademodus
+	./lademodus.py $lademodus
 fi
