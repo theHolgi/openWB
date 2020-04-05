@@ -436,6 +436,7 @@ fi
 # wenn evse aus und $mindestuberschuss vorhanden, starte evse mit 6A Ladestromstaerke (1320 - 3960 Watt je nach Anzahl Phasen)
 if (( lademodus == 2 )); then
 	nurpvlademodus
+#	./lademodus.py $lademodus
 fi
 
 
@@ -444,4 +445,8 @@ fi
 
 if (( lademodus == 4 )); then
 	semiauslademodus
+fi
+
+if (( lademodus == 5 )); then
+	./lademodus.py $lademodus
 fi
