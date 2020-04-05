@@ -7,7 +7,7 @@ import unittest
 import subprocess
 from openWBlib import *
 
-class NurPVModus:
+class LadeModus:
    def __init__(self, values, config):
       self.values = values
       self.config = config
@@ -17,13 +17,38 @@ class NurPVModus:
       req = {}
       if self.config['minimalapv'] == self.config['minimalalp2pv']:
          req['all'] = self.config['minimalapv']
-         log("alle Ladepunkte, Lademodus NurPV. %s %i Ampere" % (message, self.config['minimalapv']))
+         log("LP1, %s %i Ampere" % (message, self.config['minimalapv']))
       else:
          req['lp1'] = self.config['minimalapv']
-         log("LP1, Lademodus NurPV. %s %i Ampere" % (message, self.config['minimalapv']))
+         log("LP1, %s %i Ampere" % (message, self.config['minimalapv']))
          req['lp2'] = self.config['minimalalp2pv']
-         log("LP2, Lademodus NurPV. %w %i Ampere" % (message, self.config['minimalalp2pv']))
+         log("LP2, %s %i Ampere" % (message, self.config['minimalalp2pv']))
       return req
+
+   def lowcurrent(self):
+      """
+      Handle niedrige Ladeleistung
+      Returns:
+        - None - nichts zu tun
+        - "min" - setze min
+        - "stop" - stoppe Ladung
+      """
+      ladeleistung = self.values['mqttladeleistung']  # schon aufsummiert über alle Ladepunkte
+      llsoll = self.values['llsoll']   # TODO: max from loadvars
+      mina   = self.config['minimalapv']
+      if ladeleistung < 300:
+         self.values['pvcounter'] += 10
+         if self.values['pvcounter'] >= 100
+            log("Ladung beendet")
+            return "stop"
+         if llsoll != mina:
+            self.values['pvcounter'] = 0
+            return "min"
+
+
+class NurPVModus:
+   def __init__(self, values, config):
+      super(self).__init__(values, config)
 
    def run(self):
       req = {}
@@ -74,34 +99,12 @@ class NurPVModus:
             values['pvcounter'] = 0
             return {}
 
-      ladeleistung = values['mqttladeleistung']  # schon aufsummiert über alle Ladepunkte
-      if ladeleistung < 300:
-         if llsoll > config['minimalapv']:
-            llneu=config['minimalapv']
-            values['pvcounter'] = 0
-            return self.minimal('Ladung geändert auf')
-         if llsoll < config['minimalapv']:
-            llneu=config['minimalapv']
-            values['pvcounter'] = 0
-            return self.minimal('Ladung geändert auf')
-         if llsoll == config['minimalapv']:
-            if uberschuss < mindestuberschussphasen:
-            #if (( wattbezugint > abschaltuberschuss )); then
-               #pvcounter=$(cat /var/www/html/openWB/ramdisk/pvcounter)
-               #if (( pvcounter < abschaltverzoegerung )); then
-               #	pvcounter=$((pvcounter + 10))
-               #	echo $pvcounter > /var/www/html/openWB/ramdisk/pvcounter
-               #	if [[ $debug == "1" ]]; then
-               #		echo "Nur PV auf Minimalstromstaerke, PV Counter auf $pvcounter erhöht"
-               #	fi
-               #else
-                  if os.path.isfile('ramdisk/nurpvoff'):
-                     req['all'] = 0
-                     log("alle Ladepunkte, Lademodus NurPV. Ladefreigabe aufgehoben, Überschuss unterschritten")
-                     debug("pv ladung beendet")
-                     os.unlink('ramdisk/nurpvoff')
-                  else:
-                     open('ramdisk/nurpvoff')
+      low = self.lowcurrent()
+      if low == "min":
+         return self.minimal("Setze auf min")
+      elif low == "stop":
+         req['all'] = 0
+         return req
       else:
          # if [[ $speichervorhanden == "1" ]]; then
          #    if (( speicherleistung < 0 )); then
@@ -223,10 +226,9 @@ class NurPVModus:
                   values['pvcounter'] = 0
             return req
 
-class MaxPVModus:
+class MaxPVModus(LadeModus):
    def __init__(self, values, config):
-      self.values = values
-      self.config = config
+      super(self).__init__(values, config)
 
    def run(self):
       req = {}
@@ -242,14 +244,16 @@ class MaxPVModus:
                values['pvcounter'] = 0
                values['pvecounter'] = 0
                values['soctimer'] = 20000
-               log('Lademodus MaxPV. Ladung gestartet')
-               req['all'] = config['minimalapv']
+               return self.minimal('Lademodus MaxPV. Ladung gestartet')
          else:
             values['pvcounter'] = 0
          return req
-      ladeleistung = values['mqttladeleistung']  # schon aufsummiert über alle Ladepunkte
-      if ladeleistung < 300:
-         debug("Max-PV: Warte auf ladestrom (%i A)" % ladeleistung)
+      low = self.lowcurrent()
+      if low == "min":
+         return self.minimal("Setze auf min")
+      elif low == "stop":
+         req['all'] = 0
+         return req
       elif uberschuss > config['maxuberschuss'] and llsoll < config['maximalstromstaerke']:
          values['pvecounter'] += 10
          debug('O-o: Überschuss. Counter %i' % values['pvecounter'])

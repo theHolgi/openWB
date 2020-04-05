@@ -428,7 +428,7 @@ fi
 #NUR PV Uberschussregelung lademodus 2
 # wenn evse aus und $mindestuberschuss vorhanden, starte evse mit 6A Ladestromstaerke (1320 - 3960 Watt je nach Anzahl Phasen)
 if (( lademodus == 2 )); then
-	lademodus.py $lademodus
+	./lademodus.py $lademodus
 fi
 
 

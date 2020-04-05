@@ -5,7 +5,6 @@ import subprocess
 
 basepath = '/var/www/html/openWB/'
 
-
 def openWBconfig(configfile = basepath + 'openwb.conf'):
    """Return openWB.config"""
    settings = {}
@@ -30,9 +29,11 @@ class openWBValues:
       self.path  = ramdiskpath
    def __getitem__(self, key):
       if key not in self.cache: self.cache[key] = self._get(key)
+      debug("%s => %s" % (key, self.cache[key]))
       return self.cache[key]
    def __setitem__(self, key, value):
       self.cache[key] = value
+      debug("%s <= %s" % (key, value))
       self._put(key, value)
 
    def _get(self, name):
@@ -56,7 +57,7 @@ def log(message):
 
 
 def debug(message):
-   if openWBconfig()['debug'] == 1 or True:
+   if openWBconfig()['debug'] != 0:
       print(message)
 
 def setCurrent(req):
