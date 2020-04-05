@@ -1263,7 +1263,9 @@ function lp7DirectChargeAmpsClick() {
 function lp8DirectChargeAmpsClick() {
 	publish(document.getElementById("sofortlllp8l").innerHTML,"openWB/set/lp8/DirectChargeAmps");
 }
-
+function maxpvlimitClick() {
+	publish(document.getElementById("maxeinspeisungl").innerHTML,"openWB/set/maxpv/LimitWatt");
+}
 
 function renewMQTTclick() {
 	publish("1","openWB/set/RenewMQTT");

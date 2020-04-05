@@ -7,7 +7,7 @@ import unittest
 import subprocess
 from openWBlib import *
 
-class LadeModus:
+class LadeModus(object):
    def __init__(self, values, config):
       self.values = values
       self.config = config
@@ -38,7 +38,7 @@ class LadeModus:
       mina   = self.config['minimalapv']
       if ladeleistung < 300:
          self.values['pvcounter'] += 10
-         if self.values['pvcounter'] >= 100
+         if self.values['pvcounter'] >= 100:
             log("Ladung beendet")
             return "stop"
          if llsoll != mina:
@@ -46,9 +46,9 @@ class LadeModus:
             return "min"
 
 
-class NurPVModus:
+class NurPVModus(LadeModus):
    def __init__(self, values, config):
-      super(self).__init__(values, config)
+      super(NurPVModus, self).__init__(values, config)
 
    def run(self):
       req = {}
@@ -228,7 +228,7 @@ class NurPVModus:
 
 class MaxPVModus(LadeModus):
    def __init__(self, values, config):
-      super(self).__init__(values, config)
+      super(MaxPVModus, self).__init__(values, config)
 
    def run(self):
       req = {}

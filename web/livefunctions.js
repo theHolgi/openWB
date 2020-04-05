@@ -193,10 +193,15 @@ $(function() {
     });
 });
 $(function() {
-    if($('#sofortlm').val() == '0') {
+    if($('#lademodus').val() == '0') {
         $('#sofortlmdiv, #sofortlmdiv1, #sofortlmdiv2').show();
     } else {
         $('#sofortlmdiv, #sofortlmdiv1, #sofortlmdiv2').hide();
+    }
+    if($('#lademodus').val() == '5') {
+        $('#maxpvdiv').show();
+    } else {
+        $('#maxpvdiv').hide();
     }
 });
 
