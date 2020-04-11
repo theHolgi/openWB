@@ -11,6 +11,7 @@ class SMADASH:
 
     def read(self):
 #       urllib.disable_warnings()
+       power, generation = 0,0
        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
        context.verify_mode = ssl.CERT_NONE
        r = urllib.urlopen('https://' + self.host + self.valueURL, context = context)
@@ -24,7 +25,7 @@ class SMADASH:
                 power = 0
              else:
                 power = -int(power) # generated power is negative
-             return power, 0
+       return power, generation
 if __name__ == '__main__':
    power, generation = SMADASH(sys.argv[1]).read()
    print("Current power: %s; Total generation: %s" % (power,generation))

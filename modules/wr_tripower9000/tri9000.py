@@ -2,18 +2,35 @@
 import sys
 from smadash import SMADASH
 from modbuswr import ModbusWR
+import openWBlib
 
 ramdisk = '/var/www/html/openWB/ramdisk/'
 wrs = []
 
-if len(sys.argv) > 1:
-   wrs.append(SMADASH(sys.argv[1]).read())
-if len(sys.argv) > 2 and sys.argv[2] != "none":
-   wrs.append(ModbusWR(sys.argv[2]).read())
-if len(sys.argv) > 3 and sys.argv[3] != "none":
-   wrs.append(ModbusWR(sys.argv[3]).read())
-if len(sys.argv) > 4 and sys.argv[4] != "none":
-   wrs.append(ModbusWR(sys.argv[4]).read())
+def GetWR(host, typ):
+   if typ == "modbus":
+      instance = ModbusWR(host)
+   else:  # if typ == "dash":
+      instance = SMADASH(host)
+   return instance
+
+config = openWBlib.openWBconfig()
+settings = [ 
+   ['tri9000ip', 'wrsmatype'],
+   ['wrsma2ip',  'wrsma2type'],
+   ['wrsma3ip',  'wrsma3type'],
+   ['wrsma4ip',  'wrsma4type'],
+]
+
+for nameconf, typeconf in settings:
+   if config[nameconf] != "none":
+      # Set default type
+      if config[typeconf] == None:
+         config[typeconf] = "modbus"
+      try:
+         wrs.append(GetWR(config[nameconf], config[typeconf]).read())
+      except Exception as e:
+          openWBlib.log("Error connecting to SMA inverter " + config[nameconf] + ": " + str(e)) 
 
 totalpower, totalgeneration = 0,0
 index = 1
@@ -28,7 +45,7 @@ for w,g in wrs:
    
 with open(ramdisk + 'pvwatt', 'w') as f:
     f.write(str(totalpower))
-with open(ramdisk + 'pvkwhk', 'w') as f:
+with open(ramdisk + 'pvkwh', 'w') as f:
     f.write(str(totalgeneration))
 
 

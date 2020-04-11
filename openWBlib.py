@@ -1,22 +1,51 @@
 #!/usr/bin/python
+import os
 import sys
 import unittest
 import subprocess
 
 basepath = '/var/www/html/openWB/'
 
-def openWBconfig(configfile = basepath + 'openwb.conf'):
-   """Return openWB.config"""
-   settings = {}
-   with open(configfile, 'r') as f:
-      for line in f.readlines():
-         key, value = line.split('=')
-         try:
-            value = int(value)   # Try to convert to integer
-         except ValueError:
-            value = value.strip()
-         settings[key] = value
-   return settings
+class openWBconfig:
+   """
+   Represents openwb.conf
+   behaves like a dictionary (non-existent settings return None)
+   """
+   def __init__(self, configfile = basepath + 'openwb.conf'):
+      self.settings = {}
+      self.configfile = configfile
+      try:
+         with open(configfile, 'r') as f:
+            for line in f.readlines():
+               key, value = line.split('=')
+               try:
+                  value = int(value)   # Try to convert to integer
+               except ValueError:
+                  value = value.strip()
+               self.settings[key] = value
+      except IOError:
+         pass
+
+   def __getitem__(self, key):
+      return self.settings.get(key)
+
+   def __setitem__(self, key, value):
+      import re
+      self.settings[key] = value
+      try:
+         with open(self.configfile, 'r') as f:
+            content = f.read()
+      except IOError:
+         content = ""
+
+      line = "%s=%s\n" % (key, value)
+      if re.search('^' + key + "=", content, re.MULTILINE):
+         content = re.sub('^' + key + "=.*", line, content)
+      else:
+         content += line
+      with open(self.configfile, 'w') as f:
+         f.write(content)
+
 
 class openWBValues:
    """
@@ -76,12 +105,25 @@ def setCurrent(req):
 
 class TestWBlib(unittest.TestCase):
    def test_config(self):
-      config = openWBconfig('openwb.conf')
+      testfile = '/tmp/openwb.conf'
+      try:
+         os.remove(testfile)
+      except OSError:
+         pass
+      config = openWBconfig(testfile)
+      self.assertIsNone(config['test'])
+      config['evseids1'] = 1
+      config['evselanips1'] = "10.20.0.180"
+
       self.assertEqual(config['evseids1'], 1)
       self.assertEqual(config['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
 
+      # Read it another time
+      config2 = openWBconfig(testfile)
+      self.assertEqual(config2['evseids1'], 1)
+      self.assertEqual(config2['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
+
    def test_values(self):
-      import os
       values = openWBValues('/tmp')
       values['test'] = 'test'
       values['test2'] = 5

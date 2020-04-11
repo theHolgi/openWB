@@ -413,9 +413,21 @@ if(isset($_POST['evsecon'])) {
 			$result .= 'wakeupmyrenaultlp2='.$_POST['wakeupmyrenaultlp2']."\n";
 			$writeit = '1';
 			}
-			if(strpos($line, "wrsmawebbox=") !== false) {
-			$result .= 'wrsmawebbox='.$_POST['wrsmawebbox']."\n";
-			$writeit = '1';
+			if(strpos($line, "wrsmatype=") !== false) {
+				$result .= 'wrsmatype='.$_POST['wrsmatype']."\n";
+				$writeit = '1';
+			}
+			if(strpos($line, "wrsma2type=") !== false) {
+				$result .= 'wrsma2type='.$_POST['wrsma2type']."\n";
+				$writeit = '1';
+			}
+			if(strpos($line, "wrsma3type=") !== false) {
+				$result .= 'wrsma3type='.$_POST['wrsma3type']."\n";
+				$writeit = '1';
+			}
+			if(strpos($line, "wrsma4type=") !== false) {
+				$result .= 'wrsma4type='.$_POST['wrsma4type']."\n";
+				$writeit = '1';
 			}
 			if(strpos($line, "evseids2=") !== false) {
 			$result .= 'evseids2='.$_POST['evseids2']."\n";

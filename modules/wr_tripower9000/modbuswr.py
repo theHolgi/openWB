@@ -35,6 +35,6 @@ class ModbusWR:
         return power, generation
 
 if __name__ == '__main__':
-   power, generation = SMADASH(sys.argv[1]).read()
+   power, generation = ModbusWR(sys.argv[1]).read()
    print("Current power: %s; Total generation: %s" % (power,generation))
    

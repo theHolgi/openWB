@@ -1822,10 +1822,6 @@ if ! grep -Fq "pushbplug=" /var/www/html/openWB/openwb.conf
 then
 	echo "pushbplug=0" >> /var/www/html/openWB/openwb.conf
 fi
-if ! grep -Fq "wrsmawebbox=" /var/www/html/openWB/openwb.conf
-then
-	echo "wrsmawebbox=0" >> /var/www/html/openWB/openwb.conf
-fi
 if ! grep -Fq "bootmodus=" /var/www/html/openWB/openwb.conf
 then
 	echo "bootmodus=3" >> /var/www/html/openWB/openwb.conf
