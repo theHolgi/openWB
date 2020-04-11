@@ -26,8 +26,6 @@ var boolDisplayLp2;
 var boolDisplayLp3;
 var boolDisplayLp4;
 var boolDisplayLp5;
-var boolDisplayLp6;
-var boolDisplayLp7;
 var boolDisplayLp8;
 var boolDisplayLpAll;
 var boolDisplaySpeicherSoc;
@@ -90,8 +88,6 @@ var thevalues = [
 	["openWB/graph/boolDisplayLp3", "#"],
 	["openWB/graph/boolDisplayLp4", "#"],
 	["openWB/graph/boolDisplayLp5", "#"],
-	["openWB/graph/boolDisplayLp6", "#"],
-	["openWB/graph/boolDisplayLp7", "#"],
 	["openWB/graph/boolDisplayLp8", "#"],
 	["openWB/graph/boolDisplayLpAll", "#"],
 	["openWB/graph/boolDisplaySpeicherSoc", "#"],
@@ -543,29 +539,35 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				var lp3 = lines[i].split(",")[14];
 				var lp4 = lines[i].split(",")[15];
 				var lp5 = lines[i].split(",")[16];
-				var lp6 = lines[i].split(",")[17];
-				var lp7 = lines[i].split(",")[18];
-				var lp8 = lines[i].split(",")[19];
+				var lph1 = lines[i].split(",")[17];
+				var lph2 = lines[i].split(",")[18];
+				var lph3 = lines[i].split(",")[19];
+				var lpv1 = lines[i].split(",")[20];
+				var lpv2 = lines[i].split(",")[21];
+				var lpv3 = lines[i].split(",")[22];
 			}
 			myLine.data.labels.push(ldate.substring(0, ldate.length -3));
 			myLine.data.datasets[2].data.push(lbezug);
 			myLine.data.datasets[3].data.push(lpv);
-			myLine.data.datasets[4].data.push(lspeicherl);
-			myLine.data.datasets[5].data.push(lspeichersoc);
-			myLine.data.datasets[6].data.push(lsoc);
+			myLine.data.datasets[4].data.push(lpv1);
+			myLine.data.datasets[5].data.push(lpv2);
+			myLine.data.datasets[6].data.push(lpv3);
+			myLine.data.datasets[7].data.push(lspeicherl);
+			myLine.data.datasets[8].data.push(lspeichersoc);
+			myLine.data.datasets[9].data.push(lsoc);
 			myLine.data.datasets[0].data.push(llp1);
 			myLine.data.datasets[1].data.push(llp2);
-			myLine.data.datasets[7].data.push(lsoc1);
-			myLine.data.datasets[8].data.push(lhausverbrauch);
-			myLine.data.datasets[9].data.push(lverbraucher1);
-			myLine.data.datasets[10].data.push(lverbraucher2);
-			myLine.data.datasets[11].data.push(lpa);
-			myLine.data.datasets[12].data.push(lp3);
-			myLine.data.datasets[13].data.push(lp4);
-			myLine.data.datasets[14].data.push(lp5);
-			myLine.data.datasets[15].data.push(lp6);
-			myLine.data.datasets[16].data.push(lp7);
-			myLine.data.datasets[17].data.push(lp8);
+			myLine.data.datasets[10].data.push(lsoc1);
+			myLine.data.datasets[11].data.push(lhausverbrauch);
+			myLine.data.datasets[12].data.push(lverbraucher1);
+			myLine.data.datasets[13].data.push(lverbraucher2);
+			myLine.data.datasets[14].data.push(lpa);
+			myLine.data.datasets[15].data.push(lp3);
+			myLine.data.datasets[16].data.push(lp4);
+			myLine.data.datasets[17].data.push(lp5);
+			myLine.data.datasets[18].data.push(lph1);
+			myLine.data.datasets[19].data.push(lph2);
+			myLine.data.datasets[20].data.push(lph3);
 			myLine.data.labels.splice(0, 1);
 			myLine.data.datasets.forEach(function(dataset) {
 				dataset.data.splice(0, 1);

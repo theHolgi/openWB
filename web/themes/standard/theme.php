@@ -801,14 +801,6 @@
 					<span style="cursor: pointer;" onclick="showhidedataset('boolDisplayLp5')"><i id="graphlp5div" class="fa"></i> Ladepunkt 5</span>
 				</div>
 				<div class="col-sm-6">
-					<span style="cursor: pointer;" onclick="showhidedataset('boolDisplayLp6')"><i id="graphlp6div" class="fa"></i> Ladepunkt 6</span>
-				</div>
-			</div>
-			<div class="row col-sm-12" style="white-space: nowrap;">
-				<div class="col-sm-6">
-					<span style="cursor: pointer;" onclick="showhidedataset('boolDisplayLp7')"><i id="graphlp7div" class="fa"></i> Ladepunkt 7</span>
-				</div>
-				<div class="col-sm-6">
 					<span style="cursor: pointer;" onclick="showhidedataset('boolDisplayLp8')"><i id="graphlp8div" class="fa"></i> Phasenleistung</span>
 				</div>
 			</div>

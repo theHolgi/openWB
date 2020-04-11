@@ -104,8 +104,8 @@ function loadgraph() {
 		} , {
 			label: 'Hausverbrauch',
 			borderColor: "rgba(150, 150, 150, 0.7)",
-			backgroundColor: "rgba(200, 255, 13, 0.3)",
-			fill: false,
+			backgroundColor: "rgba(150, 155, 150, 0.3)",
+			fill: true,
 			borderWidth: 2,
 			hidden: boolDisplayHouseConsumption,
 			data: ahausverbrauch,
@@ -172,7 +172,7 @@ function loadgraph() {
 			borderWidth: 2,
 			data: alph1,
 			yAxisID: 'y-axis-1',
-			hidden: boolDisplayLp6,
+			hidden: boolDisplayLp8,
 		} , {
 			label: 'P2',
 			borderColor: "rgba(50, 50, 55, 0.7)",
@@ -181,7 +181,7 @@ function loadgraph() {
 			borderWidth: 2,
 			data: alph2,
 			yAxisID: 'y-axis-1',
-			hidden: boolDisplayLp7,
+			hidden: boolDisplayLp8,
 		} , {
 			label: 'P3',
 			borderColor: "rgba(50, 50, 55, 0.7)",
@@ -219,7 +219,7 @@ function loadgraph() {
 					// middle grey, opacy = 100% (visible)
 					fontColor: "rgba(153, 153, 153, 1)",
 					filter: function(item,chart) {
-						if ( item.text.includes(hidehaus) || item.text.includes(hideload2) || item.text.includes(hideload1) || item.text.includes(hidelp2soc) || item.text.includes(hidelp1soc) || item.text.includes(hidelp1) || item.text.includes(hidelp2) || item.text.includes(hidelp3) || item.text.includes(hidelp4) || item.text.includes(hidelp5) || item.text.includes(hidelp6) || item.text.includes(hidelp7) || item.text.includes(hidelp8) || item.text.includes(hidespeichersoc) || item.text.includes(hidespeicher) || item.text.includes(hidelpa) || item.text.includes(hidepv) || item.text.includes(hideevu) ) { return false } else { return true}
+						if ( item.text.includes(hidehaus) || item.text.includes(hideload2) || item.text.includes(hideload1) || item.text.includes(hidelp2soc) || item.text.includes(hidelp1soc) || item.text.includes(hidelp1) || item.text.includes(hidelp2) || item.text.includes(hidelp3) || item.text.includes(hidelp4) || item.text.includes(hidelp5) || item.text.includes(hidelp8) || item.text.includes(hidespeichersoc) || item.text.includes(hidespeicher) || item.text.includes(hidelpa) || item.text.includes(hidepv) || item.text.includes(hideevu) ) { return false } else { return true}
 					}
 				}
 			},
@@ -292,7 +292,7 @@ function checkgraphload(){
        	myLine.destroy();
 		loadgraph();
 	} else {
-		if (( boolDisplayHouseConsumption == true  ||  boolDisplayHouseConsumption == false) && (boolDisplayLoad1 == true || boolDisplayLoad1 == false ) && (boolDisplayLp1Soc == true || boolDisplayLp1Soc == false ) && (boolDisplayLp2Soc == true || boolDisplayLp2Soc == false ) && (boolDisplayLoad2 == true || boolDisplayLoad2 == false ) && (boolDisplayLp1 == true || boolDisplayLp1 == false ) && (boolDisplayLp2 == true || boolDisplayLp2 == false ) && (boolDisplayLp3 == true || boolDisplayLp3 == false ) && (boolDisplayLp4 == true || boolDisplayLp4 == false ) && (boolDisplayLp5 == true || boolDisplayLp5 == false ) && (boolDisplayLp6 == true || boolDisplayLp6 == false ) && (boolDisplayLp7 == true || boolDisplayLp7 == false ) && (boolDisplayLp8 == true || boolDisplayLp8 == false ) && (boolDisplayLpAll == true || boolDisplayLpAll == false ) && (boolDisplaySpeicherSoc == true || boolDisplaySpeicherSoc == false ) && (boolDisplaySpeicher == true || boolDisplaySpeicher == false ) && (boolDisplayEvu == true || boolDisplayEvu == false ) && (boolDisplayPv == true || boolDisplayPv == false ) && (boolDisplayLegend == true || boolDisplayLegend == false ))  {
+		if (( boolDisplayHouseConsumption == true  ||  boolDisplayHouseConsumption == false) && (boolDisplayLoad1 == true || boolDisplayLoad1 == false ) && (boolDisplayLp1Soc == true || boolDisplayLp1Soc == false ) && (boolDisplayLp2Soc == true || boolDisplayLp2Soc == false ) && (boolDisplayLoad2 == true || boolDisplayLoad2 == false ) && (boolDisplayLp1 == true || boolDisplayLp1 == false ) && (boolDisplayLp2 == true || boolDisplayLp2 == false ) && (boolDisplayLp3 == true || boolDisplayLp3 == false ) && (boolDisplayLp4 == true || boolDisplayLp4 == false ) && (boolDisplayLp5 == true || boolDisplayLp5 == false ) && (boolDisplayLp8 == true || boolDisplayLp8 == false ) && (boolDisplayLpAll == true || boolDisplayLpAll == false ) && (boolDisplaySpeicherSoc == true || boolDisplaySpeicherSoc == false ) && (boolDisplaySpeicher == true || boolDisplaySpeicher == false ) && (boolDisplayEvu == true || boolDisplayEvu == false ) && (boolDisplayPv == true || boolDisplayPv == false ) && (boolDisplayLegend == true || boolDisplayLegend == false ))  {
 			if ( initialread != 0 ) {
 				if ( graphloaded == 0 ) {
 					graphloaded += 1;
@@ -340,12 +340,6 @@ function forcegraphload() {
 		}
 		if ( !( boolDisplayLp5 == true  ||  boolDisplayLp5 == false) ) {
 			showhidedataset('boolDisplayLp5');
-		}
-		if ( !( boolDisplayLp6 == true  ||  boolDisplayLp6 == false) ) {
-			showhidedataset('boolDisplayLp6');
-		}
-		if ( !( boolDisplayLp7 == true  ||  boolDisplayLp7 == false) ) {
-			showhidedataset('boolDisplayLp7');
 		}
 		if ( !( boolDisplayLp8 == true  ||  boolDisplayLp8 == false) ) {
 			showhidedataset('boolDisplayLp8');
