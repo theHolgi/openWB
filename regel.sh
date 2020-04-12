@@ -28,6 +28,7 @@ set -o pipefail
 cd /var/www/html/openWB/
 #config file einlesen
 . openwb.conf
+# openWBlib verfügbar machen
 export PYTHONPATH=`pwd`
 source minundpv.sh
 source nurpv.sh

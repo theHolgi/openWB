@@ -1018,7 +1018,6 @@
 					if(strpos($tri9000ipold, "@") !== false) {
 					   list($tri9000ipold, $wrsmatypeold) = explode("@", $tri9000ipold);  
 					}
-					echo "SMA IP: " . $tri9000ipold . " = " . $wrsmatype;
 				}
 				if(strpos($line, "wrsma2ip=") !== false) {
 					list(, $wrsma2ipold) = explode("=", trim($line));
@@ -4217,7 +4216,6 @@
 								<option <?php if($wrsmatypeold == "modbus") echo "selected" ?> value="modbus">ModBus</option>
 								<option <?php if($wrsmatypeold == "dash")   echo "selected" ?> value="dash">Dashboard</option>
 								<option <?php if($wrsmatypeold == "webbox") echo "selected" ?> value="webbox">Webbox</option>
-								<?php echo $swsmatypeold ?>
 							</select>
 						</div>
 						<div class="row" style="background-color:#BEFEBE">
@@ -4232,8 +4230,7 @@
 							<select name="wrsma2type" id="wrsma2type">
 								<option <?php if($wrsma2typeold == "modbus") echo "selected" ?> value="modbus">ModBus</option>
 								<option <?php if($wrsma2typeold == "dash")   echo "selected" ?> value="dash">Dashboard</option>
-								<option <?php if($wrsma2typeold == "webbox") echo "selected" ?> value="webbox">Webbox</option>
-								<?php echo $swsma2typeold ?>
+								<!-- option <?php if($wrsma2typeold == "webbox") echo "selected" ?> value="webbox">Webbox</option -->
 							</select>
 						</div>
 						<div class="row" style="background-color:#BEFEBE">
@@ -4248,7 +4245,7 @@
 							<select name="wrsma3type" id="wrsma3type">
 								<option <?php if($wrsma3typeold == "modbus") echo "selected" ?> value="modbus">ModBus</option>
 								<option <?php if($wrsma3typeold == "dash")   echo "selected" ?> value="dash">Dashboard</option>
-								<option <?php if($wrsma3typeold == "webbox") echo "selected" ?> value="webbox">Webbox</option>
+								<!-- option <?php if($wrsma3typeold == "webbox") echo "selected" ?> value="webbox">Webbox</option -->
 							</select>
 						</div>
 						<div class="row" style="background-color:#BEFEBE">
@@ -4263,7 +4260,7 @@
 							<select name="wrsma4type" id="wrsma4type">
 								<option <?php if($wrsma4typeold == "modbus") echo "selected" ?> value="modbus">ModBus</option>
 								<option <?php if($wrsma4typeold == "dash")   echo "selected" ?> value="dash">Dashboard</option>
-								<option <?php if($wrsma4typeold == "webbox") echo "selected" ?> value="webbox">Webbox</option>
+								<!-- option <?php if($wrsma4typeold == "webbox") echo "selected" ?> value="webbox">Webbox</option -->
 							</select>
 						</div>
 					</div>
