@@ -4,9 +4,11 @@ RAMDISK=$BASEDIR/../../ramdisk
 
 . $BASEDIR/../../openwb.conf
 
+wrsmahost=$(echo $tri9000ip|cut -f1 -d@)
+wrsmatype=$(echo $tri9000ip|cut -f2 -d@)
 if [[ $wrsmatype == "webbox" ]]; then
 	rekwh='^[-+]?[0-9]+\.?[0-9]*$'
-	boxout=$(curl --silent --connect-timeout 3 -H "Content-Type: application/json" -X POST -d RPC='{"version": "1.0","proc": "GetPlantOverview","id": "1","format": "JSON"}' http://$tri9000ip/rpc)
+	boxout=$(curl --silent --connect-timeout 3 -H "Content-Type: application/json" -X POST -d RPC='{"version": "1.0","proc": "GetPlantOverview","id": "1","format": "JSON"}' http://$wrsmahost/rpc)
 	if [[ $? == "0" ]] ; then
 		pvwatt=$(echo $boxout | jq -r '.result.overview[0].value ' | sed 's/\..*$//')
 		pvwatt=$(( pvwatt * -1 ))
@@ -19,12 +21,8 @@ if [[ $wrsmatype == "webbox" ]]; then
 			echo $pvwatt > $RAMDISK/pvwatt
 		fi
 	fi
-
-
-
-
 else
-	python $BASEDIR/tri9000.py 
+	python $BASEDIR/tri9000.py
 fi
 
 

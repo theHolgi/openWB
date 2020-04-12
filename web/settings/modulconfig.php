@@ -1012,30 +1012,31 @@
 				}
 				if(strpos($line, "tri9000ip=") !== false) {
 					list(, $tri9000ipold) = explode("=", $line);
+					if(strpos($tri9000ipold, "@") !== false) {
+					   list($tri9000ipold, $wrsmatype) = explode("@", $tri9000ipold);  
+					}
+					echo "SMA IP: " + $tri9000ipold + " = " + $wrsmatype;
 				}
 				if(strpos($line, "bezug_smartfox_ip=") !== false) {
 					list(, $bezug_smartfox_ipold) = explode("=", $line);
 				}
-				if(strpos($line, "wrsmatype=") !== false) {
-					list(, $wrsmatypeold) = explode("=", $line);
-				}
 				if(strpos($line, "wrsma2ip=") !== false) {
 					list(, $wrsma2ipold) = explode("=", $line);
-				}
-				if(strpos($line, "wrsma2type=") !== false) {
-					list(, $wrsma2typeold) = explode("=", $line);
+					if(strpos($wrsma2ipold, "@") !== false) {
+					   list($wrsma2ipold, $wrsma2type) = explode("@", $wrsma2ipold);			   
+					}
 				}
 				if(strpos($line, "wrsma3ip=") !== false) {
 					list(, $wrsma3ipold) = explode("=", $line);
-				}
-				if(strpos($line, "wrsma3type=") !== false) {
-					list(, $wrsma3typeold) = explode("=", $line);
+					if(strpos($wrsma3ipold, "@") !== false) {
+					   list($wrsma3ipold, $wrsma3type) = explode("@", $wrsma3ipold);				   
+					}
 				}
 				if(strpos($line, "wrsma4ip=") !== false) {
 					list(, $wrsma4ipold) = explode("=", $line);
-				}
-				if(strpos($line, "wrsma4type=") !== false) {
-					list(, $wrsma4typeold) = explode("=", $line);
+					if(strpos($wrsma4ipold, "@") !== false) {
+					   list($wrsma4ipold, $wrsma4type) = explode("@", $wrsma4ipold);			   
+					}
 				}
 				if(strpos($line, "kostalplenticoreip=") !== false) {
 					list(, $kostalplenticoreipold) = explode("=", $line);
@@ -4216,6 +4217,7 @@
 								<option <?php if($wrsmatypeold == modbus) echo "selected" ?> value="modbus">ModBus</option>
 								<option <?php if($wrsmatypeold == dash)   echo "selected" ?> value="dash">Dashboard</option>
 								<option <?php if($wrsmatypeold == webbox) echo "selected" ?> value="webbox">Webbox</option>
+								<?php echo $swsmatypeold ?>
 							</select>
 						</div>
 						<div class="row" style="background-color:#BEFEBE">
@@ -4231,6 +4233,7 @@
 								<option <?php if($wrsma2typeold == modbus) echo "selected" ?> value="modbus">ModBus</option>
 								<option <?php if($wrsma2typeold == dash)   echo "selected" ?> value="dash">Dashboard</option>
 								<option <?php if($wrsma2typeold == webbox) echo "selected" ?> value="webbox">Webbox</option>
+								<?php echo $swsma2typeold ?>
 							</select>
 						</div>
 						<div class="row" style="background-color:#BEFEBE">

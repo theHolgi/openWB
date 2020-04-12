@@ -3,6 +3,7 @@ import sys
 from smadash import SMADASH
 from modbuswr import ModbusWR
 import openWBlib
+import re
 
 ramdisk = '/var/www/html/openWB/ramdisk/'
 wrs = []
@@ -15,22 +16,19 @@ def GetWR(host, typ):
    return instance
 
 config = openWBlib.openWBconfig()
-settings = [ 
-   ['tri9000ip', 'wrsmatype'],
-   ['wrsma2ip',  'wrsma2type'],
-   ['wrsma3ip',  'wrsma3type'],
-   ['wrsma4ip',  'wrsma4type'],
-]
+settings = [ 'tri9000ip', 'wrsma2ip', 'wrsma3ip', 'wrsma4ip']
 
-for nameconf, typeconf in settings:
-   if config[nameconf] != "none":
-      # Set default type
-      if config[typeconf] == None:
-         config[typeconf] = "modbus"
+for nameconf in settings:
+   wrtype = config[nameconf]
+   wrconnect = 'modbus'
+   if wrtype is None: wrtype = "none"
+   if wrtype.find('@') > 0:
+      wrtype, wrconnect = wrtype.split('@')
+   if wrtype != "none":
       try:
-         wrs.append(GetWR(config[nameconf], config[typeconf]).read())
+         wrs.append(GetWR(wrtype, wrconnect).read())
       except Exception as e:
-          openWBlib.log("Error connecting to SMA inverter " + config[nameconf] + ": " + str(e)) 
+          openWBlib.log("Error connecting to SMA inverter " + wrtype + ": " + str(e)) 
 
 totalpower, totalgeneration = 0,0
 index = 1

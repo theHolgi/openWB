@@ -3,6 +3,7 @@ import os
 import sys
 import unittest
 import subprocess
+import logging
 
 basepath = '/var/www/html/openWB/'
 
@@ -82,12 +83,12 @@ class openWBValues:
 
 
 def log(message):
-   print(message)
+   logging.info(message)
 
 
 def debug(message):
    if openWBconfig()['debug'] != 0:
-      print(message)
+      logging.debug(message)
 
 def setCurrent(req):
    """
