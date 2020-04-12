@@ -263,20 +263,14 @@
 		<!-- too many cols per row so bootstrap will linebreak -->
 		<!-- and change to appropriate button layout -->
 		<div class="row no-gutters justify-content-center">
-			<div class="col-sm-3 py-1">
+			<div class="col-sm-5 py-1">
 				<button id="sofortBtn" type="button" class="btn btn-lg btn-block btn-red myButtonStyle" onclick="chargeModeBtnClick(this.value)" value="0">Sofortladen</button>
 			</div>
 			<div class="d-none d-sm-block">
 				&nbsp;
 			</div>
-			<div class="col-sm-4 py-1">
+			<div class="col-sm-5 py-1">
 				<button id="minUndPvBtn" type="button" class="btn btn-lg btn-block btn-red myButtonStyle" onclick="chargeModeBtnClick(this.value)" value="1">Min + PV</button>
-			</div>
-			<div class="d-none d-sm-block">
-				&nbsp;
-			</div>
-			<div class="col-sm-3 py-1">
-				<button id="maxPvBtn" type="button" class="btn btn-lg btn-block btn-red myButtonStyle" onclick="chargeModeBtnClick(this.value)" value="5">Max-PV</button>
 			</div>
 		</div>
 		<div class="row no-gutters justify-content-center">
@@ -754,26 +748,7 @@
 			</div>
 
 		</form>
-		<form id="maxpvdiv" name="maxpv" action="./tools/maxpv.php" method="POST">
-	      <div class="row justify-content-center"><h3>Max. Einspeisung</h3></div>
-			<div class="row justify-content-center" id="slider1div">
-				<div class="col-7"><input type="range" min="1000" max="10000" step="100" name="maxeinspeisungs" id="maxeinspeisungs" class="custom-range"></div>
-				<div class="col-2 regularTextStyle"><label for="maxeinspeisungs"><span id="maxeinspeisungl">6000</span>W</label></div>
-				<script>
-					var slider1 = document.getElementById("maxeinspeisungs");
-					var output1 = document.getElementById("maxeinspeisungl");
-					output1.innerHTML = slider1.value;
-					slider1.oninput = function() {
-						output1.innerHTML = this.value;
-						maxpvlimitClick();
-					}
-				</script>
-			</div>
-			<div class="row justify-content-center">
-				<div class="col-sm-10"><button type="submit" class="btn btn-lg btn-block btn-green myButtonStyle">Save</button></div>
-			</div>
-		</form>
-			
+
 		<!-- end old code-->
 
 
