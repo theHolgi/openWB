@@ -16,12 +16,14 @@ minundpvlademodus(){
 			fi
 		fi
 	fi
-	if (( speichersoc >= speichersocminpv )); then
+	if (( speichersoc >= speichersochystminpv )); then
 		if (( ladestatus == 0 )); then
-			runs/set-current.sh $minimalampv all
-			echo "$date alle Ladepunkte, Lademodus Min und PV. Starte Ladung mit $minimalampv Ampere" >> ramdisk/ladestatus.log
-			if [[ $debug == "1" ]]; then
-				echo "starte min + pv ladung mit $minimalampv"
+			if (( speichersoc >= speichersocminpv )); then
+				runs/set-current.sh $minimalampv all
+				echo "$date alle Ladepunkte, Lademodus Min und PV. Starte Ladung mit $minimalampv Ampere" >> ramdisk/ladestatus.log
+				if [[ $debug == "1" ]]; then
+					echo "starte min + pv ladung mit $minimalampv"
+				fi
 			fi
 		else
 			if (( ladeleistung < 500 )); then
@@ -63,17 +65,17 @@ minundpvlademodus(){
 					fi
 				fi
 			fi
-		fi
-		if (( llneu < minimalampv )); then
-			llneu=$minimalampv
+			if (( llneu < minimalampv )); then
+				llneu=$minimalampv
 
-		fi
-		if (( llneu > maximalstromstaerke )); then
-			llneu=$maximalstromstaerke
-		fi
-		if (( llalt != llneu )); then
-			echo "$date alle Ladepunkte, Lademodus Min und PV. Ändere Ladeleistung auf $llneu Ampere" >> ramdisk/ladestatus.log
-			runs/set-current.sh $llneu all
+			fi
+			if (( llneu > maximalstromstaerke )); then
+				llneu=$maximalstromstaerke
+			fi
+			if (( llalt != llneu )); then
+				echo "$date alle Ladepunkte, Lademodus Min und PV. Ändere Ladeleistung auf $llneu Ampere" >> ramdisk/ladestatus.log
+				runs/set-current.sh $llneu all
+			fi
 		fi
 	else
 		runs/set-current.sh 0 all

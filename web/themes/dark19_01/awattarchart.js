@@ -1,5 +1,5 @@
 function loadawattargraph() {
-	if ( awattaraktiv == 1) {
+	if ( $("#awattardiv").attr("enabled") == "1" ) {
 		var lineAwattarData = {
 			labels: awattartime,
 			datasets: [{
@@ -78,7 +78,6 @@ function loadawattargraph() {
 			}
 		});
 		$('#awattardiv').show();
-	} 
+	}
 
 }  // end loadgraph
-

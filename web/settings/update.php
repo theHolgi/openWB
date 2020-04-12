@@ -36,8 +36,6 @@
 
 		<?php
 
-			include '/var/www/html/openWB/web/settings/navbar.php';
-
 			// read selected releasetrain from config file
 			$lines = file('/var/www/html/openWB/openwb.conf');
 			foreach($lines as $line) {
@@ -53,6 +51,8 @@
 			}
 
 		?>
+
+		<div id="nav"></div> <!-- placeholder for navbar -->
 
 		<div role="main" class="container" style="margin-top:20px">
 			<div class="row">
@@ -85,7 +85,7 @@
 							<div class="form-check">
 								<input class="form-check-input" type="radio" name="releasetrainRadioBtn" id="radioBtnStableold" value="stableold" disabled>
 								<label class="form-check-label vaRow" for="radioBtnStableold">
-									Stableold:
+									Stable old:
 									<span class="mx-1" id="availStableoldVersionSpan" data-version=""></span><span class="spinner-grow spinner-grow-sm" id="availStableoldVersionSpinner"></span>
 									<br>
 								</label>
@@ -180,7 +180,13 @@
 			</div>
 		</div>
 
-		<script>
+		<script type="text/javascript">
+
+			$.get("settings/navbar.php", function(data){
+				$("#nav").replaceWith(data);
+				// disable navbar entry for current page
+				$('#navUpdate').addClass('disabled');
+			});
 
 			$(document).ready(function(){
 

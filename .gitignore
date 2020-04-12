@@ -2,6 +2,9 @@ web/ladelog
 *.csv
 *.log
 ramdisk/
+.DS_Store
+web/settings/.htaccess
+web/settings/.passwd
 *.pyc
 __pycache__
 *~

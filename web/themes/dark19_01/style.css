@@ -4,6 +4,11 @@ Stylesheet zum openWB Dark19_01-Theme
 2019-2020 Michael Ortenstein
 */
 
+html{
+   min-height: 100%;
+   min-width:100%;
+}
+
 body {
       color: white;
       /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#7d7e7d+0,0e0e0e+100;Black+3D */
@@ -17,6 +22,19 @@ body {
       background: linear-gradient(to bottom,  rgba(125,126,125,1) 0%,rgba(14,14,14,1) 100%);
       /* IE6-9 */
       filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#7d7e7d', endColorstr='#0e0e0e',GradientType=0 );
+}
+
+.loader {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 99;
+}
+.loader-container {
+	margin-top: 150px;
+	text-align: center;
 }
 
 @keyframes alertPulsation {
@@ -123,69 +141,76 @@ body {
   cursor: pointer;
 }
 
-/* Extra small devices (portrait phones, less than 576px) */
-/* No media query since this is the default in Bootstrap */
-h1 {
-    font-size: 1.4rem;
-    font-weight: bolder;
-    text-align: center;
+.vaRow {
+    /* vertical alignment of content in rows */
+  display: flex;
+  align-items: center;
 }
 
-h2 {
-    font-size: 0.9rem;
-    font-weight: bolder;
+.hide {
+    display: none;
+}
+
+.lpEnabledStyle {
+    color: #006515;
+    text-decoration: none;
+}
+
+.lpDisabledStyle {
+    color: #A30000;
+    text-decoration: line-through;
+}
+
+.text-green {
+    color: #006515;
+}
+
+.text-red {
+    color: #A30000;
+}
+
+.text-white {
+    color: white;
+}
+
+.text-black {
+    color: black;
+}
+
+.text-blue {
+    color: blue;
+}
+
+.text-grey {
+    color: #515151;
+}
+
+.text-lightgrey {
     color: rgba(255, 255, 255, 0.82);
-    text-align: center;
 }
 
-h3 {
-    font-size: 0.7rem;
-    font-weight: bolder;
-    color: rgba(255, 255, 255, 0.82);
-    text-align: center;
+.bg-darkgrey {
+    background-color: #b6bcc9;
 }
 
-.smallTextStyle {
-      font-size: 1.0rem;
-      color: red;
-      text-align: center;
+.bg-lightgrey {
+    background-color: #d0d7e6;
 }
 
-.regularTextStyle {
-      font-size: 0.7rem;
-      color: rgba(255, 255, 255, 0.82);
-      text-align: center;
+.bg-lightgreen {
+    background-color: #befebe;
 }
 
-.versionTextStyle {
-      font-size: 0.5rem;
-      color: rgba(255, 255, 255, 0.82);
-      text-align: center;
+.bg-rose {
+    background-color: #febebe;
 }
 
-.pvInfoStyle {
-      font-size: 0.8rem;
-      font-weight: bolder;
-      color: black;
-      text-align: center;
+.bg-apricot {
+    background-color:#fefedf;
 }
 
-.extDeviceInfoStyle {
-      font-size: 0.8rem;
-      font-weight: bolder;
-      color: rgba(255, 255, 255, 0.82);
-      text-align: center;
-}
-
-.chargePointInfoStyle {
-      font-size: 0.65rem;
-      color: rgba(255, 255, 255, 0.82);
-      background-color: #327eb8;
-      text-align: center;
-}
-
-.myButtonStyle {
-    font-size: 0.9rem;
+.bg-orange {
+    background-color:#fcbe1e;
 }
 
 .btn-blue {
@@ -239,6 +264,40 @@ h3 {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Extra small devices (portrait phones, less than 576px) */
+/* No media query since this is the default in Bootstrap */
+h1 {
+    font-size: 1.4rem;
+}
+
+h2 {
+    font-size: 0.9rem;
+}
+
+h3 {
+    font-size: 0.7rem;
+}
+
+.verySmallTextSize {
+      font-size: 0.5rem;
+}
+
+.smallTextSize {
+      font-size: 0.5rem;
+}
+
+.regularTextSize {
+      font-size: 0.7rem;
+}
+
+.largeTextSize {
+      font-size: 0.8rem;
+}
+
+.buttonTextSize {
+    font-size: 0.9rem;
+}
+
 /* Small devices (landscape phones, 576px and up) */
 @media screen and (min-width: 576px) {
     h1 {
@@ -253,27 +312,23 @@ h3 {
         font-size: 0.9rem;
     }
 
-    .smallTextStyle {
-          font-size: 1.1rem;
+    .verySmallTextSize {
+          font-size: 0.6rem;
     }
 
-    .regularTextStyle {
+    .smallTextSize {
+          font-size: 0.68rem;
+    }
+
+    .regularTextSize {
           font-size: 0.75rem;
     }
 
-    .versionTextStyle {
-          font-size: 0.5rem;
-    }
-
-    .pvInfoStyle, .extDeviceInfoStyle {
+    .largeTextSize {
           font-size: 0.95rem;
     }
 
-    .chargePointInfoStyle {
-          font-size: 0.75rem;
-    }
-
-    .myButtonStyle {
+    .buttonTextSize {
           font-size: 1.0rem;
     }
 }
@@ -292,27 +347,23 @@ h3 {
         font-size: 1.1rem;
     }
 
-    .smallTextStyle {
-          font-size: 1.5rem;
+    .verySmallTextSize {
+          font-size: 0.8rem;
     }
 
-    .regularTextStyle {
+    .smallTextSize {
+          font-size: 0.9rem;
+    }
+
+    .regularTextSize {
           font-size: 1.0rem;
     }
 
-    .versionTextStyle {
-          font-size: 0.6rem;
-    }
-
-    .pvInfoStyle, .extDeviceInfoStyle {
+    .largeTextSize {
           font-size: 1.3rem;
     }
 
-    .chargePointInfoStyle {
-          font-size: 1.0rem;
-    }
-
-    .myButtonStyle {
+    .buttonTextSize {
           font-size: 1.2rem;
     }
 }
@@ -331,27 +382,23 @@ h3 {
         font-size: 1.6rem;
     }
 
-    .smallTextStyle {
-          font-size: 1.8rem;
+    .verySmallTextSize {
+          font-size: 1.1rem;
     }
 
-    .regularTextStyle {
+    .smallTextSize {
+          font-size: 1.25rem;
+    }
+
+    .regularTextSize {
           font-size: 1.4rem;
     }
 
-    .versionTextStyle {
-          font-size: 0.7rem;
-    }
-
-    .pvInfoStyle, .extDeviceInfoStyle {
+    .largeTextSize {
           font-size: 1.6rem;
     }
 
-    .chargePointInfoStyle {
-          font-size: 1.4rem;
-    }
-
-    .myButtonStyle {
+    .buttonTextSize {
           font-size: 1.6rem;
     }
 }
@@ -370,27 +417,23 @@ h3 {
         font-size: 1.95rem;
     }
 
-    .smallTextStyle {
+    .verySmallTextSize {
+          font-size: 1.4rem;
+    }
+
+    .smallTextSize {
+          font-size: 1.65rem;
+    }
+
+    .regularTextSize {
           font-size: 1.8rem;
     }
 
-    .regularTextStyle {
+    .largeTextSize {
           font-size: 1.8rem;
     }
 
-    .versionTextStyle {
-          font-size: 0.8rem;
-    }
-
-    .pvInfoStyle, .extDeviceInfoStyle {
-          font-size: 1.8rem;
-    }
-
-    .chargePointInfoStyle {
-          font-size: 1.8rem;
-    }
-
-    .myButtonStyle {
+    .buttonTextSize {
           font-size: 2.0rem;
     }
 }

@@ -5,6 +5,9 @@
  * @author Michael Ortenstein
  */
 var awattartime = new Array();
+var lademodus;
+var nurpv70status;
+var nurpv70active = 0;
 var graphawattarprice;
 var doInterval;
 var do2Interval;
@@ -34,6 +37,15 @@ var boolDisplayEvu;
 var boolDisplayPv;
 var boolDisplayLegend;
 var boolDisplayLiveGraph;
+var verbraucher1_name='notyet';
+var verbraucher2_name='notyet';
+var verbraucher3_name='Verbraucher 3';
+var verbraucher4_name='Verbraucher 4';
+var verbraucher5_name='Verbraucher 5';
+var verbraucher6_name='Verbraucher 6';
+var verbraucher7_name='Verbraucher 7';
+var verbraucher8_name='Verbraucher 8';
+var verbraucher9_name='Verbraucher 9';
 var datasend = 0;
 var all1 = 0;
 var all2 = 0;
@@ -233,7 +245,20 @@ var thevalues = [
 	["openWB/lp/5/ADirectModeAmps", "#"],
 	["openWB/lp/6/ADirectModeAmps", "#"],
 	["openWB/lp/7/ADirectModeAmps", "#"],
-	["openWB/lp/8/ADirectModeAmps", "#"]
+	["openWB/lp/8/ADirectModeAmps", "#"],
+	["openWB/Verbraucher/1/Name", "#"],
+	["openWB/Verbraucher/2/Name", "#"],
+	["openWB/Verbraucher/3/Name", "#"],
+	["openWB/Verbraucher/4/Name", "#"],
+	["openWB/Verbraucher/5/Name", "#"],
+	["openWB/Verbraucher/6/Name", "#"],
+	["openWB/Verbraucher/7/Name", "#"],
+	["openWB/Verbraucher/8/Name", "#"],
+	["openWB/Verbraucher/9/Name", "#"],
+	["openWB/pv/bool70PVDynActive", "#"],
+	["openWB/pv/bool70PVDynStatus", "#"]
+
+
 ];
 var clientuid = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
 var client = new Messaging.Client(location.host, 9001, clientuid);
@@ -252,7 +277,8 @@ function getCol(matrix, col, sign=false){
 
 function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	// receives all messages and calls respective function to process them
-	if ( mqttmsg.match( /^openwb\/graph\//i ) ) { processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
+	if ( mqttmsg.match( /^openwb\/verbraucher\//i) ) { processVerbraucherMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
+	else if ( mqttmsg.match( /^openwb\/graph\//i ) ) { processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/evu\//i) ) { processEvuMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/global\//i) ) { processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
 	else if ( mqttmsg.match( /^openwb\/housebattery\//i) ) { processHousebatteryMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv); }
@@ -656,6 +682,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 		document.getElementById("awattar1l").innerHTML = mqttpayload;
 	}
 	else if ( mqttmsg == "openWB/global/ChargeMode" ) {
+		lademodus = mqttpayload;
 		// set button colors depending on charge mode
 		switch (mqttpayload) {
 			case "0":
@@ -667,6 +694,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
+				$('#nurpv70div').hide();
 				break;
 			case "1":
 				// mode min+pv
@@ -677,6 +705,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
+				$('#nurpv70div').hide();
 				break;
 			case "2":
 				// mode pv
@@ -687,6 +716,10 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
+				if ( nurpv70active == 1 ) {
+					$('#nurpv70div').show();
+				}
+
 				break;
 			case "3":
 				// mode stop
@@ -697,6 +730,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-green").removeClass("btn-red");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
+				$('#nurpv70div').hide();
 				break;
 			case "4":
 				// mode standby
@@ -707,6 +741,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-green").removeClass("btn-red");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
+				$('#nurpv70div').hide();
 				break;
 			case "5":
 				// mode max-PV
@@ -717,6 +752,7 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
 				$('#maxPvBtn').addClass("btn-green").removeClass("btn-red");
+				$('#nurpv70div').hide();
 				break;
 		}
 		loaddivs();
@@ -800,11 +836,37 @@ function processPvMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	else if ( mqttmsg == "openWB/pv3/W") {
 		$("#pv3div").html(pv2str(parseInt(mqttpayload, 10)));
 	}
+	if ( mqttmsg == "openWB/pv/bool70PVDynActive") {
+		if ( mqttpayload == 1 ) {
+			nurpv70active = 1;
+			if ( lademodus == 2 ) {
+				$('#nurpv70div').show();
+			}	
+		}
+	}
+	if ( mqttmsg == "openWB/pv/bool70PVDynStatus") {
+		if ( mqttpayload == 1 ) {
+			$('#nurpv70Btn').addClass("btn-green").removeClass("btn-red");
+			nurpv70status = mqttpayload;
+		} else {
+			$('#nurpv70Btn').addClass("btn-red").removeClass("btn-green");
+			nurpv70status = mqttpayload;
+		}
+	}
+
 }
 
 function processVerbraucherMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 	// processes mqttmsg for topic openWB/Verbraucher
 	// called by handlevar
+	if ( mqttmsg.match( /^openwb\/verbraucher\/[1-9][0-9]*\/Name$/i ) ) {
+		// matches to all messages containing "openwb/lp/#/boolchargepointconfigured"
+		// where # is an integer > 0
+		// search is case insensitive
+		var index = mqttmsg.match(/\d/g)[0];  // extract first match = number from mqttmsg
+		window['verbraucher'+index+'_name'] = mqttpayload; 
+		putgraphtogether();
+	}
 }
 
 function processSetMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
@@ -1125,9 +1187,12 @@ client.onMessageArrived = function (message) {
 };
 var retries = 0;
 
+var isSSL = location.protocol == 'https:'
 //Connect Options
+var isSSL = location.protocol == 'https:'
 var options = {
 	timeout: 5,
+	useSSL: isSSL,
 	//Gets Called if the connection has sucessfully been established
 	onSuccess: function () {
 		retries = 0;
@@ -1275,7 +1340,7 @@ function renewMQTTclick() {
 }
 
 function putgraphtogether() {
-	if ( (all1 == 1) && (all2 == 1) && (all3 == 1) && (all4 == 1) && (all5 == 1) && (all6 == 1) && (all7 == 1) && (all8 == 1) ){
+	if ( (all1 == 1) && (all2 == 1) && (all3 == 1) && (all4 == 1) && (all5 == 1) && (all6 == 1) && (all7 == 1) && (all8 == 1) && (verbraucher1_name != "notyet") && (verbraucher2_name != "notyet")){
 		var alldata = all1p + "\n" + all2p + "\n" + all3p + "\n" + all4p + "\n" + all5p + "\n" + all6p + "\n" + all7p + "\n" + all8p;
 		alldata = alldata.replace(/^\s*[\n]/gm, '');
 		alldata = alldata.replace(/^\s*-[\n]/gm, '');

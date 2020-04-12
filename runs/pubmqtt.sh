@@ -1,6 +1,7 @@
 #!/bin/bash
 
 declare -A mqttvar
+mqttvar["system/IpAddress"]=ipaddress
 mqttvar["evu/APhase1"]=bezuga1
 mqttvar["evu/APhase2"]=bezuga2
 mqttvar["evu/APhase3"]=bezuga3
@@ -40,12 +41,12 @@ mqttvar["lp/1/APhase3"]=lla3
 mqttvar["lp/1/kWhCounter"]=llkwh
 mqttvar["lp/2/kWhCounter"]=llkwhs1
 mqttvar["lp/3/kWhCounter"]=llkwhs2
-mqttvar["Verbraucher/WNr1"]=verbraucher1_watt
-mqttvar["Verbraucher/WhImportedNr1"]=verbraucher1_wh
-mqttvar["Verbraucher/WhExportedNr1"]=verbraucher1_whe
-mqttvar["Verbraucher/WNr2"]=verbraucher2_watt
-mqttvar["Verbraucher/WhImportedNr2"]=verbraucher2_wh
-mqttvar["Verbraucher/WhExportedNr2"]=verbraucher2_whe
+mqttvar["Verbraucher/1/Watt"]=verbraucher1_watt
+mqttvar["Verbraucher/1/WhImported"]=verbraucher1_wh
+mqttvar["Verbraucher/1/WhExported"]=verbraucher1_whe
+mqttvar["Verbraucher/2/Watt"]=verbraucher2_watt
+mqttvar["Verbraucher/2/WhImported"]=verbraucher2_wh
+mqttvar["Verbraucher/2/WhExported"]=verbraucher2_whe
 mqttvar["evu/WhExported"]=einspeisungkwh
 mqttvar["evu/WhImported"]=bezugkwh
 mqttvar["housebattery/WhExported"]=speicherekwh
@@ -167,6 +168,10 @@ mqttvar["lp/7/AutolockConfigured"]=autolockconfiguredlp7
 mqttvar["lp/8/AutolockConfigured"]=autolockconfiguredlp8
 mqttvar["pv/DailyYieldKwh"]=daily_pvkwhk
 mqttvar["global/boolRse"]=rsestatus
+mqttvar["hook/1/boolHookStatus"]=hook1akt
+mqttvar["hook/2/boolHookStatus"]=hook2akt
+mqttvar["hook/3/boolHookStatus"]=hook3akt
+mqttvar["pv/bool70PVDynStatus"]=nurpv70dynstatus
 
 tempPubList=""
 for mq in "${!mqttvar[@]}"; do

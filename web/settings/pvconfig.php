@@ -7,7 +7,7 @@
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>OpenWB</title>
+		<title>openWB Einstellungen</title>
 		<meta name="description" content="Control your charge" />
 		<meta name="author" content="Kevin Wieland, Michael Ortenstein" />
 		<!-- Favicons (created with http://realfavicongenerator.net/)-->
@@ -36,23 +36,21 @@
 	<body>
 		<?php
 
-			include '/var/www/html/openWB/web/settings/navbar.php';
-
 			$lines = file('/var/www/html/openWB/openwb.conf');
 			foreach($lines as $line) {
 				if(strpos($line, "speicherpveinbeziehen=") !== false) {
 					list(, $speicherpveinbeziehenold) = explode("=", $line);
 				}
+				if(strpos($line, "nurpv70dynact=") !== false) {
+					list(, $nurpv70dynactold) = explode("=", $line);
+				}
+				if(strpos($line, "nurpv70dynw=") !== false) {
+					list(, $nurpv70dynwold) = explode("=", $line);
+				}
+
 				if(strpos($line, "speicherpvui=") !== false) {
 					list(, $speicherpvuiold) = explode("=", $line);
 				}
-				if(strpos($line, "settingspw=") !== false) {
-					list(, $settingspwold) = explode("=", $line);
-				}
-				if(strpos($line, "settingspwakt=") !== false) {
-					list(, $settingspwaktold) = explode("=", $line);
-				}
-
 				if(strpos($line, "speichermaxwatt=") !== false) {
 					list(, $speichermaxwattold) = explode("=", $line);
 				}
@@ -140,6 +138,9 @@
 				if(strpos($line, "speichersocminpv=") !== false) {
 					list(, $speichersocminpvold) = explode("=", $line, 2);
 				}
+				if(strpos($line, "speichersochystminpv=") !== false) {
+					list(, $speichersochystminpvold) = explode("=", $line, 2);
+				}
 				if(strpos($line, "speicherwattnurpv=") !== false) {
 					list(, $speicherwattnurpvold) = explode("=", $line, 2);
 				}
@@ -152,6 +153,8 @@
 			$wr_http_w_urlold = str_replace( "'", "", $wr_http_w_urlold);
 			$wr_http_kwh_urlold = str_replace( "'", "", $wr_http_kwh_urlold);
 		?>
+
+		<div id="nav"></div> <!-- placeholder for navbar -->
 
 		<div role="main" class="container" style="margin-top:20px">
 			<div class="col-sm-12">
@@ -310,7 +313,7 @@
 					</div>
 					<div class="row" style="background-color:#befebe">
 						Definiert einen Mindest-SoC-Wert (EV) bis zu welchem im "Nur PV" Modus immer geladen wird, auch, wenn keine PV Leistung zur Verfügung steht.<br>
-						Ist nur aktiv, wenn nur ein Ladepunkt konfiguriert ist!  
+						Ist nur aktiv, wenn nur ein Ladepunkt konfiguriert ist!
 					</div>
 
 					<div class="row" style="background-color:#befebe">
@@ -327,11 +330,13 @@
 							<option <?php if($maxnurpvsoclp1old == 90) echo "selected" ?> value="90">90</option>
 							<option <?php if($maxnurpvsoclp1old == 95) echo "selected" ?> value="95">95</option>
 							<option <?php if($maxnurpvsoclp1old == 100) echo "selected" ?> value="100">100</option>
+							<option <?php if($maxnurpvsoclp1old == 101) echo "selected" ?> value="101">Deaktiviert</option>
+
 						</select>
 					</div>
 					<div class="row" style="background-color:#befebe">
 						Definiert einen Maximal-SoC-Wert bis zu welchem im "Nur PV" Modus geladen wird.<br>
-						Ist nur aktiv, wenn nur ein Ladepunkt konfiguriert ist! 
+						Ist nur aktiv, wenn nur ein Ladepunkt konfiguriert ist!
 					</div>
 					<div class="row" style="background-color:#befebe">
 						<b><label for="minnurpvsocll">Stromstärke fuer den Nur PV Laden Modus wenn Mindest SoC noch nicht erreicht:</label></b>
@@ -367,7 +372,7 @@
 					</div>
 					<div class="row" style="background-color:#befebe">
 						Definiert die Ladeleistung, wenn Mindest-SoC im "Nur PV Laden" Modus noch nicht erreicht ist.<br>
-						Ist nur aktiv, wenn nur ein Ladepunkt konfiguriert ist! 
+						Ist nur aktiv, wenn nur ein Ladepunkt konfiguriert ist!
 					</div>
 
 					<div class="row" style="background-color:#befebe">
@@ -446,11 +451,18 @@
 								Im "Min + PV" Modus wird die Ladung erst gestartet, wenn der SoC über dem eingestellten Wert liegt.<br>
 								Zum Deaktivieren der Funktion den Wert auf 0 setzen.
 							</div>
+							<div class="row" style="background-color:#fcbe1e">
+								<b><label for="speichersochystminpv">Speicher Entlade SoC Min + PV Hysterese:</label></b>
+								<input type="text" name="speichersochystminpv" id="speichersochystminpv" value="<?php echo $speichersochystminpvold ?>">
+							</div>
+							<div class="row" style="background-color:#fcbe1e">
+								Die Hysterese legt fest ab welchem SoC bei Unterschreitung die Ladung wieder beendet wird.<br>
+								Zum Deaktivieren der Funktion den Wert auf 0 setzen.
+							</div>
 					</div>
-
-					<input hidden name="speicherpvrang" id="speicherpvrang" value="<?php echo $speichervorhanden ; ?>">
+					<input type="hidden" name="speicherpvrang" id="speicherpvrang" value="<?php echo trim($speichervorhanden); ?>">
 					<script>
-						$(function() {
+			$(function() {
 							if($('#speicherpvrang').val() == '1') {
 								$('#speicherpvrangdiv').show();
 							} else {
@@ -520,6 +532,42 @@
 							});
 						});
 					</script>
+					<div class="row" style="background-color:#befebe">
+						<b><label for="nurpv70dynact">Beachtung der 70% Grenze beim PV Laden:</label></b>
+						<select name="nurpv70dynact" id="nurpv70dynact">
+							<option <?php if($nurpv70dynactold == 0) echo "selected" ?> value="0">Aus</option>
+							<option <?php if($nurpv70dynactold == 1) echo "selected" ?> value="1">An</option>
+						</select>
+					</div>
+					<div class="row" style="background-color:#befebe">
+							Wenn aktiviert wird im Nur PV Modus erst mit der Ladung begonnen wenn der eingestellte Wer + Mindestüberschuss erreicht ist.<br>Die Grenze gilt dann als Regelpunkt
+					</div>
+					<div id="70pvdiv">
+						<div class="row" style="background-color:#befebe">
+							<b><label for="nurpv70dynw">70% Grenze:</label></b>
+							<input type="text" name="nurpv70dynw" id="nurpv70dynw" value="<?php echo $nurpv70dynwold ?>">
+						</div>
+						<div class="row" style="background-color:#befebe">
+							Defniert den Wert in Watt für die 70% Grenze. Bei einer 9,9kWP PV Anlage macht hier z.B. 6000 Watt Sinn.<br> Ist der Mindestüberschuss bei 1300 Watt beginnt die Ladung ab 7300 Watt Überschuss und regelt dann um 6000 Watt<br>
+						</div>
+					</div>
+					<script>
+						$(function() {
+							if($('#nurpv70dynact').val() == '1') {
+								$('#70pvdiv').show();
+							} else {
+								$('#70pvdiv').hide();
+							}
+							$('#nurpv70dynact').change(function(){
+								if($('#nurpv70dynact').val() == '1') {
+									$('#70pvdiv').show();
+								} else {
+									$('#70pvdiv').hide();
+								}
+							});
+						});
+					</script>
+
 
 					<button type="submit" class="btn btn-green">Save</button>
 				</form>
@@ -545,29 +593,16 @@
 			</div>
 		</footer>
 
-		<script>
-			var settingspwaktold = <?php echo $settingspwaktold ?>;
-			var settingspwold = <?php echo $settingspwold ?>;
-			if ( settingspwaktold == 1 ) {
-			passWord();
-			}
-			function passWord() {
-			var testV = 1;
-			var pass1 = prompt('Einstellungen geschützt, bitte Password eingeben:','');
 
-			while (testV < 3) {
-				if (!pass1)
-					history.go(-1);
-				if (pass1 == settingspwold) {
-					break;
-				}
-				testV+=1;
-				var pass1 = prompt('Passwort falsch','Password');
-			}
-			if (pass1!="password" & testV == 3)
-				history.go(-1);
-			return " ";
-			}
+		<script type="text/javascript">
+
+			$.get("settings/navbar.php", function(data){
+				$("#nav").replaceWith(data);
+				// disable navbar entry for current page
+				$('#navPVLadeeinstellungen').addClass('disabled');
+			});
+
 		</script>
+
 	</body>
 </html>

@@ -45,6 +45,7 @@ source u1p3p.sh
 source nrgkickcheck.sh
 source rfidtag.sh
 source leds.sh
+source slavemode.sh
 date=$(date)
 re='^-?[0-9]+$'
 
@@ -98,9 +99,9 @@ fi
 
 #######################################
 # check rfid
-if [[ $rfidakt == "1" ]]; then
-	rfid
-fi
+#moved in loadvars
+
+
 #goe mobility check
 goecheck
 # nrgkick mobility check
@@ -264,6 +265,12 @@ else
 	echo $evsemodbustimer > ramdisk/evsemodbustimer
 	evsemodbuscheck
 fi
+
+# Slave Mode, openWB als Ladepunkt nutzen
+
+if (( slavemode == 1 )); then
+	openwbisslave
+fi
 #Lademodus 3 == Aus
 
 if (( lademodus == 3 )); then
@@ -397,6 +404,17 @@ if [ "$anzahlphasen" -ge "24" ]; then
 fi
 ########################
 # Berechnung für PV Regelung
+if [[ $nurpv70dynact == "1" ]]; then
+	nurpv70status=$(<ramdisk/nurpv70dynstatus)
+	if [[ $nurpv70status == "1" ]]; then
+        	uberschuss=$((uberschuss - nurpv70dynw))
+		wattbezugint=$((wattbezugint + nurpv70dynw))
+	fi
+	if [[ $debug == "1" ]]; then
+		echo "PV 70% aktiv! derzeit genutzter Überschuss $uberschuss"
+	fi
+fi
+
 mindestuberschussphasen=$(echo "($mindestuberschuss*$anzahlphasen)" | bc)
 wattkombiniert=$(echo "($ladeleistung+$uberschuss)" | bc)
 abschaltungw=$(echo "(($abschaltuberschuss-1320)*-1*$anzahlphasen)" | bc)

@@ -75,6 +75,7 @@ if [[ $evsecon == "modbusevse" ]]; then
 				if [[ $displayconfigured == "1" ]] && [[ $displayEinBeimAnstecken == "1" ]] ; then
 					export DISPLAY=:0 && xset dpms force on && xset dpms $displaysleep $displaysleep $displaysleep
 				fi
+				echo 20000 > /var/www/html/openWB/ramdisk/soctimer
 			fi
 			echo 1 > /var/www/html/openWB/ramdisk/plugstat
 			plugstat=1
@@ -90,7 +91,9 @@ if [[ $evsecon == "modbusevse" ]]; then
 			chargestat=0
 		fi
 	fi
-
+else
+	plugstat=$(<ramdisk/plugstat)
+	chargestat=$(<ramdisk/chargestat)
 fi
 if [[ $evsecon == "ipevse" ]]; then
 	evseplugstatelp1=$(sudo python runs/readipmodbus.py $evseiplp1 $evseidlp1 1002 1)
@@ -165,6 +168,10 @@ if [[ $lastmanagement == "1" ]]; then
 	fi
 	plugstatlp2=$(<ramdisk/plugstats1)
 	chargestatlp2=$(<ramdisk/chargestats1)	
+else
+	plugstatlp2=$(<ramdisk/plugstats1)
+	chargestatlp2=$(<ramdisk/chargestats1)
+
 fi
 if [[ $lastmanagements2 == "1" ]]; then
 	if [[ $evsecons2 == "ipevse" ]]; then
@@ -196,6 +203,9 @@ if [[ $lastmanagements2 == "1" ]]; then
                         echo 0 > /var/www/html/openWB/ramdisk/chargestatlp3
                 fi
         fi
+else
+	plugstatlp3=$(<ramdisk/plugstats2)
+	chargestatlp3=$(<ramdisk/chargestats2)
 fi
 if [[ $lastmanagementlp4 == "1" ]]; then
 	if [[ $evseconlp4 == "ipevse" ]]; then
@@ -295,6 +305,7 @@ if [ -z "$lademodus" ] ; then
 	lademodus=$bootmodus
 fi
 llalt=$(cat /var/www/html/openWB/ramdisk/llsoll)
+llaltlp1=$llalt
 #PV Leistung ermitteln
 if [[ $pvwattmodul != "none" ]]; then
 	pvwatt=$(modules/$pvwattmodul/main.sh || true)
@@ -308,10 +319,25 @@ pvwatt1=$(</var/www/html/openWB/ramdisk/pvwatt1)
 pvwatt2=$(</var/www/html/openWB/ramdisk/pvwatt2)
 pvwatt3=$(</var/www/html/openWB/ramdisk/pvwatt3)
 
+if [[ $pv2wattmodul != "none" ]]; then
+	pv2watt=$(modules/$pv2wattmodul/main.sh || true)
+	pvwatt=$(( pvwatt + pv2watt ))
+	pvkwh=$(</var/www/html/openWB/ramdisk/pvkwh)
+	pv2kwh=$(</var/www/html/openWB/ramdisk/pv2kwh)
+
+	pvkwh=$(echo "$pvkwh + $pv2kwh" |bc)
+	echo $pvkwh > /var/www/html/openWB/ramdisk/pvkwh
+	echo $pvwatt > /var/www/html/openWB/ramdisk/pvwatt
+	if ! [[ $pvwatt =~ $re ]] ; then
+		pvwatt="0"
+	fi
+fi
+
 #Speicher werte
 if [[ $speichermodul != "none" ]] ; then
 	timeout 5 modules/$speichermodul/main.sh || true
 	speicherleistung=$(</var/www/html/openWB/ramdisk/speicherleistung)
+	speicherleistung=$(echo $speicherleistung | sed 's/\..*$//')
 	speichersoc=$(</var/www/html/openWB/ramdisk/speichersoc)
 	speichersoc=$(echo $speichersoc | sed 's/\..*$//')
 	speichervorhanden="1"
@@ -548,19 +574,21 @@ if [[ $wattbezugmodul != "none" ]]; then
 	fi
 	#evu glaettung
 	if (( evuglaettungakt == 1 )); then
-		ganzahl=$(( evuglaettung / 10 ))
-		for ((i=ganzahl;i>=1;i--)); do
-			i2=$(( i + 1 ))
-			cp ramdisk/glaettung$i ramdisk/glaettung$i2
-		done
-		echo $wattbezug > ramdisk/glaettung1
-		for ((i=1;i<=ganzahl;i++)); do
-			glaettung=$(<ramdisk/glaettung$i)
-			glaettungw=$(( glaettung + glaettungw))
-		done
-		glaettungfinal=$((glaettungw / ganzahl))
-		echo $glaettungfinal > ramdisk/glattwattbezug
-		wattbezug=$glaettungfinal
+		if (( evuglaettung > 20 )); then
+			ganzahl=$(( evuglaettung / 10 ))
+			for ((i=ganzahl;i>=1;i--)); do
+				i2=$(( i + 1 ))
+				cp ramdisk/glaettung$i ramdisk/glaettung$i2
+			done
+			echo $wattbezug > ramdisk/glaettung1
+			for ((i=1;i<=ganzahl;i++)); do
+				glaettung=$(<ramdisk/glaettung$i)
+				glaettungw=$(( glaettung + glaettungw))
+			done
+			glaettungfinal=$((glaettungw / ganzahl))
+			echo $glaettungfinal > ramdisk/glattwattbezug
+			wattbezug=$glaettungfinal
+		fi
 	fi
 	#uberschuss zur berechnung
 	wattbezugint=$(printf "%.0f\n" $wattbezug)
@@ -686,7 +714,7 @@ if [[ $wattbezugmodul == "bezug_e3dc" ]] || [[ $wattbezugmodul == "bezug_kostalp
 	fi
 	# sim bezug end
 fi
-if [[ $pvwattmodul == "none" ]] && [[ $speichermodul == "speicher_e3dc" ]]; then
+if [[ $pvwattmodul == "none" ]] && [[ $speichermodul == "speicher_e3dc" ]] || [[ $speichermodul == "speicher_kostalplenticore" ]] && [[ $pvwattmodul == "wr_plenticore" ]] || [[ $pvwattmodul == "wr_kostalpiko" ]] || [[ $pvwattmodul == "wr_kostalpikovar2" ]]; then
 	ra='^-?[0-9]+$'
 	watt3=$(</var/www/html/openWB/ramdisk/pvwatt)
 	if [[ -e /var/www/html/openWB/ramdisk/pvwatt0pos ]]; then
@@ -758,7 +786,42 @@ if [[ $speichermodul == "speicher_e3dc" ]] || [[ $speichermodul == "speicher_byd
 	fi
 	# sim speicher end
 fi
-
+if [[ $verbraucher1_aktiv == "1" ]] && [[ $verbraucher1_typ == "shelly" ]]; then
+	ra='^-?[0-9]+$'
+	watt3=$(</var/www/html/openWB/ramdisk/verbraucher1_watt)
+	if [[ -e /var/www/html/openWB/ramdisk/verbraucher1watt0pos ]]; then
+		importtemp=$(</var/www/html/openWB/ramdisk/verbraucher1watt0pos)
+	else
+		importtemp=$(timeout 4 mosquitto_sub -t openWB/Verbraucher/1/WH1Imported_temp)
+		if ! [[ $importtemp =~ $ra ]] ; then
+			importtemp="0"
+		fi
+		dtime=$(date +"%T")
+		echo " $dtime loadvars read openWB/Verbraucher/1/WHImported_temp from mosquito $importtemp"
+		echo $importtemp > /var/www/html/openWB/ramdisk/verbraucher1watt0pos
+	fi
+	if [[ -e /var/www/html/openWB/ramdisk/verbraucher1watt0neg ]]; then
+		exporttemp=$(</var/www/html/openWB/ramdisk/verbraucher1watt0neg)
+	else
+		exporttemp=$(timeout 4 mosquitto_sub -t openWB/verbraucher/1/WH1Export_temp)
+		if ! [[ $exporttemp =~ $ra ]] ; then
+			exporttemp="0"
+		fi
+		dtime=$(date +"%T")
+		echo " $dtime loadvars read openWB/verbraucher/1/WHExport_temp from mosquito $exporttemp"
+		echo $exporttemp > /var/www/html/openWB/ramdisk/verbraucher1watt0neg
+	fi
+	sudo python /var/www/html/openWB/runs/simcount.py $watt3 verbraucher1 verbraucher1_wh verbraucher1_whe
+	importtemp1=$(</var/www/html/openWB/ramdisk/verbraucher1watt0pos)
+	exporttemp1=$(</var/www/html/openWB/ramdisk/verbraucher1watt0neg)
+	if [[ $importtemp !=  $importtemp1 ]]; then
+		mosquitto_pub -t openWB/verbraucher/1/WHImported_temp -r -m "$importtemp1"
+	fi
+	if [[ $exporttemp !=  $exporttemp1 ]]; then
+		mosquitto_pub -t openWB/verbraucher/1/WHExport_temp -r -m "$exporttemp1"
+	fi
+	# sim bezug end
+fi
 
 #Uhrzeit
 date=$(date)
@@ -835,7 +898,9 @@ if [[ "$osoc1" != "$soc1" ]]; then
 	tempPubList="${tempPubList}\nopenWB/lp/2/%Soc=${soc1}"
 	echo $soc1 > ramdisk/mqttsoc1
 fi
-
+if [[ $rfidakt == "1" ]]; then
+	rfid
+fi
 dailychargelp1=$(curl -s -X POST -d "dailychargelp1call=loadfile" http://127.0.0.1:/openWB/web/tools/dailychargelp1.php | jq -r .text)
 dailychargelp2=$(curl -s -X POST -d "dailychargelp2call=loadfile" http://127.0.0.1:/openWB/web/tools/dailychargelp2.php | jq -r .text)
 dailychargelp3=$(curl -s -X POST -d "dailychargelp3call=loadfile" http://127.0.0.1:/openWB/web/tools/dailychargelp3.php | jq -r .text)
@@ -885,6 +950,21 @@ fi
 if (( ogelrlp3 != gelrlp3 )); then
 	tempPubList="${tempPubList}\nopenWB/lp/3/kmCharged=${gelrlp3}"
 	echo $gelrlp3 > ramdisk/mqttgelrlp3
+fi
+ohook1_aktiv=$(<ramdisk/mqtthook1_aktiv)
+if [[ "$ohook1_aktiv" != "$hook1_aktiv" ]]; then
+	tempPubList="${tempPubList}\nopenWB/hook/1/boolHookConfigured=${hook1_aktiv}"
+	echo $ > ramdisk/mqtthook1_aktiv
+fi
+ohook2_aktiv=$(<ramdisk/mqtthook2_aktiv)
+if [[ "$ohook2_aktiv" != "$hook2_aktiv" ]]; then
+	tempPubList="${tempPubList}\nopenWB/hook/2/boolHookConfigured=${hook2_aktiv}"
+	echo $ > ramdisk/mqtthook2_aktiv
+fi
+ohook3_aktiv=$(<ramdisk/mqtthook3_aktiv)
+if [[ "$ohook3_aktiv" != "$hook3_aktiv" ]]; then
+	tempPubList="${tempPubList}\nopenWB/hook/3/boolHookConfigured=${hook3_aktiv}"
+	echo $ > ramdisk/mqtthook3_aktiv
 fi
 
 if (( ohook1aktiv != hook1aktiv )); then
@@ -1016,21 +1096,73 @@ if [[ "$olademstats2" != "$lademstats2" ]]; then
 	tempPubList="${tempPubList}\nopenWB/lp/3/boolDirectModeChargekWh=${lademstats2}"
 	echo $lademstats2 > ramdisk/mqttlademstats2
 fi
+olademstatlp4=$(<ramdisk/mqttlademstatlp4)
+if [[ "$olademstatlp4" != "$lademstatlp4" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/4/boolDirectModeChargekWh=${lademstatlp4}"
+	echo $lademstatlp4 > ramdisk/mqttlademstatlp4
+fi
+olademstatlp5=$(<ramdisk/mqttlademstatlp5)
+if [[ "$olademstatlp5" != "$lademstatlp5" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/5/boolDirectModeChargekWh=${lademstatlp5}"
+	echo $lademstatlp5 > ramdisk/mqttlademstatlp5
+fi
+olademstatlp6=$(<ramdisk/mqttlademstatlp6)
+if [[ "$olademstatlp6" != "$lademstatlp6" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/6/boolDirectModeChargekWh=${lademstatlp6}"
+	echo $lademstatlp6 > ramdisk/mqttlademstatlp6
+fi
+olademstatlp7=$(<ramdisk/mqttlademstatlp7)
+if [[ "$olademstatlp7" != "$lademstatlp7" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/7/boolDirectModeChargekWh=${lademstatlp7}"
+	echo $lademstatlp7 > ramdisk/mqttlademstatlp7
+fi
+olademstatlp8=$(<ramdisk/mqttlademstatlp8)
+if [[ "$olademstatlp8" != "$lademstatlp8" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/8/boolDirectModeChargekWh=${lademstatlp8}"
+	echo $lademstatlp8 > ramdisk/mqttlademstatlp8
+fi
 olademkwh=$(<ramdisk/mqttlademkwh)
 if (( olademkwh != lademkwh )); then
-	tempPubList="${tempPubList}\nopenWB/lp/1/kWhDirectModeToChargekWh=${lademkwh}"
+	tempPubList="${tempPubList}\nopenWB/lp/1/kWhDirectModeToCharge=${lademkwh}"
 	echo $lademkwh > ramdisk/mqttlademkwh
 fi
 olademkwhs1=$(<ramdisk/mqttlademkwhs1)
 if (( olademkwhs1 != lademkwhs1 )); then
-	tempPubList="${tempPubList}\nopenWB/lp/2/kWhDirectModeToChargekWh=${lademkwhs1}"
+	tempPubList="${tempPubList}\nopenWB/lp/2/kWhDirectModeToCharge=${lademkwhs1}"
 	echo $lademkwhs1 > ramdisk/mqttlademkwhs1
 fi
 olademkwhs2=$(<ramdisk/mqttlademkwhs2)
 if (( olademkwhs2 != lademkwhs2 )); then
-	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToChargekWh=${lademkwhs2}"
+	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToCharge=${lademkwhs2}"
 	echo $lademkwhs2 > ramdisk/mqttlademkwhs2
 fi
+olademkwhlp4=$(<ramdisk/mqttlademkwhlp4)
+if (( olademkwhlp4 != lademkwhlp4 )); then
+	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToCharge=${lademkwhlp4}"
+	echo $lademkwhlp4 > ramdisk/mqttlademkwhlp4
+fi
+
+olademkwhlp8=$(<ramdisk/mqttlademkwhlp8)
+if (( olademkwhlp8 != lademkwhlp8 )); then
+	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToCharge=${lademkwhlp8}"
+	echo $lademkwhlp8 > ramdisk/mqttlademkwhlp8
+fi
+olademkwhlp7=$(<ramdisk/mqttlademkwhlp7)
+if (( olademkwhlp7 != lademkwhlp7 )); then
+	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToCharge=${lademkwhlp7}"
+	echo $lademkwhlp7 > ramdisk/mqttlademkwhlp7
+fi
+olademkwhlp6=$(<ramdisk/mqttlademkwhlp6)
+if (( olademkwhlp6 != lademkwhlp6 )); then
+	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToCharge=${lademkwhlp6}"
+	echo $lademkwhlp6 > ramdisk/mqttlademkwhlp6
+fi
+olademkwhlp5=$(<ramdisk/mqttlademkwhlp5)
+if (( olademkwhlp5 != lademkwhlp5 )); then
+	tempPubList="${tempPubList}\nopenWB/lp/3/kWhDirectModeToCharge=${lademkwhlp5}"
+	echo $lademkwhlp5 > ramdisk/mqttlademkwhlp5
+fi
+
 osofortsocstatlp1=$(<ramdisk/mqttsofortsocstatlp1)
 if [[ "$osofortsocstatlp1" != "$sofortsocstatlp1" ]]; then
 	tempPubList="${tempPubList}\nopenWB/lp/1/boolDirectChargeModeSoc=${sofortsocstatlp1}"
@@ -1070,6 +1202,36 @@ omsmoduslp2=$(<ramdisk/mqttmsmoduslp2)
 if [[ "$omsmoduslp2" != "$msmoduslp2" ]]; then
 	tempPubList="${tempPubList}\nopenWB/lp/2/boolDirectChargeMode_none_kwh_soc=${msmoduslp2}"
 	echo $msmoduslp2 > ramdisk/mqttmsmoduslp2
+fi
+omsmoduslp3=$(<ramdisk/mqttmsmoduslp3)
+if [[ "$omsmoduslp3" != "$msmoduslp3" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/3/boolDirectChargeMode_none_kwh_soc=${msmoduslp3}"
+	echo $msmoduslp3 > ramdisk/mqttmsmoduslp3
+fi
+omsmoduslp4=$(<ramdisk/mqttmsmoduslp4)
+if [[ "$omsmoduslp4" != "$msmoduslp4" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/4/boolDirectChargeMode_none_kwh_soc=${msmoduslp4}"
+	echo $msmoduslp4 > ramdisk/mqttmsmoduslp4
+fi
+omsmoduslp5=$(<ramdisk/mqttmsmoduslp5)
+if [[ "$omsmoduslp5" != "$msmoduslp5" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/5/boolDirectChargeMode_none_kwh_soc=${msmoduslp5}"
+	echo $msmoduslp5 > ramdisk/mqttmsmoduslp5
+fi
+omsmoduslp6=$(<ramdisk/mqttmsmoduslp6)
+if [[ "$omsmoduslp6" != "$msmoduslp6" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/6/boolDirectChargeMode_none_kwh_soc=${msmoduslp6}"
+	echo $msmoduslp6 > ramdisk/mqttmsmoduslp6
+fi
+omsmoduslp7=$(<ramdisk/mqttmsmoduslp7)
+if [[ "$omsmoduslp7" != "$msmoduslp7" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/7/boolDirectChargeMode_none_kwh_soc=${msmoduslp7}"
+	echo $msmoduslp7 > ramdisk/mqttmsmoduslp7
+fi
+omsmoduslp8=$(<ramdisk/mqttmsmoduslp8)
+if [[ "$omsmoduslp8" != "$msmoduslp8" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/8/boolDirectChargeMode_none_kwh_soc=${msmoduslp8}"
+	echo $msmoduslp8 > ramdisk/mqttmsmoduslp8
 fi
 ospeichervorhanden=$(<ramdisk/mqttspeichervorhanden)
 if (( ospeichervorhanden != speichervorhanden )); then
@@ -1167,15 +1329,47 @@ if [[ "$oevuglaettungakt" != "$evuglaettungakt" ]]; then
 	tempPubList="${tempPubList}\nopenWB/boolEvuSmoothedActive=${evuglaettungakt}"
 	echo $evuglaettungakt > ramdisk/mqttevuglaettungakt
 fi
-ographliveam=$(<ramdisk/mqttgraphliveam)
-if [[ "$ographliveam" != "$graphliveam" ]]; then
-	tempPubList="${tempPubList}\nopenWB/boolGraphLiveAM=${graphliveam}"
-	echo $graphliveam > ramdisk/mqttgraphliveam
+onurpv70dynact=$(<ramdisk/mqttnurpv70dynact)
+if [[ "$onurpv70dynact" != "$nurpv70dynact" ]]; then
+	tempPubList="${tempPubList}\nopenWB/pv/bool70PVDynActive=${nurpv70dynact}"
+	echo $nurpv70dynact > ramdisk/mqttnurpv70dynact
+fi
+onurpv70dynw=$(<ramdisk/mqttnurpv70dynw)
+if [[ "$onurpv70dynw" != "$nurpv70dynw" ]]; then
+	tempPubList="${tempPubList}\nopenWB/pv/W70PVDyn=${nurpv70dynw}"
+	echo $nurpv70dynw > ramdisk/mqttnurpv70dynw
+fi
+
+overbraucher1_name=$(<ramdisk/mqttverbraucher1_name)
+if [[ "$overbraucher1_name" != "$verbraucher1_name" ]]; then
+	tempPubList="${tempPubList}\nopenWB/Verbraucher/1/Name=${verbraucher1_name}"
+	echo $verbraucher1_name > ramdisk/mqttverbraucher1_name
+fi
+overbraucher1_aktiv=$(<ramdisk/mqttverbraucher1_aktiv)
+if [[ "$overbraucher1_aktiv" != "$verbraucher1_aktiv" ]]; then
+	tempPubList="${tempPubList}\nopenWB/Verbraucher/1/Configured=${verbraucher1_aktiv}"
+	echo $verbraucher1_aktiv > ramdisk/mqttverbraucher1_aktiv
+fi
+overbraucher2_aktiv=$(<ramdisk/mqttverbraucher2_aktiv)
+if [[ "$overbraucher2_aktiv" != "$verbraucher2_aktiv" ]]; then
+	tempPubList="${tempPubList}\nopenWB/Verbraucher/2/Configured=${verbraucher2_aktiv}"
+	echo $verbraucher2_aktiv > ramdisk/mqttverbraucher2_aktiv
+fi
+
+overbraucher2_name=$(<ramdisk/mqttverbraucher2_name)
+if [[ "$overbraucher2_name" != "$verbraucher2_name" ]]; then
+	tempPubList="${tempPubList}\nopenWB/Verbraucher/2/Name=${verbraucher2_name}"
+	echo $verbraucher2_name > ramdisk/mqttverbraucher2_name
 fi
 ospeicherpvui=$(<ramdisk/mqttspeicherpvui)
 if [[ "$ospeicherpvui" != "$speicherpvui" ]]; then
 	tempPubList="${tempPubList}\nopenWB/boolDisplayHouseBatteryPriority=${speicherpvui}"
 	echo $speicherpvui > ramdisk/mqttspeicherpvui
+fi
+ospeicherpveinbeziehen=$(<ramdisk/mqttspeicherpveinbeziehen)
+if [[ "$ospeicherpveinbeziehen" != "$speicherpveinbeziehen" ]]; then
+	tempPubList="${tempPubList}\nopenWB/global/priorityModeEVBattery=${speicherpveinbeziehen}"
+	echo $speicherpveinbeziehen > ramdisk/mqttspeicherpveinbeziehen
 fi
 oawattaraktiv=$(<ramdisk/mqttawattaraktiv)
 if [[ "$oawattaraktiv" != "$awattaraktiv" ]]; then
@@ -1194,8 +1388,21 @@ if [[ "$oawattarmaxprice" != "$awattarmaxprice" ]]; then
 	tempPubList="${tempPubList}\nopenWB/global/awattar/MaxPriceForCharging=${awattarmaxprice}"
 	echo $awattarmaxprice > ramdisk/mqttawattarmaxprice
 fi
-
-
+odurchslp1=$(<ramdisk/mqttdurchslp1)
+if [[ "$odurchslp1" != "$durchslp1" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/1/energyConsumptionPer100km=${durchslp1}"
+	echo $durchslp1 > ramdisk/mqttdurchslp1
+fi
+odurchslp2=$(<ramdisk/mqttdurchslp2)
+if [[ "$odurchslp2" != "$durchslp2" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/2/energyConsumptionPer100km=${durchslp2}"
+	echo $durchslp2 > ramdisk/mqttdurchslp2
+fi
+odurchslp3=$(<ramdisk/mqttdurchslp3)
+if [[ "$odurchslp3" != "$durchslp3" ]]; then
+	tempPubList="${tempPubList}\nopenWB/lp/3/energyConsumptionPer100km=${durchslp3}"
+	echo $durchslp3 > ramdisk/mqttdurchslp3
+fi
 # publish last RFID scans as CSV with timestamp
 timestamp="$(date +%s)"
 
