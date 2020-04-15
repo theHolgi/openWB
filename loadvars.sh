@@ -609,21 +609,24 @@ if [[ $wattbezugmodul != "none" ]]; then
 	evua1=$(cat /var/www/html/openWB/ramdisk/bezuga1)
 	evua2=$(cat /var/www/html/openWB/ramdisk/bezuga2)
 	evua3=$(cat /var/www/html/openWB/ramdisk/bezuga3)
+	evuv1=$(cat /var/www/html/openWB/ramdisk/evuv1)
+	evuv2=$(cat /var/www/html/openWB/ramdisk/evuv2)
+	evuv3=$(cat /var/www/html/openWB/ramdisk/evuv3)
 	evua1=$(echo $evua1 | sed 's/\..*$//')
 	evua2=$(echo $evua2 | sed 's/\..*$//')
 	evua3=$(echo $evua3 | sed 's/\..*$//')
+        evuv1=$(echo $evuv1 | sed 's/\..*$//')
+        evuv2=$(echo $evuv2 | sed 's/\..*$//')
+        evuv3=$(echo $evuv3 | sed 's/\..*$//')
 	bezugw1=$(cat /var/www/html/openWB/ramdisk/bezugw1)
 	bezugw2=$(cat /var/www/html/openWB/ramdisk/bezugw2)
 	bezugw3=$(cat /var/www/html/openWB/ramdisk/bezugw3)
-	if ! [[ $evua1 =~ $re ]] ; then
-		evua1="0"
-	fi
-	if ! [[ $evua2 =~ $re ]] ; then
-		evua2="0"
-	fi
-	if ! [[ $evua3 =~ $re ]] ; then
-		evua3="0"
-	fi
+	[[ $evua1 =~ $re ]] || evua1="0"
+	[[ $evua2 =~ $re ]] || evua2="0"
+	[[ $evua3 =~ $re ]] || evua3="0"
+	[[ $evuv1 =~ $re ]] || evuv1="230"
+	[[ $evuv2 =~ $re ]] || evuv2="230"
+	[[ $evuv3 =~ $re ]] || evuv3="230"
 	evuas=($evua1 $evua2 $evua3)
 	maxevu=${evuas[0]}
 	for v in "${evuas[@]}"; do
@@ -836,11 +839,9 @@ if [[ $debug == "1" ]]; then
 	echo lla1 "$lla1" llas11 "$llas11" llas21 "$llas21" mindestuberschuss "$mindestuberschuss" abschaltuberschuss "$abschaltuberschuss" lademodus "$lademodus"
 	echo lla2 "$lla2" llas12 "$llas12" llas22 "$llas22" sofortll "$sofortll" wattbezugint "$wattbezugint" wattbezug "$wattbezug" uberschuss "$uberschuss"
 	echo lla3 "$lla3" llas13 "$llas13" llas23 "$llas23" soclp1 $soc soclp2 $soc1
-	echo evua 1 "$evua1" 2 "$evua2" 3 "$evua3"
+	echo "EVU 1:${evuv1}V/${evua1}A 2: ${evuv2}V/${evua2}A 3: ${evuv3}V/${evua3}A"
 	echo lp1enabled "$lp1enabled" lp2enabled "$lp2enabled" lp3enabled "$lp3enabled"
 	echo plugstatlp1 "$plugstat" plugstatlp2 "$plugstatlp2" chargestatlp1 "$chargestat" chargestatlp2 "$chargestatlp2"
-
-
 fi
 
 tempPubList=""

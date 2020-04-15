@@ -409,15 +409,20 @@ if [[ $nurpv70dynact == "1" ]]; then
 	if [[ $nurpv70status == "1" ]]; then
         	uberschuss=$((uberschuss - nurpv70dynw))
 		wattbezugint=$((wattbezugint + nurpv70dynw))
-	fi
-	if [[ $debug == "1" ]]; then
-		echo "PV 70% aktiv! derzeit genutzter Überschuss $uberschuss"
+		mindestuberschuss=0
+		abschaltuberschuss=$((minimalapv * 230 * anzahlphasen))
+ 		if [[ $debug == "1" ]]; then
+			echo "PV 70% aktiv! derzeit genutzter Überschuss $uberschuss"
+		fi
 	fi
 fi
 
-mindestuberschussphasen=$(echo "($mindestuberschuss*$anzahlphasen)" | bc)
-wattkombiniert=$(echo "($ladeleistung+$uberschuss)" | bc)
-abschaltungw=$(echo "(($abschaltuberschuss-1320)*-1*$anzahlphasen)" | bc)
+# Schwelle zum Beginn der Ladung
+mindestuberschussphasen=$((mindestuberschuss * anzahlphasen))
+# Schwelle zum Beenden der Ladung
+abschaltungw=$abschaltuberschuss
+
+wattkombiniert=$((ladeleistung + uberschuss))
 #PV Regelmodus
 if [[ $pvbezugeinspeisung == "0" ]]; then   # Einspeisung
 	pvregelungm="0"
