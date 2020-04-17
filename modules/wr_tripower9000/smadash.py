@@ -23,13 +23,14 @@ class SMADASH:
       if r.getcode() == 200:
          content = json.loads(r.read())
          for unitName, unitResult in content['result'].items():
-            powerOut = int(unitResult['6100_40463600']['1'][0]['val']) # Generation
-            powerIn = int(unitResult['6100_40463700']['1'][0]['val'])  # Consumption
-            power = unitResult['6100_40263F00']['1'][0]['val']
+            powerOut = int(unitResult['6100_40463600']['1'][0]['val'])  # Generation
+            powerIn  = int(unitResult['6100_40463700']['1'][0]['val'])  # Consumption
+            power    = unitResult['6100_40263F00']['1'][0]['val']       # 
             if power is None:
                power = 0
             else:
                power = -int(power) # generated power is negative
+            generation = int(unitResult['6400_00260100']['1'][0]['val'])  # Total yield
       return power, generation
 if __name__ == '__main__':
    power, generation = SMADASH(sys.argv[1]).read()
