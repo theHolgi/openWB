@@ -263,14 +263,10 @@ var thevalues = [
 var clientuid = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
 var client = new Messaging.Client(location.host, 9001, clientuid);
 
-function getCol(matrix, col, sign=false){
+function getCol(matrix, col){
 	var column = [];
 	for(var i=0; i<matrix.length; i++){
-		if (sign) {
-				column.push(-matrix[i][col]);
-		} else {
-			column.push(matrix[i][col]);
-		}
+		column.push(matrix[i][col]);
 	}
 	return column;
 }
@@ -520,7 +516,7 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			});
 			atime = splittime;
 			//atime = getCol(csvData, 0);
-			abezug = getCol(csvData, 1, true);
+			abezug = getCol(csvData, 1);
 			alpa = getCol(csvData, 2);
 			apv = getCol(csvData, 3);
 			alp1 = getCol(csvData, 4);
@@ -550,7 +546,7 @@ function processGraphMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			var lines = mqttpayload.split("\n");
 			for (var i = 0; i < lines.length; i++) {
 				var ldate = lines[i].split(",")[0];
-				var lbezug = -lines[i].split(",")[1];
+				var lbezug = lines[i].split(",")[1];
 				var lpv = lines[i].split(",")[3];
 				var llp2 = lines[i].split(",")[5];
 				var lspeicherl = lines[i].split(",")[7];
@@ -1357,7 +1353,7 @@ function putgraphtogether() {
 		});
 		atime = splittime;
 		//atime = getCol(csvData, 0);
-		abezug = getCol(csvData, 1, true);
+		abezug = getCol(csvData, 1);
 		alpa = getCol(csvData, 2);
 		apv = getCol(csvData, 3);
 		alp1 = getCol(csvData, 4);
