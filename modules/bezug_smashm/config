@@ -1,0 +1,32 @@
+[SMA-EM]
+# serials of sma-ems the daemon should take notice
+# seperated by space
+serials=3006136491
+# features could filter serials to, but wouldn't see serials if these serials was not defines in SMA-EM serials
+# list of features to load/run
+features=simplefswriter 
+#features=rrdwriter
+
+[DAEMON]
+pidfile=/run/openwb-smaemd.pid
+# listen on an interface with the given ip
+# use 0.0.0.0 for any interface
+ipbind=0.0.0.0
+#ipout=192.168.3.72
+# multicast ip and port of sma-datagrams
+# defaults
+mcastgrp=239.12.255.254
+mcastport=9522
+
+# each feature/plugin has its own section
+# called FEATURE-[featurename]
+# the feature section is required if a feature is listed in [SMA-EM]features
+
+[FEATURE-simplefswriter]
+# list serials simplefswriter notice
+serials=3006136491
+statusdir=/var/www/html/openWB/ramdisk/
+# measurement vars simplefswriter should write to filesystem (only from smas with serial in serials)
+# values=pregard pregardcounter psurplus psurpluscounter p1regard p1surplus p2regard p2surplus p3regard p3surplus
+values=pconsume pconsumecounter psupply psupplycounter p1consume p1supply p2consume p2supply p3consume p3supply i1 i2 i3 u1 u2 u3 frequency
+
