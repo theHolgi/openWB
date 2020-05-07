@@ -46,7 +46,7 @@ try:
 except:
     ipbind="0.0.0.0"
 try:
-    ipout = parser.get('DAEMON', 'ipout')
+    ipout = parser.get('DAEMON', 'ipout1')
 except:
     ipout = None
 MCAST_GRP = parser.get('DAEMON', 'mcastgrp')
@@ -127,7 +127,7 @@ class MyDaemon(daemon3x):
 		emparts = {}
 		while True:
 			#getting sma values
-			try:
+			#try:
 				#emparts=smaem.readem(sock)
 				emparts=decode_speedwire(sock.recv(608))
 				for serial in serials:
@@ -137,12 +137,12 @@ class MyDaemon(daemon3x):
 						for featurenr in featurelist:
 							#print('>>> starting '+featurelist[featurenr]['name'])
 							featurelist[featurenr]['feature'].run(emparts,featurelist[featurenr]['config'])
-							if sockout is not None:
-								sockout.sendto(emparts['new_datagram'], (MCAST_GRP, MCAST_PORT))
-			except Exception as e:
-				print("Daemon: Exception occured")
-				print(e)
-				pass
+						if sockout is not None:
+							sockout.sendto(emparts['new_datagram'], (MCAST_GRP, MCAST_PORT))
+			#except Exception as e:
+			#	print("Daemon: Exception occured")
+			#	print(e)
+			#	pass
 #Daemon - Coding
 if __name__ == "__main__":
 	daemon = MyDaemon(pidfile)

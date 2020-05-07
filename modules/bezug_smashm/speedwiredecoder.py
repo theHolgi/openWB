@@ -95,6 +95,7 @@ def decode_OBIS(obis):
 
 def decode_speedwire(datagram):
   emparts={}
+  datagram_patches = []
   # process data only of SMA header is present
   if datagram[0:3]==b'SMA':
     # datagram length
@@ -161,4 +162,13 @@ def decode_speedwire(datagram):
         position+=8
       else:
         position+=8
+    emparts['datagram'] = datagram
+  new_datagram = b''
+  position=0
+  for start, patch in datagram_patches:
+      new_datagram += datagram[position:start] + patch
+      position = start+len(patch)
+  new_datagram += datagram[position:]
+  emparts['new_datagram'] = new_datagram
+
   return emparts

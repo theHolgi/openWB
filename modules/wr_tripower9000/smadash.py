@@ -5,6 +5,12 @@ import urllib
 import ssl
 import json
 
+def getVal(result, id):
+   if result[id]['1'][0]['val'] is None:
+      return 0
+   else:
+      return int(result[id]['1'][0]['val'])
+
 class SMADASH:
    """
    Read values from SMA inverter from the dashboard
@@ -23,16 +29,16 @@ class SMADASH:
       if r.getcode() == 200:
          content = json.loads(r.read())
          for unitName, unitResult in content['result'].items():
-            powerOut = int(unitResult['6100_40463600']['1'][0]['val'])  # Generation
-            powerIn  = int(unitResult['6100_40463700']['1'][0]['val'])  # Consumption
-            power    = unitResult['6100_40263F00']['1'][0]['val']       # 
+            # powerOut = getVal(unitResult, '6100_40463600')  # grid Supply
+            # powerIn  = getVal(unitResult, '6100_40463700')  # grid Consumption
+            power    = getVal(unitResult, '6100_40263F00')  # PV generation
             if power is None:
                power = 0
             else:
                power = -int(power) # generated power is negative
-            generation = int(unitResult['6400_00260100']['1'][0]['val'])  # Total yield
+            generation = getVal(unitResult, '6400_00260100') # Total yield
       return power, generation
 if __name__ == '__main__':
    power, generation = SMADASH(sys.argv[1]).read()
-   print("Current power: %s; Total generation: %s" % (power,generation))
+   print("Current power: %sW; Total generation: %.2fkWh" % (power, generation/1000.0))
 

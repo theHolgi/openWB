@@ -40,5 +40,5 @@ class ModbusWR:
 
 if __name__ == '__main__':
    power, generation = ModbusWR(sys.argv[1]).read()
-   print("Current power: %s; Total generation: %s" % (power,generation))
+   print("Current power: %sW; Total generation: %.2fkWh" % (power, generation / 1000.0))
    
