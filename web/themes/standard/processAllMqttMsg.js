@@ -701,7 +701,9 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
-				$('#nurpv70div').hide();
+				if ( nurpv70active == 1 ) {
+					$('#nurpv70div').show();
+				}
 				break;
 			case "2":
 				// mode pv
@@ -737,17 +739,6 @@ function processGlobalMessages(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
 				$('#standbyBtn').addClass("btn-green").removeClass("btn-red");
 				$('#maxPvBtn').addClass("btn-red").removeClass("btn-green");
-				$('#nurpv70div').hide();
-				break;
-			case "5":
-				// mode max-PV
-				$('#targetChargingProgressDiv').hide();
-				$('#sofortBtn').addClass("btn-red").removeClass("btn-green");
-				$('#minUndPvBtn').addClass("btn-red").removeClass("btn-green");
-				$('#pvBtn').addClass("btn-red").removeClass("btn-green");
-				$('#stopBtn').addClass("btn-red").removeClass("btn-green");
-				$('#standbyBtn').addClass("btn-red").removeClass("btn-green");
-				$('#maxPvBtn').addClass("btn-green").removeClass("btn-red");
 				$('#nurpv70div').hide();
 				break;
 		}

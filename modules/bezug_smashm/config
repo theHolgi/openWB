@@ -4,7 +4,7 @@
 serials=3006136491
 # features could filter serials to, but wouldn't see serials if these serials was not defines in SMA-EM serials
 # list of features to load/run
-features=openwb
+features=openwb pwm
 #features=rrdwriter
 
 [DAEMON]
@@ -25,6 +25,9 @@ mcastport=9522
 
 [FEATURE-openwb]
 serial=3006136491
+
+[FEATURE-pwm]
+verbose=1
 
 [FEATURE-simplefswriter]
 # list serials simplefswriter notice
