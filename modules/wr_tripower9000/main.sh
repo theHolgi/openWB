@@ -33,8 +33,8 @@ echo $pvwatt
 ekwh=$(<$RAMDISK/pvkwh)
 
 
-pvkwh=$(echo "scale=3;$ekwh / 1000" |bc)
-echo $pvkwh > $RAMDISK/pvkwh
+pvkwhk=$(echo "scale=3;$ekwh / 1000" |bc)
+echo $pvkwh > $RAMDISK/pvkwhk
 
 
 

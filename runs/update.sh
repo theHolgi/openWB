@@ -1,8 +1,9 @@
 #!/bin/bash
 mosquitto_pub -t openWB/set/ChargeMode -r -m "3"
+mosquitto_pub -t openWB/system/updateInProgress -r -m "1"
 sleep 15
 cd /var/www/html/openWB
-. /var/www/html/openWB/openwb.conf
+. /var/www/html/openWB/loadconfig.sh
 echo 1 > /var/www/html/openWB/ramdisk/updateinprogress
 echo 1 > /var/www/html/openWB/ramdisk/bootinprogress
 echo "Update im Gange, bitte warten bis die Meldung nicht mehr sichtbar ist" > /var/www/html/openWB/ramdisk/lastregelungaktiv

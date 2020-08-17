@@ -102,6 +102,7 @@
 				<div class="col-lg-7">
 					Das Sammeln der Systemparameter für die Debug-Meldung kann einige Zeit in Anspruch nehmen.
 					<b>Es werden keine Benutzernamen oder Passwörter aus der Konfigurationsdatei übertragen!</b>
+					Der Debug Modus muss nicht verstellt werden.
 				</div>
 			</div>
 			<br>
@@ -151,7 +152,7 @@
 					</div>
 				</div>
 			</form>
-			
+
 
 
 		</div>  <!-- container -->
@@ -164,7 +165,7 @@
 
 		<script type="text/javascript">
 
-			$.get("settings/navbar.php", function(data){
+			$.get("settings/navbar.html", function(data){
 				$("#nav").replaceWith(data);
 				// disable navbar entry for current page
 				$('#navDebugging').addClass('disabled');

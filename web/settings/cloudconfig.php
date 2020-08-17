@@ -118,7 +118,7 @@
 							<input type="text" name="username" id="register_username" value="">
 						</div>
 						<div class="row">
-							Der Benutzername darf nur Buchstaben und Zahlen enthalten. Keine Umlaute, Sonderzeichen oder Leerzeilen
+							Der Benutzername darf nur Buchstaben enthalten. Keine Umlaute, Sonderzeichen oder Leerzeilen
 						</div>
 						<div class="row">
 							<b><label for="email">Email Adresse:</label></b>
@@ -134,7 +134,7 @@
 				<div class="row justify-content-center">
 					<div class="col text-center">
 						Open Source made with love!<br>
-						Jede Spende hilft die Weiterentwicklung von openWB vorranzutreiben<br>
+						Jede Spende hilft die Weiterentwicklung von openWB voranzutreiben<br>
 						<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 							<input type="hidden" name="cmd" value="_s-xclick">
 							<input type="hidden" name="hosted_button_id" value="2K8C4Y2JTGH7U">
@@ -154,7 +154,7 @@
 
 		<script type="text/javascript">
 
-			$.get("settings/navbar.php", function(data){
+			$.get("settings/navbar.html", function(data){
 				$("#nav").replaceWith(data);
 				// disable navbar entry for current page
 				$('#navOpenwbCloud').addClass('disabled');

@@ -12,6 +12,7 @@ loginID=str(sys.argv[1])
 password=str(sys.argv[2])
 location=str(sys.argv[3])
 country=str(sys.argv[4])
+vin=str(sys.argv[5])
 
 named_tuple = time.localtime() # get struct_time
 time_string = time.strftime("%m/%d/%Y, %H:%M:%S myrenault wake lp1", named_tuple)
@@ -37,23 +38,24 @@ kamereonaccountid = kamereon_per['accounts'][0]['accountId']
 #print(time_string,'kamereonaccountid',kamereonaccountid)
 #
 
-f = open('/var/www/html/openWB/ramdisk/zoereply6lp1', 'r')
-kamereon_token = json.loads(f.read())
-f.close()
-kamereonaccesstoken = kamereon_token['accessToken']
+#f = open('/var/www/html/openWB/ramdisk/zoereply6lp1', 'r')
+#kamereon_token = json.loads(f.read())
+#f.close()
+#kamereonaccesstoken = kamereon_token['accessToken']
 #print(time_string,'kamereonaccesstoken',kamereonaccesstoken)
 #
 f = open('/var/www/html/openWB/ramdisk/zoereply7lp1', 'r')
 vehic = json.loads(f.read())
 f.close()
-vin = vehic['vehicleLinks'][0]['vin']
+if len(vin) < 10:
+    vin = vehic['vehicleLinks'][0]['vin']
 print(time_string,'vin wakeup',vin)
-
 payload = {"data":{"type":"ChargingStart","attributes":{"action":"start"}}}
 data=json.dumps(payload)
 payloadc = {'country': country} 
-head1 = 'Bearer ' + kamereonaccesstoken
-headers = {'Content-Type':'application/vnd.api+json','x-gigya-id_token': gigya_jwttoken, 'apikey': kamereonapikey,'x-kamereon-authorization': head1} 
+#head1 = 'Bearer ' + kamereonaccesstoken
+#headers = {'Content-Type':'application/vnd.api+json','x-gigya-id_token': gigya_jwttoken, 'apikey': kamereonapikey,'x-kamereon-authorization': head1} 
+headers = {'Content-Type':'application/vnd.api+json','x-gigya-id_token': gigya_jwttoken, 'apikey': kamereonapikey} 
 reg= kamereonrooturl + '/commerce/v1/accounts/' + kamereonaccountid + '/kamereon/kca/car-adapter/v1/cars/' + vin + '/actions/charging-start'
 response=requests.post(reg, params=payloadc, data=data, headers=headers)
 responsetext  = response.text
