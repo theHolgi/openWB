@@ -4,6 +4,8 @@
 
 import Adafruit_PCA9685 as Ada
 import time
+import threading
+import time
 
 pwm = Ada.PCA9685(address=0x40)
 pwm.set_pwm_freq(100)
@@ -13,10 +15,26 @@ ch_pv   = 1
 ch_green = 15
 ch_red   = 14
 
+ON = 4095
+OFF = 0
+
 # pwm.set_pwm(ch_green, 0, )
 # pwm.set_pwm(ch_red, 0, 4095)
 
 ramdisk = "/var/www/html/openWB/ramdisk/"
+
+def blink(port):
+    t = threading.currentThread()
+    t.do_run = True
+    state = ON
+    while t.do_run:
+      try:
+        pwm.set_pwm(port, 0, state)
+      except OSError:
+        pass
+      time.sleep(1)
+      state = ON-state
+    print("Stop blinking.")
 
 def readfile(fileName):
     with open(ramdisk + fileName) as f:
@@ -52,7 +70,11 @@ def run(emparts, config):
           bezug = emparts["psupply"]
 
       red = (bezug > 6400)
-      green = readfile("ladestatus") != 0      
+      if bezug < 0 and pvwatt > 1000:
+        red = "blink"
+      green = readfile("ladestatus") != 0
+      if green and readfile("mqttladeleistung") == 0:
+        green = "blink"
       pvdc = 0
       bezugdc = 0
       
@@ -73,20 +95,34 @@ def run(emparts, config):
         else:
           log += " Grid: %dw = ----" % bezug
   
-        if red:
+        if red == "blink":
+          log += " r"
+        elif red:
           log += " R"
         if green:
           log += " G"
 
         if last['red'] != red:
-          last['red'] = red
+          if last['red'] == "blink":
+             last['red_blink'].do_run = False
           print("Red changed to %s" % red)
-          pwm.set_pwm(ch_red, 0, 4095 if red else 0)
+          if red == "blink":
+             last['red_blink'] = threading.Thread(target=blink, args=(ch_red,))
+             last['red_blink'].start()
+          else:
+             pwm.set_pwm(ch_red, 0, ON if red else OFF)
+          last['red'] = red
 
         if last['green'] != green:
-          last['green'] = green
+          if last['green'] == "blink":
+             last['green_blink'].do_run = False
           print("Green changed to %s" % green)
-          pwm.set_pwm(ch_green, 0, 4095 if green else 0)
+          if green == "blink":
+             last['green_blink'] = threading.Thread(target=blink, args=(ch_green,))
+             last['green_blink'].start()
+          else:
+             pwm.set_pwm(ch_green, 0, ON if green else OFF)
+          last['green'] = green
       except OSError:
         pass
       if config['verbose'] == '1':
@@ -96,3 +132,4 @@ def stopping(emparts, config):
     pass
 def config(config):
     pass
+
