@@ -10,7 +10,7 @@ class GO_E(DataProvider, Ladepunkt):
       pass
 
    def set(self, power:int) -> None:
-      print("%i lädt mit %i Watt" % (self.id, power))
+      self.core.logger.info("%i lädt mit %i Watt" % (self.id, power))
 
 
 def getClass():

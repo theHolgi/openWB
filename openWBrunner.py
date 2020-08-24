@@ -11,13 +11,12 @@ from openWB import *
 from openWB.OpenWBCore import OpenWBCore
 global core
 
-config = openWBconfig(mypath + 'pyconfig.conf')
 core = OpenWBCore(mypath)
 
 for source in ['wr', 'bezug', 'lp']:
    instance = 1
    while True:
-      modulename = config[source + 'modul' + str(instance)]
+      modulename = core.config[source + 'modul' + str(instance)]
       if modulename is None:
          break
       module = importlib.import_module('modules.%s_%s' % (source, modulename))

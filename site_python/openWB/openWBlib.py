@@ -72,6 +72,8 @@ class openWBconfig:
          f.write(content)
    #__setattr__ = __setitem__
 
+   def get(self, key, default=None):
+      return self.settings.get(key, default)
 
 
 class openWBValues(dict):

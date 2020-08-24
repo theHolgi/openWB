@@ -41,6 +41,7 @@ class OpenWBCore:
       self.basePath = basePath
       self.modules = []
       self.data = openWBValues()
+      self.config = openWBconfig(basePath + 'pyconfig.conf')
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.ladepunkte = []

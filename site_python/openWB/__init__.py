@@ -30,7 +30,7 @@ class Modul:
 
 class DataPackage(dict):
    """A package of Data points"""
-   def __init__(self, source: Modul, payload: dict):
+   def __init__(self, source: Modul, payload: dict = {}):
       self.source = source
       self.update(payload)
 
