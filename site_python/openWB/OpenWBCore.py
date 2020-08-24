@@ -1,39 +1,11 @@
 from . import Modul, DataPackage, setCore, getCore
 from .openWBlib import *
+from .regler import Regler
 import logging
 import time
-from collections import namedtuple
-import enum
 
 logging.basicConfig(level=logging.INFO)
 
-Request = namedtuple('Request', 'id power priority')
-
-
-class Priority(enum.IntEnum):
-   low = 1
-   medium = 2
-   high = 3
-   forced = 4
-
-
-class Regler:
-   """Eine Reglerinstanz"""
-
-   def __init__(self, wallbox):
-      self.mode = "pv"
-      self.wallbox = wallbox
-
-   def request(self, data) -> Request:
-      if self.mode == "pv":
-         if data.uberschuss > 1000:
-            return Request(self.wallbox.id, data.uberschuss/2, Priority.low)
-         else:
-            return Request(self.wallbox.id, 0, Priority.low)
-
-   def set(self, power: int) -> None:
-      """Set the given power"""
-      self.wallbox.set(power)
 
 class OpenWBCore:
    """openWB core and scheduler"""
@@ -62,12 +34,12 @@ class OpenWBCore:
             module.trigger()
          self.data.derive_values()
          self.controlcycle()
-         print("Values: " + str(self.data))
+         self.logger.debug("Values: " + str(self.data))
          time.sleep(5)
 
    def sendData(self, package: DataPackage):
       self.data.update(package)
-      self.logger.info('Received a data package: ' + str(package))
+      self.logger.info('Daten von %s: ' % package.source.name + str(package))
 
    def controlcycle(self):
       """Regelzyklus"""

@@ -18,7 +18,7 @@ class SMASHM(DataProvider):
 
       #                filename:  channel
       mapping = {'evuhu': 'frequency'}
-      phasemapping = {'bezuga%i': {'from': 'i%i', 'sign': True},
+      phasemapping = {'evua%i': {'from': 'i%i', 'sign': True},
                       'evuv%i': {'from': 'u%i'},
                       'evupf%i': {'from': 'cosphi%i'}
                       }
