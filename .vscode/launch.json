@@ -1,0 +1,24 @@
+{
+   // Use IntelliSense to learn about possible attributes.
+   // Hover to view descriptions of existing attributes.
+   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+   "version": "0.2.0",
+   "configurations": [
+      {
+         "name": "Python: lademodus",
+         "type": "python",
+         "request": "launch",
+         "program": "${workspaceFolder}/lademodus.py",
+         "console": "integratedTerminal",
+         "args": [ "3" ]            
+      },
+      {
+         "name": "Python: openWB",
+         "type": "python",
+         "request": "launch",
+         "program": "${workspaceFolder}/openWBrunner.py",
+         "console": "integratedTerminal",
+         "args": [ ]            
+      }
+   ]
+}

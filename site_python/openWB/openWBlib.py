@@ -23,10 +23,10 @@
 #####
 
 import os
-import sys
 import unittest
 import subprocess
 import logging
+from typing import Iterator
 
 basepath = '/var/www/html/openWB/'
 
@@ -52,6 +52,7 @@ class openWBconfig:
 
    def __getitem__(self, key):
       return self.settings.get(key)
+   #__getattr__ = __getitem__
 
    def __setitem__(self, key, value):
       import re
@@ -69,25 +70,84 @@ class openWBconfig:
          content += line
       with open(self.configfile, 'w') as f:
          f.write(content)
+   #__setattr__ = __setitem__
 
 
-class openWBValues:
+
+class openWBValues(dict):
+   """
+   Represents openWB values dictionary
+   behaves like a dictionary
+   """
+   def __init__(self):
+      self.sumvalues = set()
+
+   def update(self, data: "DataPackage"):
+      if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
+         for (key, value) in data.items():
+            self[key + str(data.source.id)] = value
+            self.sumvalues.add(key)
+      else:
+         for key, value in data.items():
+            self[key] = value
+      self.fast_derive_values(data)
+
+   def __getattr__(self, item):
+      return self[item]
+
+   def __setattr__(self, item, value):
+      self[item] = value
+
+   def get(self, key, default=0):
+      """Returns the value or the given default, if not available"""
+      return self[key] if key in self else default
+
+   def get_all_phased(self, basename: str) -> Iterator:
+       return (self[basename + str(phase)] for phase in range(1, 4))
+
+   def fast_derive_values(self, data: "DataPackage"):
+      """Immediately derive values from a new data package"""
+      if 'evua1' in data:
+         self.maxevu = max(data['evua' + str(phase)] for phase in range(1, 4))
+         self.lowevu = min(data['evua' + str(phase)] for phase in range(1, 4))
+         self.schieflast = self.maxevu - self.lowevu
+
+   def derive_values(self):
+      """Calculate derived values"""
+      for key in self.sumvalues:
+         sumVal = 0
+         for instance in range(1, 10):
+            value = self.get(key + str(instance))
+            if value is None:
+               break
+            sumVal += value
+         self[key] = sumVal
+      self.uberschuss = -self.wattbezug
+      self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('ladeleistung') - self.get('speicherleistung')
+
+class ramdiskValues:
    """
    Represents the ramdisk of openWB
    behaves like a dictionary
    """
    def __init__(self, ramdiskpath = basepath + 'ramdisk/'):
-      if ramdiskpath[-1] != '/': ramdiskpath += '/'
+      if ramdiskpath[-1] != '/':
+         ramdiskpath += '/'
       self.cache = {}
-      self.path  = ramdiskpath
+      self.path = ramdiskpath
+      self.sumvalues = set()
+
    def __getitem__(self, key):
       if key not in self.cache: self.cache[key] = self._get(key)
       debug("%s => %s" % (key, self.cache[key]))
       return self.cache[key]
+   #__getattr__ = __getitem__
+
    def __setitem__(self, key, value):
       self.cache[key] = value
       debug("%s <= %s" % (key, value))
       self._put(key, value)
+   #__setattr__ = __setitem__
 
    def _get(self, name):
       """Get content of Ramdisk file <name>"""
@@ -110,7 +170,7 @@ def log(message):
 
 
 def debug(message):
-   if openWBconfig()['debug'] != 0:
+   if True or openWBconfig()['debug'] != 0:
       logging.debug(message)
 
 def setCurrent(req):
