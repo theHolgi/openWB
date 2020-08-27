@@ -20,13 +20,16 @@ class OpenWBCore:
       setCore(self)
 
    @staticmethod
-   def add_module(module: Modul):
-      getCore().modules.append(module)
+   def add_module(module: Modul, configprefix: str) -> None:
+      core = getCore()
+      core.modules.append(module)
       if hasattr(module, 'type'):
          if module.type == "wr":
-            getCore().pvmodule += 1
+            core.pvmodule += 1
          elif module.type == "lp":
-            getCore().ladepunkte.append(Regler(module))
+            core.ladepunkte.append(Regler(module))
+      module.configprefix = configprefix
+      module.setup(core.config)
 
    def run(self):
       while True:

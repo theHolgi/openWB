@@ -41,6 +41,8 @@ class openWBconfig:
       try:
          with open(configfile, 'r') as f:
             for line in f.readlines():
+               if line[0] == '#' or line[0] == '\n':
+                  continue
                key, value = line.split('=')
                try:
                   value = int(value)   # Try to convert to integer
@@ -82,13 +84,13 @@ class openWBValues(dict):
    behaves like a dictionary
    """
    def __init__(self):
-      self.sumvalues = set()
+      self.sumvalues = set(['pvwatt', 'llaktuell'])
 
    def update(self, data: "DataPackage"):
       if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
          for (key, value) in data.items():
             self[key + str(data.source.id)] = value
-            self.sumvalues.add(key)
+#            self.sumvalues.add(key)
       else:
          for key, value in data.items():
             self[key] = value
@@ -125,7 +127,7 @@ class openWBValues(dict):
             sumVal += value
          self[key] = sumVal
       self.uberschuss = -self.wattbezug
-      self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('ladeleistung') - self.get('speicherleistung')
+      self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
 
 class ramdiskValues:
    """

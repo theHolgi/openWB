@@ -6,10 +6,8 @@ import struct
 class SMASHM(DataProvider):
    """SMA Smart home Meter (or Energy Meter)"""
 
-   def __init__(self, instance_id: int):
-      super().__init__(instance_id)
-      self.serial = self.core.config.get('bezugmodul%i_serial' % self.id)
-
+   def setup(self, config) -> None:
+      self.serial = config.get(self.configprefix + '_serial')
 
    def trigger(self):
       ipbind = '0.0.0.0'
