@@ -1,3 +1,4 @@
+from typing import Union
 
 core = None  # The OpenWBcore singleton
 
@@ -12,12 +13,6 @@ class Event:
    """Abstract class for an event"""
    pass
 
-# A decorator for Modules to register with the core.
-#def OpenWBModule(cls):
-#   getCore().add_module(cls)
-#   return cls
-
-
 # Properties that every Modul has:
 # name - Its name, built as CLASSNAME or CLASSNAME_<id> (when multiple instances)
 # configprefix - Prefix for configuration
@@ -28,8 +23,12 @@ class Event:
 # core.data   - Data
 
 
-class Modul:
-   """Abstract class for a module"""
+class Modul(object):
+   """
+   Abstrakte Klasse für ein Modul.
+   Konkrete Klassen dürften sich in erster Linie nicht hiervon, sondern von DataProvider ableiten.
+   """
+
    def __init__(self, instance_id: int):
       name = self.__class__.__name__
       if hasattr(self.__class__, 'multiinstance') and self.__class__.multiinstance:
@@ -40,12 +39,12 @@ class Modul:
       self.core = getCore()
 
    def setup(self, config):
-      """Setup the module (another possiblinity than overriding the constructor)"""
+      """Setup the module (another possibility than overriding the constructor)"""
       pass
 
    def event(self, event: Event):
       """Process an event"""
-      raise NotImplementedError
+      pass
 
 
 class DataPackage(dict):
@@ -56,30 +55,65 @@ class DataPackage(dict):
 
 
 class DataProvider(Modul):
-   """Abstract class for a data provider"""
+   """Abstrakte Klasse eines Daten sendenden Moduls.
+   Ein EVU- (Bezug-)Modul leitet sich von DataProvider und keinem Mix-in ab.
+   """
 
    def trigger(self):
-      raise NotImplementedError
+      """
+      Trigger Datenerfassung. Als Bestätigung muss(!) ein Aufruf von self.core.sendData erfolgen.
+      Ein Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast
+      """
+      ...
 
 class Ladepunkt:
-   """Identifiziert einen Ladepunkt"""
+   """Mix-in Klasse eines Ladepunktes.
+   Konkrete Ladepunkte leiten sich von "DataProvider" und "Ladepunkt" ab.
+   """
    multiinstance = True
    type = "lp"
+   phasen = 3   # Init worst-case
 
-# Ein Ladepunkt sollte folgende Datenpunkte senden:
-# llaktuell - Aktuelle Ladeleistung
+   def set(self, ampere: int):
+      """
+      Setze Sollstrom. 0=Ladung stoppen
+      """
+      ...
+
+# Properties eines Ladepunktes:
+# - phasen - Anzahl erkannter benutzter Phasen
+# Ein Ladepunkt muss folgende Datenpunkte senden:
+# - llaktuell - Aktuelle Ladeleistung
 # Optionale Datenpunkte:
-# plugstat - Stecker eingesteckt (1|0)
-# chargestat - Auto lädt (1|0)
-# llkwh - Gesamte Lademenge
-# llv1, llv2, llv3 - Spannung
-# lla1, lla2, lla3 - Strom
+# - plugstat - Stecker eingesteckt (1|0)
+# - chargestat - Auto lädt (1|0)
+# - llkwh - Gesamte Lademenge
+# - llv1, llv2, llv3 - Spannung
+# - lla1, lla2, lla3 - Strom
 
 
 class PVModul:
-   """Identifiziert einen Wechselrichter"""
+   """Mix-in Klasse eines Wechselrichters.
+      Konkrete Wechselrichter leiten sich von "DataProvider" und "PVModul" ab.
+   """
    multiinstance = True
    type = "wr"
 
 # Ein Wechselrichter sollte folgende Datenpunkte senden:
-#
+# - pvwatt: Momentanleistung (W)
+# Optional:
+# - pvkwh: Gesamte Einspeiseleistung (kWh)
+
+
+def amp2amp(amp: Union[float,int]) -> int:
+   """Limitiere Ampere auf min/max und runde ab auf Ganze"""
+   config = getCore().config
+   if amp < config.minimalstromstaerke:
+      amp = config.minimalstromstaerke
+   elif amp > config.maximalstromstaerke:
+      amp = config.maximalstromstaerke
+   return int(amp)
+
+def power2amp(power:int, phasen: int) -> int:
+   """Konvertiere Leistung zu (ganzen) Ampere"""
+   return amp2amp(power/phasen/230)

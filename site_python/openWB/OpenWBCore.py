@@ -2,6 +2,7 @@ from . import Modul, DataPackage, setCore, getCore
 from .openWBlib import *
 from .regler import Regler
 import logging
+from typing import Callable
 import time
 
 logging.basicConfig(level=logging.INFO)
@@ -31,14 +32,20 @@ class OpenWBCore:
       module.configprefix = configprefix
       module.setup(core.config)
 
-   def run(self):
-      while True:
+   def run(self, loops: int = 0):
+      """Run the given number of loops (0=infinite)"""
+      if loops == 0:
+         condition = lambda: True
+      else:
+         done = (i < loops for i in range(loops+1))
+         condition = lambda: next(done)
+      while condition():
          for module in self.modules:
             module.trigger()
          self.data.derive_values()
          self.controlcycle()
          self.logger.debug("Values: " + str(self.data))
-         time.sleep(5)
+#         time.sleep(5)
 
    def sendData(self, package: DataPackage):
       self.data.update(package)

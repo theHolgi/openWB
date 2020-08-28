@@ -26,7 +26,7 @@ import os
 import unittest
 import subprocess
 import logging
-from typing import Iterator
+from typing import Iterator, Any, Optional
 
 basepath = '/var/www/html/openWB/'
 
@@ -54,7 +54,7 @@ class openWBconfig:
 
    def __getitem__(self, key):
       return self.settings.get(key)
-   #__getattr__ = __getitem__
+   __getattr__ = __getitem__
 
    def __setitem__(self, key, value):
       import re
@@ -102,12 +102,15 @@ class openWBValues(dict):
    def __setattr__(self, item, value):
       self[item] = value
 
-   def get(self, key, default=0):
+   def get(self, key, id: Optional[int]=None, default=0) -> Any:
       """Returns the value or the given default, if not available"""
+      if id is not None:
+         key = key+str(id)
       return self[key] if key in self else default
 
    def get_all_phased(self, basename: str) -> Iterator:
-       return (self[basename + str(phase)] for phase in range(1, 4))
+      """Iterates basename<i> over phase i=1..3"""
+      return (self[basename + str(phase)] for phase in range(1, 4))
 
    def fast_derive_values(self, data: "DataPackage"):
       """Immediately derive values from a new data package"""
@@ -212,12 +215,12 @@ class TestWBlib(unittest.TestCase):
       self.assertEqual(config2['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
 
    def test_values(self):
-      values = openWBValues('/tmp')
+      values = ramdiskValues('/tmp')
       values['test'] = 'test'
       values['test2'] = 5
       self.assertTrue(os.path.isfile('/tmp/test'))
       self.assertTrue(os.path.isfile('/tmp/test2'))
-      values2 = openWBValues('/tmp')
+      values2 = ramdiskValues('/tmp')
       self.assertEqual(values2['test'],  'test', "Retrieve a string value")
       self.assertEqual(values2['test2'], 5)
 

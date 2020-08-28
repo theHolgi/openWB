@@ -8,14 +8,16 @@ class GO_E(DataProvider, Ladepunkt):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
-      self.phases = 3  # if in doubt, ...
 
+   # DataProvier trigger
    def trigger(self):
       try:
          with request.urlopen('http://%s/status' % self.ip, timeout=self.timeout) as req:
-            if req.getcode() == 200:
-               goe = json.loads(req.read().decode())
-               self.laststate = goe
+            if req.getcode() != 200:
+               self.core.logger.info('HTTP error on %s' % self.ip)
+               return
+            goe = json.loads(req.read().decode())
+            self.laststate = goe
             u1 = int(goe['nrg'][0])   # V
             u2 = int(goe['nrg'][1])
             u3 = int(goe['nrg'][2])
@@ -43,16 +45,13 @@ class GO_E(DataProvider, Ladepunkt):
    def event(self):
       pass
 
-   def set(self, power:int) -> None:
-      self.core.logger.info("%i lädt mit %i Watt" % (self.id, power))
+   # Ladepunkt setter
+   def set(self, ampere: int) -> None:
+      self.core.logger.info("%i lädt mit %i Ampere" % (self.id, ampere))
       payload = {}
-      ampere = power / self.phases
-      if ampere < 6:
-         ampere = 6
-      elif ampere > 32:
-         ampere = 32
-      if self.laststate['alw'] != str(self.core.data.get('ladestatus%i' % self.id,0)): # Allow
-         payload['alw'] = str(self.core.data.ladestatus)
+      aktiv = '1' if ampere > 0 else '0'
+      if self.laststate['alw'] != aktiv:  # Allow
+         payload['alw'] = aktiv
       if self.laststate['amp'] != str(ampere):  # Power
          payload['amp'] = str(ampere)
 
