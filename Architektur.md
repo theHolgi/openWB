@@ -59,50 +59,195 @@ Data Provider (auch Aktoren) senden ein Datenpaket an den Core und melden damit 
 7) Warten auf nächsten Zyklus
 
 
-# Leistungsarbitrierung
-Ladepunkte (d.h. deren Regler) fordern eine Liste von Leistung kombiniert mit Priorität an
-- "Sofortladen": 
-  * Muss nichts anfordern, lädt einfach sowieso
-  * Schmälert das Budget für andere LPs über seinen IST-Strom
-* "PV": 
-  * (Max-I)*(Phasen) kW, Prio: low
-* "PV" mit SOC < 50%:
-  * (Max-I)*(Phasen) kW, Prio: low
-  * Minimalleistung, Prio: medium
+# Leistungsarbitrierung v2
 
-Mehrere Ladepunkte bekommen das Budget anhand ihrer Priorität aufgeteilt.
-Einschalt- und Ausschaltverzögerung wird vom Ladepunkt selbst verwaltet.
- - LP in Ausschaltverzögerung fordert keine Leistung an, beansprucht aber weiter Budget (siehe Arbitrierung unten)
- - LP in Einschaltverzögerung fordert Min-Leistung an, um zu testen ob ihm diese (kontinuierlich) genehmigt wird.
+## Regelgruppen
+
+Es gibt (mindestens) 2 Regelgruppen; jeder Ladepunkt ist genau einer Gruppe zugeordnet:
+
+- PV 
+- PV peak shaving
+- Sofortladen (Null-Regler, aber zum Aufruf der LPs die in dieser Gruppe sind)
+
+"PV" und "PV peak shaving" funktionieren im Wesentlichen gleich, aber haben verschiedene Regelbereiche.
+PV möchte Überschuss nahe 0 halten, ohne Übertritt nach unten
+PV peak shaving möchte Überschuss nahe Limit halten, ohne Übertritt nach oben
+
+"Sofortladen" wird nicht geregelt. Der Ladepunkt wird nur aufgerufen und stellt seinen Soll-Strom direkt ein.
+
+## Erkennung gesättigter / blockierter Ladepunkt
+
+Eine Nicht-Ladebereitschaft (kein Fahrzeug angesteckt) erkennt der LP wenn technisch möglich selbst und fordert keine Leistung an.
+Ein gesättigtes Fahrzeug (Nimmt nicht mehr als die momentane Leistung ab) erkennt der LP selbst. 
+Erhöhung der Leistung wird mit der niedrigsten Priorität gesendet, um nur zum Zuge zu kommen wenn kein anderer die Leistung anfordert.
+
+## Einschalt- / Ausschaltverzögerung
+
+Werden vom Ladepunkt selbst gezählt.
+TODO: LP in Ausschaltverzögerung muss dem Arbiter signalisieren, zunächst andere LPs zu reduzieren.
+
+## Kommunikation LP <-> Regler
+
+Ladepunkte generieren eine Liste:
+- minimales Leistungsinkrement (z.B. 0 -> 6A oder gar nicht)
+- maximales Leistungsinkrement (Platz bis Pmax)
+- minimales Leistungsdekrement (ebenso)
+- maximales Leistungsdekrement (Platz bis Pmin)
+- Flag, LP in Einschaltverzögerung. Zugeteilte Leistung muss nicht von anderen abgezogen werden, aber bitte zuteilen 
+damit der LP die Verzögerung zählen kann.
+
+Inkremente sind mit Priorität versehen. Standardprorität ist am LP konfiguriert, 
+darüber lassen sich Ladepunkte untereinander sowie gegenüber Batteriespeicher priorisieren.
+
+z.B. Ein LP mit SOC < Wunsch-% liefert:
+
+- P+min prio medium: 1A * 230V*1 Ph (in Stufen von 1A)
+- P+max prio medium: 3A * 230V* 1 Ph (noch 3A, dann ist Wunsch-P zum SOC Laden)
+[- P+max prio low:   12A * 230V*1 Ph (noch 12A bis I-max erreicht)]
+ Wird erst gesendet, wenn die 3A Anforderung erfüllt ist.
+- P-min prio medium: 1A * 230V*1Ph (in Stufen von 1A, aber nur erlaubt wenn mit Prio "high" abgezogen wird)
+- P-max prio medium: 600W (so viel lädt er über Pmin)
+
+z.B. ein Batteriespeicher liefert:
+- P+min 10W prio low -> Kann in 10W Schritten Leistung verändern
+- P+max 3000W prio low -> Könnte noch 3kW schneller
+- P-min 10W prio low -> Kann auch um 10W runter
+- P-max = llaktuell -> Kann bis auf 0W sofort runterregeln
+
+z.B. Ladepunkt an gesättigtem Fahrzeug:
+- P+min 1A * 230V*1 Ph prio idle -> Wenn noch Leistung frei ist, probieren wir 1A mehr. Sonst bleiben wir bei aktuell.
+- P+max 10A * 230V*1 Ph prio idle -> so viel mehr ginge von I-max. Aber hat ja keinen Sinn.
+- P-min 1A * 230V*1 Ph prio low -> was lädt, das lädt. Wegnehmen gegen meine Default-Prio.
+- P-max 600W (Differenz zu Pmin)
+
+z.B. ladebereiter Ladepunkt, aktuell "aus":
+- Flag "ondelay"
+- P+min 6A * 230V * 1Ph -> Einschalten mit 6A oder gar nicht
+- P+max 16A * 230V * 1Ph -> Gerne auch direkt auf 16A
+- P-min 0W prio egal -> Weniger als nichts geht nun gar nicht
+- P-max 0W
+
+Ladepunkt mit "Minimalstrom" und Lädt mit diesem:
+- P-min 0A
+- P-max 0A
+- P+min/max analog oben
+
+Ladepunkt auf minP und die Sonne ist aus:
+- P+min 1A * 230V * 1Ph -> Erhöhen geht von Seiten des LP ja schon. Wird nur nichts geben.
+- P+max 10A * ...
+- P-min 6A * 230V * 1Ph -> Abschalten gibt ja 6A frei.
+- P-max 6A ...          -> Ist gleichzeitig die maximal freigebbare Leistung.
 
 
-Zuteilung der Leistung muss bei mehreren LPs ein bisschen intelligent erfolgen:
+Szenario: 2000W Überschuss, 2LP aus
+-> beide signalisieren "P+min 1300W"
+-> Zuteilung Einschalten nur an den ersten.
 
-Ein LP nimmt vom verfügbaren Budget idR nur den IST-Ladestrom weg, nicht das ihm zugeteilte Budget.
-(Kein Auto angeschlossen, Auto lädt langsamer als ihm erlaubt ist)
+Szenario: 2LP gleiche Prio; einer Lädt mit 2000W, einer aus. Überschuss 1000W.
+-> 3000W Budget. Kann LP2 eingeschaltet werden?
+-> LP1 signalisiert P-max 700W. Also reicht es.
+-> LP2 wird freigegeben. Solange LP2 ondelay signalisiert, bekommt LP1 die vollen 3000W
+-> Wenn LP2 einschaltet, ist Flag "ondelay" weg. LP1 wird die Leistung abgezogen.
+Sollten sich zwischendurch die Bedingungen ändern (Weniger PV-Leistung...), wird LP2 wieder gesperrt und resettet counter.
 
-Andererseits darf die Leistung nicht an mehreren LPs gleichzeitig über das Verfügbare hinaus erhöht werden,
-sonst drohen Überschwinger.
+Szenario: 2LP laden: low-Prio 2000W, high-Prio 1000W. Kein Überschuss.
+Low-Prio soll abgeschaltet werden, damit high-Prio schneller kann.
+-> Zuteilung (-P-max) an LP1. Zuteilung "llaktuell" an LP2 (Status quo bis Leistung verfügbar)
+-> Nächste Loop ist Überschuss da. Wird an LP2 zugeteilt.
 
-a) Es ist mehr Leistung verfügbar als aktuell abgenommen wird. Prio-mäßig muss auch kein LP verringert werden:
+## Funktionsweise Arbiter
 
-* Restbudget -= Summe aller IST 
-* Ein LP lädt nicht mit zuletzt zugewiesenem Strom? &rarr; Zuweisung von I+1. Reduzierung des Budgets um 1A
-* Aufteilung des Restbudgets auf die anderen LPs.
+- Ermittle den Zielkorridor des Überschusses.
+z.B. +200W bis +600W sei eingestellt. Liegt der aktuelle Überschuss darüber -> Leistungserhöhung
+Liegt er darunter -> Leistungsreduktion
+Liegt er darin -> Leistungsverschiebung
 
-b) ... aber prio-mäßig muss ein LP verringert werden:
-Wir wissen ja nicht, ob der High-Prio LP alle Leistung abnimmt. Daher:
-- Low-Prio LP bekommt aktuelles IST (außer er hatte eh 0, d.h. ist in Ausschaltverzögerung. Die soll nicht resettet werden.)
-- High-Prio lädt mit zuletzt zugeteiltem Strom? &rarr; Erhöhe High-Prio LP(s)
-- Tut er gar nicht &rarr; setze High-Prio auf IST+1A, erhöhe Low-Prio.
+* Einschaltversuch (in Erhöhung + Verschiebungsmodus)
+Ab jetzt werden abgeschaltete LPs nicht mehr berücksichtigt.
 
-c) Bilanz ist ausgeglichen, aber es müsste von einem low-Prio Leistung zum high-Prio verlagert werden:
-* High-Prio Lädt mit dem zuletzt zugeteilten Strom?
-  * nein: Nichts tun 
-  * ja: Verringere Strom am Low-Prio um 1A. Erhöhe High-Prio um 1A.
+a) Leistungserhöhung; gleiche Prioritäten gleichzeitig bedienen:
+- sortiere P+min nach Prioritäten (highest first).
+- sortiere als 2. Key die mit niedrigster ist-Leistung nach oben
+Innerhalb der höchsten Priorität:
+- Plane die Differenz zum Max-Lader ein, wenn im Korridor P+min/P+max
+ ( < P+min: Keine Anpassung, > P+max: nur P+max)
+-  ist der berechnete Überschuss im Korridor, höre auf.
+-  verlässt der berechnete Überschuss den Korridor, ignoriere letzte Aktion und höre auf.
+- Angepasst, aber Budget übrig? Fange von vorne an:
+ - Weitere Erhöhung des Restbudgets in gleichen Teilen auf alle, nicht über P+max hinaus.
+ - sollte für alle LPs in dieser Prio P+max ausgeschöpft sein und immer noch Budget vorhanden:     
+ setze in nächster Prio fort.
 
-d) Bilanz ist negativ.
-* Verringere Strom an Low-Prio LP(s)
-* Wenn das reicht, und der Soll-Strom an LPs nicht unter Min-A ist &rarr; Ende
-- Wenn doch, verringere auch High-Prio LP in der Annahme daß die Low-Prio LPs Min-A ziehen.
+Szenario: 3 LP; alle aus. Überschuss: 3000W
+Leistung kann aktuell nicht abgegeben werden. Aber nur LP1+2 können eingeschaltet werden.
+Szenario: 4LP; LP4 lädt auf 1000W. Überschuss: 3000
+LP4 kann zunächst auf Max gestellt werden.
+-> Step 2: LP4 auf 3700W, Überschuss: 300W
+   LP4 signalisiert nun P-max (prio high) >2000W. LP1 muss und kann eingeschaltet werden.
+
+
+Szenario: LP1 lädt mit 1000W, LP2 mit 2000W (gleiche Prio).
+Korridor: +200 bis +600W, ist: +1000W
+=> LP1 wird um 400W erhöht; +600W erreicht
+
+          One two                         Spills             
+        ist  P+min     P+max               P+min     P+max     
+LP1    1000  230W low   *800W low*1       1000   230W low  *230W low*2 
+LP2    2000  *230W low*2 800W low         2000   230W med  *500W med*1
+LP3    3000  230W low    230W low         3000   *230W low*3  1000W low     
+Übersch 1500 -> +800LP1, +230LP2 -> 470   1500  -> +500LP2,+230LP1,+230LP3 -> 540
+Korridor: +200 bis +600W
+
+
+b) Leistungsreduktion; gleiche Prioritäten gleichzeitig bedienen:
+Ausschaltbare LPs werden zunächst ignoriert.
+- sortiere P-min nach Prioritäten (lowest first)
+- sortiere als 2. Key die LPs nach aktueller Leistung.
+- Innerhalb der gleichen Priorität, reduziere die Leistung in Richtung min-Lader,
+  aber limitiert auf P-min bis P-max.
+- Im Korridor -> fertig
+- Weitere Verringerung des Budgets in gleichen Teilen auf alle, nicht über P-min hinaus.
+ - sollte für alle LPs in dieser Prio P-max ausgeschöpft sein und immer noch Notwendigkeit vorhanden:
+ setze in nächster Prio fort.
+Wenn am Ende angelangt:
+- Ausschalten von LPs sortiert nach Priorität (lowest first) bis Budget erreicht.
+
+
+             One two                            One can do it              switch off
+           ist  P-min     P-max                 P-min     P-max                 P-min
+    LP1    1000  230W low  800W low       1000   230W low  230W low      Imin   1300 med
+    LP2    2000  230W low  *800W low*2    2000   230W med  500W med      Imin   1300 low
+    LP3    3000  230W low  *230W low*1    3000   230W low  *2000W low*1 
+    Übersch -1000 -230LP3,-770LP2 -> 200  -1000 -> -1200LP3 -> 200       -2000 -> -LP2,-LP1 -> +600
+    Korridor: +200 bis +600W
+
+c) Leistungsverschiebung
+- sortiere P+min nach Prio (highest first); 2. key Ladeleistung (lowest first). Außer LP ist aus.
+- sortiere P-min nach Prio (lowest first); 2. key Ladeleistung (highest first). Ignoriere LP winner (P+min).
+- Eine Liste ist leer -> Ende
+- wenn die Prio von P-min höher ist als die von P+min -> Ende
+- Arbitriere die P-min Anforderung. 
+- Warte darauf, daß in der nächsten Loop die Überschussverteilung stattfindet.
+
+         High steals low                   Equalize           Ignoring self in P-min
+        ist  P+min     P-min             P+min   P-min              P+min     P-min
+LP1    1000  1A low   *1A low*   
+LP2    1000  1A med    1A high    2000   1A low    *1A low*   2000 *1A med* --1A low--
+LP3    1000  *1A high* 1A high    1500  *1A low*   1A low     1500  1A low   *1A low*
+
+d) Einschaltversuch für deaktivierte LPs
+- sortiere P+min der ausgeschalteten LPs nach Priorität.
+Top Prio LP soll eingeschaltet werden.
+- Ermittle Budget: Budget ist Überschuss - (lower Bound für Überschuss)
+- Addiere P-max aller gleichen oder niedrigeren Priorität zum Budget.
+- Wenn ausreichend, arbitriere diesen LP.
+Es wird nur 1 LP auf einmal in Betrieb genommen.
+
+               LP3 is higher prio
+          P_akt     P+min   P-max
+    LP1   3000              *2000* low
+    LP2   off    *1300W low*
+    LP3   2000               1000 med
+    Übersch 500, Korridor 200...
+    Budget = 300 + 2000
 
