@@ -1,8 +1,8 @@
 from . import Modul, DataPackage, setCore, getCore
 from .openWBlib import *
-from .regler import Regler
+from .regler import *
 import logging
-from typing import Callable
+from typing import Iterable
 import time
 
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +17,7 @@ class OpenWBCore:
       self.config = openWBconfig(basePath + 'pyconfig.conf')
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
-      self.ladepunkte = []
+      self.regelkreise = dict()
       setCore(self)
 
    @staticmethod
@@ -28,7 +28,10 @@ class OpenWBCore:
          if module.type == "wr":
             core.pvmodule += 1
          elif module.type == "lp":
-            core.ladepunkte.append(Regler(module))
+            lpmode = core.config.get(configprefix + '_mode')
+            if lpmode not in core.regelkreise:
+               core.regelkreise[lpmode] = Regelgruppe(lpmode)
+            core.regelkreise[lpmode].add(module)
       module.configprefix = configprefix
       module.setup(core.config)
 
@@ -43,23 +46,14 @@ class OpenWBCore:
          for module in self.modules:
             module.trigger()
          self.data.derive_values()
-         self.controlcycle()
          self.logger.debug("Values: " + str(self.data))
+         for gruppe in self.regelkreise.values():
+            gruppe.controlcycle(self.data)
 #         time.sleep(5)
 
    def sendData(self, package: DataPackage):
       self.data.update(package)
       self.logger.info('Daten von %s: ' % package.source.name + str(package))
-
-   def controlcycle(self):
-      """Regelzyklus"""
-      requests = [lp.request(self.data) for lp in self.ladepunkte]
-      requests.sort(key=lambda req: req.priority)
-      zugeteilt = 0
-      for request in requests:
-         if request.power <= self.data.uberschuss:
-            zugeteilt += request.power
-            self.ladepunkte[request.id-1].set(request.power)
 
 
 

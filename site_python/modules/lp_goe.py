@@ -8,6 +8,7 @@ class GO_E(DataProvider, Ladepunkt):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
+      self.plugged = False
 
    # DataProvier trigger
    def trigger(self):
@@ -24,26 +25,34 @@ class GO_E(DataProvider, Ladepunkt):
             a1 = int(goe['nrg'][4])/10  # 0.1A
             a2 = int(goe['nrg'][5])/10
             a3 = int(goe['nrg'][6])/10
-            power = int(goe['nrg'][11]) * 10  # 0.01kW
+            self.actP = int(goe['nrg'][11]) * 10  # 0.01kW
 
             # car status 1 Ladestation bereit, kein Auto
             # car status 2 Auto lädt
             # car status 3 Warte auf Fahrzeug
             # car status 4 Ladung beendet, Fahrzeug verbunden
-            plugged = 0 if goe['car'] == '1' else 1
-            charging = 1 if goe['car'] == '2' else 0
+            self.plugged = goe['car'] != '1'
+            self.charging = goe['car'] == '2'
             self.core.sendData(DataPackage(self, {
                'llv1': u1, 'llv2': u2, 'llv3': u3,
                'lla1': a1, 'lla2': a2, 'lla3': a3,
                'llkwh': int(goe['eto'])/10,  # 0.1kWh
-               'plugstat': plugged,
-               'chargestat': charging,
-               'llaktuell': power}))
+               'plugstat': self.plugged,
+               'chargestat': self.charging,
+               'llaktuell': self.actP}))
       except error.URLError:
          pass
 
    def event(self):
       pass
+
+   def powerproperties(self):
+      if not self.plugged:
+         return PowerProperties(0, 0, 0)
+      else:
+         return PowerProperties(minP=self.minP,
+                                maxP=self.maxP,
+                                inc=self.phasen*230)
 
    # Ladepunkt setter
    def set(self, ampere: int) -> None:
@@ -54,6 +63,7 @@ class GO_E(DataProvider, Ladepunkt):
          payload['alw'] = aktiv
       if self.laststate['amp'] != str(ampere):  # Power
          payload['amp'] = str(ampere)
+
 
 def getClass():
    return GO_E

@@ -1,6 +1,6 @@
 import enum
-from typing import Set
-from . import power2amp
+from typing import Set, Optional
+from . import power2amp, PowerProperties
 
 class Priority(enum.IntEnum):
    low = 1
@@ -9,13 +9,36 @@ class Priority(enum.IntEnum):
    forced = 4
 
 # dataclass would be great here, but requires Python 3.7
-class Request:
-   def __init__(self, id: int, power: int = 0, amp: int = 0, priority: Priority = Priority.low, flags: Set[str] = None):
-      self.id = id
-      self.power = power
-      self.amp = amp
+class RequestPoint:
+   def __init__(self, key: str, value: int, priority: Optional[Priority] = None):
+      self.key = key
+      self.value = value
       self.priority = priority
+
+   def __str__(self):
+      return str(self.value)
+
+class Request(dict):
+   """
+   Ein Request bildet die Möglichkeiten eines Ladepunktes ab, seine Leistung zu verändern.
+   - min+P Mindest Leistungsinkrement
+   - max+P Maximum Listungsinkrement
+   - min-P Mindest Leistungsdekrement
+   - max-P Maximum Leistungsdekrement
+   jeder dieser Schlüssel hat einen Wert und eine Priorität.
+   """
+   def __init__(self, id: int, prio: int = 1, flags: Set[str] = None):
+      self.id = id
+      self.defaultprio = prio
       self.flags = set() if flags is None else flags  # can't do this in function default, as this will return the same single object for every usage.
+
+   def __iadd__(self, point: RequestPoint) -> "Request":
+      if point.priority is None:
+         point.priority = self.defaultprio
+      point.owner = self.id
+      self[point.key] = point
+      return self
+
 
 # Arbeitsweise:
 # Definition:
@@ -31,69 +54,41 @@ class Request:
 
 class Regler:
    """Eine Reglerinstanz"""
+   mode = "pv"
 
-   def __init__(self, wallbox):
-      self.mode = "pv"
+   def __init__(self, wallbox: "Ladepunkt"):
       self.wallbox = wallbox
       self.oncount = 0
       self.offcount = 0
       self.blockcount = 0
       self.state = 'idle'
-      self.request = self.pv_request_idle
-      self.set = self.set_idle
-      self.lastrequest = None
-      self.current_i = 0
-      self.current_p = 0
       self.config = self.wallbox.core.config
 
-   @property
-   def minP(self):
-      return self.config.minimalstromstaerke * self.wallbox.phasen * 230
-
-   @property
-   def maxP(self):
-      return self.config.maximalstromstaerke * self.wallbox.phasen * 230
-
-   def pv_request_idle(self, data: "openWBValues") -> Request:
-      """request function for PV/idle and PV/init mode"""
-      if data.get('plugstat', id=self.wallbox.id, default=1) == 0:
-         # Auto (bekannt) nicht eingesteckt: Keine Anforderung nötig
-         return Request(id=self.wallbox.id)
-      if data.uberschuss <= self.minP:
-         self.lastrequest = Request(id=self.wallbox.id)
+   def request(self) -> Request:
+      props = self.wallbox.powerproperties()
+      request = Request(self.wallbox.id, prio=self.wallbox.prio)
+      if self.wallbox.charging:
+         request.flags.add('on')
+         if self.wallbox.actP - props.inc >= props.minP:  # Verringerung noch möglich
+            request += RequestPoint('min-P', props.inc)
+            request += RequestPoint('max-P', self.wallbox.actP - props.minP)
+         else:  # Nein, nur ganz ausschalten
+            request.flags.add('min')
+            request += RequestPoint('min-P', props.minP)
+            request += RequestPoint('max-P', props.minP)
+         if self.wallbox.actP + props.inc <= props.maxP:  # Erhöhung noch möglich
+            request += RequestPoint('min+P', props.inc)
+            request += RequestPoint('max+P', props.maxP - self.wallbox.actP)
+         else:
+            request.flags.add('max')  # Nicht wirklich benötigt
       else:
-         self.lastrequest = Request(id=self.wallbox.id, power=self.minP, amp=self.config.minimalstromstaerke)
-      if self.state == 'init':
-         if data.get('llaktuell', id=self.wallbox.id) > 200:  # Gaining traction.
-            self.state = 'charging'
-            self.request = self.pv_request_charging
-            self.set = self.set_charging
-      elif self.lastrequest.power > 0:
-         self.lastrequest.flags.add('ondelay')
-      return self.lastrequest
+         request.flags.add('off')
+         request += RequestPoint('min+P', props.minP)
+         request += RequestPoint('max+P', props.maxP)
+      return request
 
-   def pv_request_charging(self, data: "openWBValues") -> Request:
-      if self.current_p - data.get('llaktuell', self.wallbox.id) > 200 * self.wallbox.phasen:
-         self.blockcount += 1
-      else:
-         self.blockcount = 0
-      blocked = self.blockcount >= 10
-      if data.uberschuss <= self.minP:
-         # TODO: Shut-off delay
-         self.lastrequest = Request(id=self.wallbox.id, power=self.minP, amp=self.config.minimalstromstaerke)
-      elif blocked and data.get('llaktuell', self.wallbox.id) < data.uberschuss:
-         # Beschränke Anforderung auf aktuelle Ladeleistung
-         amp = 1 + data.get('llaktuell', self.wallbox.id) // (230 * self.wallbox.phasen)
-         self.lastrequest = Request(id=self.wallbox.id, power=amp*230*self.wallbox.phasen, amp=amp,
-                                    flags=set(['blocked']))
-      elif data.uberschuss >= self.maxP:
-         self.lastrequest = Request(id=self.wallbox.id, power=self.maxP, amp=self.config.maximalstromstaerke)
-      else:
-         amp = data.uberschuss // (230 * self.wallbox.phasen)
-         self.lastrequest = Request(id=self.wallbox.id, power=data.uberschuss, amp=amp)
-      return self.lastrequest
-   
 
+   ##################### old code ########################
    def set_idle(self, power: int) -> None:
       """set function of PV/idle and PV/init mode"""
       if power == 0 or power < self.lastrequest.power:  # Keine Anforderung, oder Anforderung abgelehnt
@@ -112,4 +107,40 @@ class Regler:
       self.current_p = power
       self.current_i = power2amp(power, self.wallbox.phasen)
       self.wallbox.set(self.current_i)
+
+class Regelgruppe():
+   """
+   Eine Regelungsgruppe, charakterisiert durch eine Regelungsstrategie:
+   - "pv" - Überschuss regler
+   - "peak" - Peak shaving
+   - "sofort" - Sofortladen
+   """
+   def __init__(self, mode:str):
+      self.mode = mode
+      self.regler = []
+      self.wallboxes = set()
+      self.hysterese = 600
+      if self.mode == 'pv':
+         self.leistungserhoehung = lambda i: i>800
+         self.leistungssenkung   = lambda i: i<200
+      elif self.mode == 'peal':
+         self.leistungserhoehung = lambda i: i>6500
+         self.leistungssenkung   = lambda i: i<6000
+
+   def leistungserhoehung(self, uberschuss: int) -> bool:
+      """Ermittle ob """
+   def add(self, ladepunkt: "Ladepunkt") -> None:
+      self.regler.append(Regler(ladepunkt))
+      self.wallboxes.add(ladepunkt)
+
+   def controlcycle(self, data) -> None:
+      requests = [lp.request() for lp in self.regler]
+      if self.leistungserhoehung(data.uberschuss):
+         ...
+      elif self.leistungssenkung(data.uberschuss):
+         ...
+      else:
+         ...
+
+
 

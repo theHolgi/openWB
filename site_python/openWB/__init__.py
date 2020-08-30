@@ -1,4 +1,5 @@
 from typing import Union
+from collections import namedtuple
 
 core = None  # The OpenWBcore singleton
 
@@ -12,6 +13,8 @@ def setCore(o):
 class Event:
    """Abstract class for an event"""
    pass
+
+PowerProperties = namedtuple('PowerProperties', 'minP maxP inc')
 
 # Properties that every Modul has:
 # name - Its name, built as CLASSNAME or CLASSNAME_<id> (when multiple instances)
@@ -72,13 +75,30 @@ class Ladepunkt:
    """
    multiinstance = True
    type = "lp"
-   phasen = 3   # Init worst-case
 
-   def set(self, ampere: int):
-      """
-      Setze Sollstrom. 0=Ladung stoppen
-      """
+   # Diese Properties hat ein Ladepunkt und werden von ihm selbst verändert:
+   phasen = 3   # Init worst-case
+   charging = False   # Lädt gerade
+   setP = 0  # Aktuell zugewiesene Leistung
+   actP = 0  # Aktuell verwendete Leistung
+   prio = 1  # Aktuelle Priorität
+
+   def powerproperties(self) -> PowerProperties:
       ...
+
+   def set(self, power:int) -> None:
+      """Setze zugewiesene Leistung"""
+      self.setP = power
+      ...
+
+   @property
+   def minP(self):
+      return self.core.config.minimalstromstaerke * self.phasen * 230
+
+   @property
+   def maxP(self):
+      return self.core.config.maximalstromstaerke * self.phasen * 230
+
 
 # Properties eines Ladepunktes:
 # - phasen - Anzahl erkannter benutzter Phasen
