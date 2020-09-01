@@ -94,12 +94,12 @@ class TEST_PV1LP1(unittest.TestCase):
       self.EVU.P = -1700
       self.core.run(12)
       self.assertEqual(10, self.LPregler.oncount, "Ladestart")
-      self.assertEqual(1500, self.LP.setP, "Anforderung")   # TODO: Eigentlich nur minP
+      self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung")
 
       with self.subTest("Fahzeug startet"):
          self.LP.actP = 500  # etwas
          self.core.run(1)
-         # self.assertEqual(1500, self.LP.setP, "Anforderung solange nicht gestartet")  # TODO: Eigentlich nur minP
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung solange nicht gestartet")
          self.LP.charging = True
          self.core.run(1)
          self.assertEqual(self.LP.actP + 1500, self.LP.setP, "Erhöhte Anforderung")

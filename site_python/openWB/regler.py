@@ -84,8 +84,9 @@ class Regler:
             request.flags.add('max')  # Nicht wirklich benötigt
       else:
          request.flags.add('off')
-         request += RequestPoint('min+P', props.minP)
-         request += RequestPoint('max+P', props.maxP)
+         # actP i.d.R 0, aber könnte schon etwas Strom haben
+         request += RequestPoint('min+P', props.minP - self.wallbox.actP)
+         request += RequestPoint('max+P', props.maxP - self.wallbox.actP)
       return request
 
    ##################### old code ########################
@@ -175,22 +176,30 @@ class Regelgruppe():
    def controlcycle(self, data) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
-      deltaP = data.uberschuss - self.limit
       if data.uberschuss > self.limit:  # Leistungserhöhung
-         for r in sorted(filter(lambda r: 'min+P' in r, properties), key=lambda r: r['min+P'].priority):
+         deltaP = data.uberschuss - self.limit
+         # Erhöhe eingeschaltete LPs
+         for r in sorted(filter(lambda r: 'min+P' in r and 'on' in r.flags, properties), key=lambda r: r['min+P'].priority):
             p = self.get_increment(r, deltaP)
             if p is not None:
                arbitriert[r.id] = p
                deltaP -= p
                if deltaP <= 0:
                   break
+         # Schalte LPs ein
+         deltaP = data.uberschuss - self.limit
+         for r in sorted(filter(lambda r: 'min+P' in r and 'off' in r.flags, properties), key=lambda r: r['min+P'].priority):
+            if r['min+P'].value < deltaP:
+               arbitriert[r.id] = r['min+P'].value
+               deltaP -= r['min+P'].value
       elif data.uberschuss < self.limit:  # Leistungsreduktion
-         for r in sorted(filter(lambda r: 'min-P' in r, properties), key=lambda r: r['min-P'].priority):
-            p = self.get_decrement(r, -deltaP)
+         deltaP = self.limit - data.uberschuss
+         for r in sorted(filter(lambda r: 'min-P' in r and 'on' in r.flags, properties), key=lambda r: r['min-P'].priority):
+            p = self.get_decrement(r, deltaP)
             if p is not None:
                arbitriert[r.id] = p
-               deltaP += p
-               if deltaP >= 0:
+               deltaP -= p
+               if deltaP <= 0:
                   break
 
       for ID, inc in arbitriert.items():
