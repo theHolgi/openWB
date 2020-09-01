@@ -92,6 +92,10 @@ class Ladepunkt:
       ...
 
    @property
+   def is_charging(self):
+      return self.actP > 300
+
+   @property
    def minP(self):
       return self.core.config.minimalstromstaerke * self.phasen * 230
 

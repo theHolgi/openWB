@@ -65,11 +65,20 @@ class Regler:
       self.config = self.wallbox.core.config
       self.request = self.req_idle
 
+   @property
+   def blocked(self):
+      return self.blockcount >= 10
+
    def get_props(self) -> Request:
       props = self.wallbox.powerproperties()
       request = Request(self.wallbox.id, prio=self.wallbox.prio)
-      if self.wallbox.charging:
+      if self.wallbox.is_charging:
          request.flags.add('on')
+         # Erkennung blockierter Ladepunkt
+         if self.wallbox.setP - self.wallbox.actP > 200 * self.wallbox.phasen:
+            self.blockcount += 1
+         else:
+            self.blockcount = 0
          if self.wallbox.actP - props.inc >= props.minP:  # Verringerung noch möglich
             request += RequestPoint('min-P', props.inc)
             request += RequestPoint('max-P', self.wallbox.actP - props.minP)
@@ -77,24 +86,25 @@ class Regler:
             request.flags.add('min')
             request += RequestPoint('min-P', props.minP)
             request += RequestPoint('max-P', props.minP)
-         if self.wallbox.actP + props.inc <= props.maxP:  # Erhöhung noch möglich
+         if self.blocked:
+            request.flags.add('blocked')  # Nicht wirklich benötigt
+         elif self.wallbox.actP + props.inc <= props.maxP:  # Erhöhung noch möglich
             request += RequestPoint('min+P', props.inc)
             request += RequestPoint('max+P', props.maxP - self.wallbox.actP)
          else:
             request.flags.add('max')  # Nicht wirklich benötigt
       else:
          request.flags.add('off')
+         self.blockcount = 0
          # actP i.d.R 0, aber könnte schon etwas Strom haben
          request += RequestPoint('min+P', props.minP - self.wallbox.actP)
          request += RequestPoint('max+P', props.maxP - self.wallbox.actP)
       return request
 
-   ##################### old code ########################
    def req_idle(self, increment: int) -> None:
       """set function of PV/idle and PV/init mode"""
       if increment == 0:  # Keine Anforderung
          self.oncount = 0
-         self.blockcount = 0
          self.state = 'idle'
       else:
          self.oncount += 1
@@ -107,7 +117,17 @@ class Regler:
    def req_charging(self, increment: int) -> None:
       """Set the given power"""
       power = self.wallbox.actP + increment
-      self.wallbox.set(power)
+      if power == 0:
+         self.offcount += 1
+         if self.offcount >= self.config.ausschaltverzoegerung:
+            self.state = 'idle'
+            self.request = self.req_idle
+            self.wallbox.set(power)
+      else:
+         self.offcount = 0
+         if self.blocked:
+            power += self.wallbox.powerproperties().inc
+         self.wallbox.set(power)
 
 
 class Regelgruppe():

@@ -97,18 +97,25 @@ class TEST_PV1LP1(unittest.TestCase):
       self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung")
 
       with self.subTest("Fahzeug startet"):
-         self.LP.actP = 500  # etwas
+         self.LP.actP = 200  # etwas
          self.core.run(1)
+         self.assertFalse(self.LP.is_charging, "LP nicht gestartet")
          self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung solange nicht gestartet")
-         self.LP.charging = True
+         self.LP.actP = 350  # charging
          self.core.run(1)
+         self.assertTrue(self.LP.is_charging, "LP gestartet")
          self.assertEqual(self.LP.actP + 1500, self.LP.setP, "Erhöhte Anforderung")
-         ...
 
       with self.subTest('Mehr PV-Leistung'):
          self.EVU.P = -2000
          self.core.run(1)
          self.assertEqual(self.LP.actP+1800, self.LP.setP, "Anforderung")
+
+      with self.subTest('EVU stabilisiert'):
+         self.LP.actP += 1700
+         self.EVU.P += 1700
+         self.core.run(1)
+         self.assertEqual(self.LP.actP, self.LP.setP, "Keine Bedget für neue Anforderung")
 
       with self.subTest('Fahrzeug max-Leistung'):
          self.LP.actP = 3700  # max
@@ -116,7 +123,8 @@ class TEST_PV1LP1(unittest.TestCase):
          self.core.run(8)
          self.assertEqual(self.LP.maxP, self.LP.setP, "Anforderung auf max")
          self.core.run(4)
-         self.assertEqual(3910, self.LP.setP, "Reduzierte Anforderung")
+         self.assertTrue(self.LPregler.blocked, "Regler ist blockiert")
+         self.assertEqual(3930, self.LP.setP, "Reduzierte Anforderung")
 
 class Test_Regler(unittest.TestCase):
    """Teste Regler Klasse"""
@@ -128,8 +136,7 @@ class Test_Regler(unittest.TestCase):
    def setUp(self):
       self.regler = Regler(self.LP)
       self.LP.I = 0
-      self.LP.P = 0
-      self.LP.charging = False
+      self.LP.actP = 0
 
    def test_idle(self):
       req = self.regler.get_props()
@@ -143,7 +150,6 @@ class Test_Regler(unittest.TestCase):
       self.assertNotIn('max-P', req, "Keine Leistungsverringerung")
 
    def test_atminP(self):
-      self.LP.charging = True
       self.LP.actP = self.LP.minP + 50  # A bit more, but not enough
       req = self.regler.get_props()
       self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
@@ -155,7 +161,6 @@ class Test_Regler(unittest.TestCase):
       self.assertEqual(self.LP.minP, req['max-P'].value, "Maximal-P ist Abschaltung")
 
    def test_atmiddle(self):
-      self.LP.charging = True
       self.LP.actP = self.LP.minP + 1000  # Somewhere
       req = self.regler.get_props()
       self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
@@ -168,7 +173,6 @@ class Test_Regler(unittest.TestCase):
       self.assertEqual(self.LP.maxP - self.LP.actP, req['max+P'].value, "Maximal+P ist Delta zu Max")
 
    def test_atmaxP(self):
-      self.LP.charging = True
       self.LP.actP = self.LP.maxP - 50  # A bit less, but not enough
       req = self.regler.get_props()
       self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
