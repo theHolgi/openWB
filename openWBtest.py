@@ -36,8 +36,64 @@ class StubEVU(DataProvider):
    def trigger(self):
       self.core.sendData(DataPackage(self, {'wattbezug': self.P}))
 
+class Test_Regler(unittest.TestCase):
+   """Teste Regler Klasse"""
+   EVU = StubEVU(1)
+   LP = StubLP(1)
+   LP.core = StubCore()
+   LP.id = 1
 
-class TEST_PV1LP1(unittest.TestCase):
+   def setUp(self):
+      self.regler = Regler(self.LP)
+      self.LP.I = 0
+      self.LP.actP = 0
+
+   def test_idle(self):
+      req = self.regler.get_props()
+      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
+      self.assertIn('off', req.flags, "Request hat off-Flag")
+      self.assertEqual(self.LP.minP, req['min+P'].value, "Minimal+P ist Einschaltschwelle")
+      self.assertEqual(self.LP.maxP, req['max+P'].value, "Maximal+P ist Max-Leistung")
+      self.assertEqual(self.LP.prio, req['min+P'].priority, "Minimal+P prio ist vom LP")
+      self.assertEqual(self.LP.prio, req['max+P'].priority, "Maximal+P prio ist vom LP")
+      self.assertNotIn('min-P', req, "Keine Leistungsverringerung")
+      self.assertNotIn('max-P', req, "Keine Leistungsverringerung")
+
+   def test_atminP(self):
+      self.LP.actP = self.LP.minP + 50  # A bit more, but not enough
+      req = self.regler.get_props()
+      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
+      self.assertIn('on', req.flags, "Kein off-Flag")
+      self.assertIn('min', req.flags, "Läuft auf min-P")
+      self.assertEqual(230, req['min+P'].value, "Minimal+P ist Inkrement")
+      self.assertEqual(self.LP.maxP - self.LP.actP, req['max+P'].value, "Maximal+P ist Delta zu Max")
+      self.assertEqual(50, req['min-P'].value, "Minimal-P ist Rest zu min")
+      self.assertEqual(self.LP.minP + 50, req['max-P'].value, "Maximal-P ist Abschaltung")
+
+   def test_atmiddle(self):
+      self.LP.actP = self.LP.minP + 1000  # Somewhere
+      req = self.regler.get_props()
+      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
+      self.assertIn('on', req.flags, "Kein off-Flag")
+      self.assertNotIn('min', req.flags, "Läuft nicht auf min-P")
+      self.assertNotIn('max', req.flags, "Läuft nicht auf max-P")
+      self.assertEqual(230, req['min+P'].value, "Minimal+P ist Inkrement")
+      self.assertEqual(230, req['min-P'].value, "Minimal-P ist Inkrement")
+      self.assertEqual(self.LP.actP - self.LP.minP, req['max-P'].value, "Maximal-P ist Delta zu Min")
+      self.assertEqual(self.LP.maxP - self.LP.actP, req['max+P'].value, "Maximal+P ist Delta zu Max")
+
+   def test_atmaxP(self):
+      self.LP.actP = self.LP.maxP - 50  # A bit less, but not enough
+      req = self.regler.get_props()
+      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
+      self.assertIn('on', req.flags, "Kein off-Flag")
+      self.assertIn('max', req.flags, "Läuft auf max-P")
+      self.assertEqual(230, req['min-P'].value, "Minimal-P ist Inkrement")
+      self.assertEqual(self.LP.actP - self.LP.minP, req['max-P'].value, "Maximal-P ist Delta zu Min")
+      self.assertNotIn('min+P', req, "Keine Leistungserhöhung")
+      self.assertNotIn('max+P', req, "Keine Leistungserhöhung")
+
+class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
    def setUp(self):
       self.core = OpenWBCore(mypath)
@@ -93,7 +149,6 @@ class TEST_PV1LP1(unittest.TestCase):
       self.PV.P = 2000
       self.EVU.P = -1700
       self.core.run(12)
-      self.assertEqual(10, self.LPregler.oncount, "Ladestart")
       self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung")
 
       with self.subTest("Fahzeug startet"):
@@ -126,62 +181,42 @@ class TEST_PV1LP1(unittest.TestCase):
          self.assertTrue(self.LPregler.blocked, "Regler ist blockiert")
          self.assertEqual(3930, self.LP.setP, "Reduzierte Anforderung")
 
-class Test_Regler(unittest.TestCase):
-   """Teste Regler Klasse"""
-   EVU = StubEVU(1)
-   LP = StubLP(1)
-   LP.core = StubCore()
-   LP.id = 1
+   def test_supply_stop(self):
+      """Überschuss, Abschaltung eines LPs"""
+      self.PV.P = 2000
+      self.EVU.P = -1700
+      self.LP.actP = 2000
 
-   def setUp(self):
-      self.regler = Regler(self.LP)
-      self.LP.I = 0
-      self.LP.actP = 0
+      self.core.run(15)
+      self.assertEqual(self.LP.actP + 1500, self.LP.setP, "Anforderung")
 
-   def test_idle(self):
-      req = self.regler.get_props()
-      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
-      self.assertIn('off', req.flags, "Request hat off-Flag")
-      self.assertEqual(self.LP.minP, req['min+P'].value, "Minimal+P ist Einschaltschwelle")
-      self.assertEqual(self.LP.maxP, req['max+P'].value, "Maximal+P ist Max-Leistung")
-      self.assertEqual(self.LP.prio, req['min+P'].priority, "Minimal+P prio ist vom LP")
-      self.assertEqual(self.LP.prio, req['max+P'].priority, "Maximal+P prio ist vom LP")
-      self.assertNotIn('min-P', req, "Keine Leistungsverringerung")
-      self.assertNotIn('max-P', req, "Keine Leistungsverringerung")
+      with self.subTest('EVU stabilisiert'):
+         self.LP.actP = self.LP.setP - 100
+         self.EVU.P = -self.core.config.offsetpv - 100
+         self.core.run(1)
+         self.assertEqual(self.LP.actP, self.LP.setP, "Keine neue Anforderung")
 
-   def test_atminP(self):
-      self.LP.actP = self.LP.minP + 50  # A bit more, but not enough
-      req = self.regler.get_props()
-      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
-      self.assertIn('on', req.flags, "Kein off-Flag")
-      self.assertIn('min', req.flags, "Läuft auf min-P")
-      self.assertEqual(230, req['min+P'].value, "Minimal+P ist Inkrement")
-      self.assertEqual(self.LP.maxP - self.LP.actP, req['max+P'].value, "Maximal+P ist Delta zu Max")
-      self.assertEqual(self.LP.minP, req['min-P'].value, "Minimal-P ist Abschaltung")
-      self.assertEqual(self.LP.minP, req['max-P'].value, "Maximal-P ist Abschaltung")
+      with self.subTest('EVU sinkt'):
+         self.EVU.P += 200
+         self.core.run(1)
+         self.assertEqual(self.LP.actP-self.LP.powerproperties().inc, self.LP.setP, "Reduzierung um 1A")
 
-   def test_atmiddle(self):
-      self.LP.actP = self.LP.minP + 1000  # Somewhere
-      req = self.regler.get_props()
-      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
-      self.assertIn('on', req.flags, "Kein off-Flag")
-      self.assertNotIn('min', req.flags, "Läuft nicht auf min-P")
-      self.assertNotIn('max', req.flags, "Läuft nicht auf max-P")
-      self.assertEqual(230, req['min+P'].value, "Minimal+P ist Inkrement")
-      self.assertEqual(230, req['min-P'].value, "Minimal-P ist Inkrement")
-      self.assertEqual(self.LP.actP - self.LP.minP, req['max-P'].value, "Maximal-P ist Delta zu Min")
-      self.assertEqual(self.LP.maxP - self.LP.actP, req['max+P'].value, "Maximal+P ist Delta zu Max")
+      with self.subTest('LP auf min'):
+         self.EVU.P = 2000
+         self.core.run(1)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
 
-   def test_atmaxP(self):
-      self.LP.actP = self.LP.maxP - 50  # A bit less, but not enough
-      req = self.regler.get_props()
-      self.assertEqual(self.LP.id, req.id, "Request kommt von LP")
-      self.assertIn('on', req.flags, "Kein off-Flag")
-      self.assertIn('max', req.flags, "Läuft auf max-P")
-      self.assertEqual(230, req['min-P'].value, "Minimal-P ist Inkrement")
-      self.assertEqual(self.LP.actP - self.LP.minP, req['max-P'].value, "Maximal-P ist Delta zu Min")
-      self.assertNotIn('min+P', req, "Keine Leistungserhöhung")
-      self.assertNotIn('max+P', req, "Keine Leistungserhöhung")
+      with self.subTest('LP off'):
+         self.LP.actP = self.LP.minP+20
+         self.core.run(1)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
+         self.assertEqual(0, self.LPregler.offcount, "keine Abchaltung")
+         self.LP.actP = self.LP.minP-20
+         self.core.run(16)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
+         self.assertNotEqual(0, self.LPregler.offcount, "Abchaltungszähler")
+         self.core.run(6)
+         self.assertEqual(0, self.LP.setP, "Anforderung Abschaltung")
 
 if __name__ == '__main__':
    unittest.main()

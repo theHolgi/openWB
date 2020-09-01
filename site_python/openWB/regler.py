@@ -1,6 +1,6 @@
 import enum
 from typing import Set, Optional
-from . import power2amp, PowerProperties
+from . import getCore
 
 class Priority(enum.IntEnum):
    low = 1
@@ -84,8 +84,12 @@ class Regler:
             request += RequestPoint('max-P', self.wallbox.actP - props.minP)
          else:  # Nein, nur ganz ausschalten
             request.flags.add('min')
-            request += RequestPoint('min-P', props.minP)
-            request += RequestPoint('max-P', props.minP)
+            # Wenn actP noch über Min ist, lasse Reduzierung noch zu
+            if self.wallbox.actP > props.minP:
+               request += RequestPoint('min-P', self.wallbox.actP - props.minP)
+            else:
+               request += RequestPoint('min-P', self.wallbox.actP)
+            request += RequestPoint('max-P', self.wallbox.actP)
          if self.blocked:
             request.flags.add('blocked')  # Nicht wirklich benötigt
          elif self.wallbox.actP + props.inc <= props.maxP:  # Erhöhung noch möglich
@@ -110,6 +114,7 @@ class Regler:
          self.oncount += 1
          if self.oncount >= self.config.einschaltverzoegerung:
             self.state = 'init'
+            self.oncount = 0
             self.request = self.req_charging
             power = self.wallbox.actP + increment
             self.wallbox.set(power)
@@ -117,10 +122,11 @@ class Regler:
    def req_charging(self, increment: int) -> None:
       """Set the given power"""
       power = self.wallbox.actP + increment
-      if power == 0:
+      if power < 100:
          self.offcount += 1
-         if self.offcount >= self.config.ausschaltverzoegerung:
+         if self.offcount >= self.config.abschaltverzoegerung:
             self.state = 'idle'
+            self.offcount = 0
             self.request = self.req_idle
             self.wallbox.set(power)
       else:
@@ -154,7 +160,7 @@ class Regelgruppe():
                   return deltaP
          def get_decrement(r: Request, deltaP: int) -> int:
             if r['min-P'].value > deltaP:  # min+P reicht
-               return r['max-P'].value
+               return r['min-P'].value
             elif r['max-P'].value < deltaP:  # Pmax reicht noch nicht
                return r['max-P'].value
             else:  # deltaP liegt zwischen beidem
@@ -162,7 +168,7 @@ class Regelgruppe():
 
          self.get_increment = get_increment
          self.get_decrement = get_decrement
-         self.limit = 200
+         self.limit = getCore().config.offsetpv
          self.mode = "min"
 
       elif self.mode == 'peak':
@@ -171,7 +177,7 @@ class Regelgruppe():
             - P > Limit: erhöhe bis < Limit
             - P < Limit: reduziere solange < Limit
          """
-         self.limit = 6500
+         self.limit = getCore().config.offsetpvpeak
          self.mode = "max"
          def get_increment(r: Request, deltaP: int) -> int:
             if r['min+P'].value > deltaP:  # min+P reicht
@@ -214,13 +220,19 @@ class Regelgruppe():
                deltaP -= r['min+P'].value
       elif data.uberschuss < self.limit:  # Leistungsreduktion
          deltaP = self.limit - data.uberschuss
-         for r in sorted(filter(lambda r: 'min-P' in r and 'on' in r.flags, properties), key=lambda r: r['min-P'].priority):
+         for r in sorted(filter(lambda r: 'min-P' in r and 'min' not in r.flags, properties), key=lambda r: r['min-P'].priority):
             p = self.get_decrement(r, deltaP)
             if p is not None:
-               arbitriert[r.id] = p
+               arbitriert[r.id] = -p
                deltaP -= p
                if deltaP <= 0:
                   break
+         # Schalte LPs aus
+         deltaP = self.limit - data.uberschuss
+         for r in sorted(filter(lambda r: 'min' in r.flags, properties), key=lambda r: r['min-P'].priority):
+            if r['min-P'].value < deltaP:
+               arbitriert[r.id] = -r['min-P'].value
+               deltaP -= r['min-P'].value
 
       for ID, inc in arbitriert.items():
          self.regler[ID].request(inc)
