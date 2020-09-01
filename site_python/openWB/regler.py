@@ -63,8 +63,9 @@ class Regler:
       self.blockcount = 0
       self.state = 'idle'
       self.config = self.wallbox.core.config
+      self.request = self.req_idle
 
-   def request(self) -> Request:
+   def get_props(self) -> Request:
       props = self.wallbox.powerproperties()
       request = Request(self.wallbox.id, prio=self.wallbox.prio)
       if self.wallbox.charging:
@@ -87,11 +88,10 @@ class Regler:
          request += RequestPoint('max+P', props.maxP)
       return request
 
-
    ##################### old code ########################
-   def set_idle(self, power: int) -> None:
+   def req_idle(self, increment: int) -> None:
       """set function of PV/idle and PV/init mode"""
-      if power == 0 or power < self.lastrequest.power:  # Keine Anforderung, oder Anforderung abgelehnt
+      if increment == 0:  # Keine Anforderung
          self.oncount = 0
          self.blockcount = 0
          self.state = 'idle'
@@ -99,14 +99,15 @@ class Regler:
          self.oncount += 1
          if self.oncount >= self.config.einschaltverzoegerung:
             self.state = 'init'
-            self.current_i = self.lastrequest.amp
-            self.wallbox.set(self.current_i)
+            self.request = self.req_charging
+            power = self.wallbox.actP + increment
+            self.wallbox.set(power)
 
-   def set_charging(self, power: int) -> None:
+   def req_charging(self, increment: int) -> None:
       """Set the given power"""
-      self.current_p = power
-      self.current_i = power2amp(power, self.wallbox.phasen)
-      self.wallbox.set(self.current_i)
+      power = self.wallbox.actP + increment
+      self.wallbox.set(power)
+
 
 class Regelgruppe():
    """
@@ -117,30 +118,80 @@ class Regelgruppe():
    """
    def __init__(self, mode:str):
       self.mode = mode
-      self.regler = []
-      self.wallboxes = set()
-      self.hysterese = 600
+      self.regler = dict()
       if self.mode == 'pv':
-         self.leistungserhoehung = lambda i: i>800
-         self.leistungssenkung   = lambda i: i<200
-      elif self.mode == 'peal':
-         self.leistungserhoehung = lambda i: i>6500
-         self.leistungssenkung   = lambda i: i<6000
+         """
+            PV-Modus: Limit darf nicht unterschritten werden.
+            - P > Limit: iO, aber erhöhe solange > Limit
+            - P < Limit: reduziere bis P>limit
+         """
+         def get_increment(r: Request, deltaP: int) -> Optional[int]:
+            if r['min+P'].value < deltaP:  # Akzeptiert
+               if r['max+P'].value < deltaP:  # Sogar Pmax
+                  return r['max+P'].value
+               else:  # Dann liegt deltaP dazwischen
+                  return deltaP
+         def get_decrement(r: Request, deltaP: int) -> int:
+            if r['min-P'].value > deltaP:  # min+P reicht
+               return r['max-P'].value
+            elif r['max-P'].value < deltaP:  # Pmax reicht noch nicht
+               return r['max-P'].value
+            else:  # deltaP liegt zwischen beidem
+               return deltaP
 
-   def leistungserhoehung(self, uberschuss: int) -> bool:
-      """Ermittle ob """
+         self.get_increment = get_increment
+         self.get_decrement = get_decrement
+         self.limit = 200
+         self.mode = "min"
+
+      elif self.mode == 'peak':
+         """
+            Peak-Modus: Limit darf nicht überschritten werden.
+            - P > Limit: erhöhe bis < Limit
+            - P < Limit: reduziere solange < Limit
+         """
+         self.limit = 6500
+         self.mode = "max"
+         def get_increment(r: Request, deltaP: int) -> int:
+            if r['min+P'].value > deltaP:  # min+P reicht
+               return r['max+P'].value
+            elif r['max+P'].value < deltaP:  # Pmax reicht noch nicht
+               return r['max+P'].value
+            else:  # deltaP liegt zwischen beidem
+               return deltaP
+         def get_decrement(r: Request, deltaP: int) -> Optional[int]:
+            if r['min-P'].value < deltaP:  # Akzeptiert
+               if r['max-P'].value < deltaP:  # Sogar Pmax
+                  return r['max-P'].value
+               else:  # Dann liegt deltaP dazwischen
+                  return deltaP
+         self.get_increment = get_increment
+         self.get_decrement = get_decrement
+
+
    def add(self, ladepunkt: "Ladepunkt") -> None:
-      self.regler.append(Regler(ladepunkt))
-      self.wallboxes.add(ladepunkt)
+      self.regler[ladepunkt.id] = Regler(ladepunkt)
 
    def controlcycle(self, data) -> None:
-      requests = [lp.request() for lp in self.regler]
-      if self.leistungserhoehung(data.uberschuss):
-         ...
-      elif self.leistungssenkung(data.uberschuss):
-         ...
-      else:
-         ...
+      properties = [lp.get_props() for lp in self.regler.values()]
+      arbitriert = dict([(id, 0) for id in self.regler.keys()])
+      deltaP = data.uberschuss - self.limit
+      if data.uberschuss > self.limit:  # Leistungserhöhung
+         for r in sorted(filter(lambda r: 'min+P' in r, properties), key=lambda r: r['min+P'].priority):
+            p = self.get_increment(r, deltaP)
+            if p is not None:
+               arbitriert[r.id] = p
+               deltaP -= p
+               if deltaP <= 0:
+                  break
+      elif data.uberschuss < self.limit:  # Leistungsreduktion
+         for r in sorted(filter(lambda r: 'min-P' in r, properties), key=lambda r: r['min-P'].priority):
+            p = self.get_decrement(r, -deltaP)
+            if p is not None:
+               arbitriert[r.id] = p
+               deltaP += p
+               if deltaP >= 0:
+                  break
 
-
-
+      for ID, inc in arbitriert.items():
+         self.regler[ID].request(inc)
