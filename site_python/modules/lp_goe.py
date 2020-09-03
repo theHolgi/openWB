@@ -1,6 +1,21 @@
 from openWB import *
 from urllib import request, error
 import json
+from threading import Thread
+
+class GO_E_SET(Thread):
+   """Threaded parameter setting on a GO-E charger"""
+   def __init__(self, url, timeout):
+      self.url = url
+      self.timeout = timeout
+
+   def run(self):
+      try:
+         with request.urlopen(self.url, timeout=self.timeout) as req:
+            pass
+      except error.URLError:
+         pass
+
 
 class GO_E(DataProvider, Ladepunkt):
    """SMA Smart home Meter (or Energy Meter)"""
@@ -55,15 +70,14 @@ class GO_E(DataProvider, Ladepunkt):
                                 inc=self.phasen*230)
 
    # Ladepunkt setter
-   def set(self, ampere: int) -> None:
-      self.core.logger.info("%i lädt mit %i Ampere" % (self.id, ampere))
-      payload = {}
+   def set(self, power: int) -> None:
+      ampere = power2amp(power, self.phasen)
+      self.core.logger.info("%i lädt mit %iW = %iA" % (self.id, ampere))
       aktiv = '1' if ampere > 0 else '0'
       if self.laststate['alw'] != aktiv:  # Allow
-         payload['alw'] = aktiv
+         GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()
       if self.laststate['amp'] != str(ampere):  # Power
-         payload['amp'] = str(ampere)
-
+         GO_E_SET('http://%s/mqtt?payload=amp=%s' % (self.ip, ampere), self.timeout).start()
 
 def getClass():
    return GO_E

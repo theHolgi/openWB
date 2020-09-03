@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import os
 import sys
 import importlib
@@ -14,7 +15,7 @@ global core
 os.environ.pop('http_proxy')
 os.environ.pop('https_proxy')
 
-core = OpenWBCore(mypath)
+core = OpenWBCore(mypath + "/pyconfig.conf")
 
 for source in ['wr', 'bezug', 'lp']:
    instance = 1

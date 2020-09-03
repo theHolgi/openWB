@@ -96,7 +96,8 @@ class Test_Regler(unittest.TestCase):
 class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
    def setUp(self):
-      self.core = OpenWBCore(mypath)
+      self.core = OpenWBCore(mypath + "/test.conf")
+      self.core.config["lpmodul1_mode"] = "pv"
       self.PV = StubPV(1)
       self.LP = StubLP(1)
       self.EVU = StubEVU(1)
@@ -119,12 +120,12 @@ class TEST_LP1(unittest.TestCase):
       self.assertEqual(-500, self.core.data.uberschuss, "Kein Überschuss")
       self.assertEqual(1000, self.core.data.hausverbrauch, "Ruheverbrauch")
 
-   def test_supply_toofew(self):
+   def test_supply_toolow(self):
       """Wenig Überschuss, kein Ladestart"""
-      self.PV.P = 800
-      self.EVU.P = -500
+      self.PV.P = 2200
+      self.EVU.P = -1900
       self.core.run(5)
-      self.assertEqual(500, self.core.data.uberschuss, "Überschuss")
+      self.assertEqual(1900, self.core.data.uberschuss, "Überschuss")
       self.assertEqual(300, self.core.data.hausverbrauch, "Ruheverbrauch")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
@@ -132,11 +133,11 @@ class TEST_LP1(unittest.TestCase):
 
    def test_supply_tooshort(self):
       """Überschuss, Ladestart abgebrochen"""
-      self.PV.P = 2000
-      self.EVU.P = -1700
+      self.PV.P = 2300
+      self.EVU.P = -2000
       self.core.run(5)
-      self.assertEqual(1700, self.core.data.uberschuss, "Überschuss")
-      self.assertEqual(300, self.core.data.hausverbrauch, "Ruheverbrauch")
+      self.assertEqual(2000, self.core.data.uberschuss, "Überschuss")
+      self.assertEqual(self.PV.P + self.EVU.P, self.core.data.hausverbrauch, "Ruheverbrauch")
       self.assertNotEqual(0, self.LPregler.oncount, "Ladestart")
       self.EVU.P = -1000
       self.core.run(1)
@@ -146,20 +147,22 @@ class TEST_LP1(unittest.TestCase):
 
    def test_supply_start(self):
       """Überschuss, Ladestart erfolgreich"""
-      self.PV.P = 2000
-      self.EVU.P = -1700
+      self.PV.P = 2300
+      self.EVU.P = -2000
       self.core.run(12)
       self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung")
 
-      with self.subTest("Fahzeug startet"):
+      with self.subTest("Fahrzeug startet"):
          self.LP.actP = 200  # etwas
          self.core.run(1)
          self.assertFalse(self.LP.is_charging, "LP nicht gestartet")
          self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung solange nicht gestartet")
          self.LP.actP = 350  # charging
+         self.EVU.P = -1600
          self.core.run(1)
          self.assertTrue(self.LP.is_charging, "LP gestartet")
-         self.assertEqual(self.LP.actP + 1500, self.LP.setP, "Erhöhte Anforderung")
+         self.assertEqual(self.LP.actP - self.EVU.P - 200, self.LP.setP, "Erhöhte Anforderung")
+         self.assertEqual(self.PV.P + self.EVU.P - self.LP.actP, self.core.data.hausverbrauch, "LP Verbrauch nicht im Hausverbrauch") # XXX
 
       with self.subTest('Mehr PV-Leistung'):
          self.EVU.P = -2000
@@ -188,7 +191,7 @@ class TEST_LP1(unittest.TestCase):
       self.LP.actP = 2000
 
       self.core.run(15)
-      self.assertEqual(self.LP.actP + 1500, self.LP.setP, "Anforderung")
+      self.assertEqual(self.LP.actP - self.EVU.P - 200, self.LP.setP, "Anforderung")
 
       with self.subTest('EVU stabilisiert'):
          self.LP.actP = self.LP.setP - 100
@@ -217,6 +220,83 @@ class TEST_LP1(unittest.TestCase):
          self.assertNotEqual(0, self.LPregler.offcount, "Abchaltungszähler")
          self.core.run(6)
          self.assertEqual(0, self.LP.setP, "Anforderung Abschaltung")
+
+class TEST_LP1_PEAK(unittest.TestCase):
+   """System mit 1 PV und 1 Ladepunkt im Peak-mode"""
+   def setUp(self):
+      self.core = OpenWBCore(mypath + "/test.conf")
+      self.core.config["lpmodul1_mode"] = "peak"
+      self.PV = StubPV(1)
+      self.LP = StubLP(1)
+      self.EVU = StubEVU(1)
+      self.core.add_module(self.PV, 'wrmodul1')
+      self.core.add_module(self.LP, 'lpmodul1')
+      self.core.add_module(self.EVU, 'bezugmodul1')
+
+      self.PV.P = 0
+      self.LP.actP = 0
+      self.EVU.P = 0
+
+      # Zur leichteren Verfügbarkeit
+      self.LPregler = self.core.regelkreise['peak'].regler[1]
+
+   def test_supply_toolow(self):
+      """Zu wenig Überschuss"""
+      self.PV.P = 9000
+      self.EVU.P = -6400
+      self.core.run(5)
+      self.assertEqual(6400, self.core.data.uberschuss, "Überschuss")
+      self.assertEqual(2600, self.core.data.hausverbrauch, "Ruheverbrauch")
+      self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
+      self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
+      self.assertEqual(0, self.LP.I, "Keine Ladung gestartet")
+
+   def test_supply_start(self):
+      """Überschuss, Ladestart erfolgreich"""
+      self.PV.P = 9000
+      self.EVU.P = -6550
+      self.core.run(12)
+      self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung")
+
+   def test_supply_stop(self):
+      """Überschuss, Ein- u. Abschaltung eines LPs"""
+      self.PV.P = 9000
+      self.EVU.P = -self.core.config.offsetpvpeak - 100
+      self.LP.actP = 2000
+
+      with self.subTest('Ladestart'):
+         self.core.run(15)
+         self.assertEqual(self.LP.actP + 230, self.LP.setP, "Anforderung +1A")
+
+      with self.subTest('EVU stabilisiert'):
+         self.LP.actP = self.LP.setP - 100
+         self.EVU.P = -self.core.config.offsetpvpeak + 100
+         self.core.run(1)
+         self.assertEqual(self.LP.actP, self.LP.setP, "Keine neue Anforderung")
+
+      with self.subTest('EVU sinkt'):
+         self.EVU.P += 200
+         self.core.run(1)
+         self.assertEqual(self.LP.actP-300, self.LP.setP, "Reduzierung um delta")
+
+      with self.subTest('LP auf min'):
+         self.EVU.P = -self.core.config.offsetpvpeak + 1500
+         self.core.run(1)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
+
+      with self.subTest('LP off'):
+         self.LP.actP = self.LP.minP+20
+         self.EVU.P = -self.core.config.offsetpvpeak + 1800
+         self.core.run(1)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
+         self.assertEqual(0, self.LPregler.offcount, "keine Abchaltung")
+         self.LP.actP = self.LP.minP-20
+         self.core.run(16)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
+         self.assertNotEqual(0, self.LPregler.offcount, "Abchaltungszähler")
+         self.core.run(6)
+         self.assertEqual(0, self.LP.setP, "Anforderung Abschaltung")
+
 
 if __name__ == '__main__':
    unittest.main()

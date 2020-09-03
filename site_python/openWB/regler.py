@@ -146,6 +146,8 @@ class Regelgruppe():
    def __init__(self, mode:str):
       self.mode = mode
       self.regler = dict()
+      self.hysterese = getCore().config.hysterese
+
       if self.mode == 'pv':
          """
             PV-Modus: Limit darf nicht unterschritten werden.
@@ -158,8 +160,10 @@ class Regelgruppe():
                   return r['max+P'].value
                else:  # Dann liegt deltaP dazwischen
                   return deltaP
-         def get_decrement(r: Request, deltaP: int) -> int:
-            if r['min-P'].value > deltaP:  # min+P reicht
+         def get_decrement(r: Request, deltaP: int) -> Optional[int]:
+            if deltaP <= 0:  # Kein Bedarf
+               return None
+            elif r['min-P'].value > deltaP:  # min+P reicht
                return r['min-P'].value
             elif r['max-P'].value < deltaP:  # Pmax reicht noch nicht
                return r['max-P'].value
@@ -169,7 +173,7 @@ class Regelgruppe():
          self.get_increment = get_increment
          self.get_decrement = get_decrement
          self.limit = getCore().config.offsetpv
-         self.mode = "min"
+         self.hysterese = getCore().config.hysterese
 
       elif self.mode == 'peak':
          """
@@ -178,10 +182,11 @@ class Regelgruppe():
             - P < Limit: reduziere solange < Limit
          """
          self.limit = getCore().config.offsetpvpeak
-         self.mode = "max"
-         def get_increment(r: Request, deltaP: int) -> int:
-            if r['min+P'].value > deltaP:  # min+P reicht
-               return r['max+P'].value
+         def get_increment(r: Request, deltaP: int) -> Optional[int]:
+            if deltaP <= 0:  # Kein Bedarf
+               return None
+            elif r['min+P'].value > deltaP:  # min+P reicht
+               return r['min+P'].value
             elif r['max+P'].value < deltaP:  # Pmax reicht noch nicht
                return r['max+P'].value
             else:  # deltaP liegt zwischen beidem
@@ -214,8 +219,10 @@ class Regelgruppe():
                   break
          # Schalte LPs ein
          deltaP = data.uberschuss - self.limit
+         if self.mode == "pv":
+            deltaP -= self.hysterese
          for r in sorted(filter(lambda r: 'min+P' in r and 'off' in r.flags, properties), key=lambda r: r['min+P'].priority):
-            if r['min+P'].value < deltaP:
+            if self.get_increment(r, deltaP) is not None:
                arbitriert[r.id] = r['min+P'].value
                deltaP -= r['min+P'].value
       elif data.uberschuss < self.limit:  # Leistungsreduktion
@@ -229,8 +236,10 @@ class Regelgruppe():
                   break
          # Schalte LPs aus
          deltaP = self.limit - data.uberschuss
+         if self.mode == "peak":
+            deltaP -= self.hysterese
          for r in sorted(filter(lambda r: 'min' in r.flags, properties), key=lambda r: r['min-P'].priority):
-            if r['min-P'].value < deltaP:
+            if self.get_decrement(r, deltaP) is not None:
                arbitriert[r.id] = -r['min-P'].value
                deltaP -= r['min-P'].value
 

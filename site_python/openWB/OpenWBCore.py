@@ -10,11 +10,10 @@ logging.basicConfig(level=logging.INFO)
 
 class OpenWBCore:
    """openWB core and scheduler"""
-   def __init__(self, basePath: str):
-      self.basePath = basePath
+   def __init__(self, configFile: str):
       self.modules = []
       self.data = openWBValues()
-      self.config = openWBconfig(basePath + 'pyconfig.conf')
+      self.config = openWBconfig(configFile)
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
