@@ -1,6 +1,7 @@
 import enum
 from typing import Set, Optional
 from . import getCore
+from itertools import groupby
 
 class Priority(enum.IntEnum):
    low = 1
@@ -217,14 +218,21 @@ class Regelgruppe():
                deltaP -= p
                if deltaP <= 0:
                   break
-         # Schalte LPs ein
-         deltaP = data.uberschuss - self.limit
-         if self.mode == "pv":
-            deltaP -= self.hysterese
-         for r in sorted(filter(lambda r: 'min+P' in r and 'off' in r.flags, properties), key=lambda r: r['min+P'].priority):
-            if self.get_increment(r, deltaP) is not None:
-               arbitriert[r.id] = r['min+P'].value
-               deltaP -= r['min+P'].value
+         # Schalte LPs mit höchster Prio ein
+         candidates = unroll(groupby(filter(lambda r: 'min+P' in r and 'off' in r.flags, properties), key=lambda r: r['min+P'].priority))
+         if candidates:
+            highest_prio = max(candidates.keys())
+            candidates = candidates[highest_prio]
+            # Budget zum Einschalten: Erstmal der Überschuss
+            budget = data.uberschuss - self.limit
+            if self.mode == "pv":
+               budget -= self.hysterese
+            # Zusätzliches Budget kommt vom Regelpotential eingeschalteter LPs gleicher oder niedrigerer Prio
+            budget += sum(r['max-P'].value for r in filter(lambda r: 'max-P' in r and 'min' not in r.flags and r['max-P'].priority <= highest_prio, properties))
+            for r in candidates:
+               if self.get_increment(r, budget) is not None:
+                  arbitriert[r.id] = r['min+P'].value
+                  budget -= r['min+P'].value
       elif data.uberschuss < self.limit:  # Leistungsreduktion
          deltaP = self.limit - data.uberschuss
          for r in sorted(filter(lambda r: 'min-P' in r and 'min' not in r.flags, properties), key=lambda r: r['min-P'].priority):
@@ -245,3 +253,10 @@ class Regelgruppe():
 
       for ID, inc in arbitriert.items():
          self.regler[ID].request(inc)
+
+def unroll(d) -> dict:
+   """Unroll a grouped iterator, which is not ver useable as it is returned from itertools."""
+   r = dict()
+   for key, values in d:
+      r[key] = list(values)
+   return r

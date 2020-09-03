@@ -36,6 +36,10 @@ class StubEVU(DataProvider):
    def trigger(self):
       self.core.sendData(DataPackage(self, {'wattbezug': self.P}))
 
+   @property
+   def pvuberschuss(self):
+      return (-self.P) - 200
+
 class Test_Regler(unittest.TestCase):
    """Teste Regler Klasse"""
    EVU = StubEVU(1)
@@ -161,7 +165,7 @@ class TEST_LP1(unittest.TestCase):
          self.EVU.P = -1600
          self.core.run(1)
          self.assertTrue(self.LP.is_charging, "LP gestartet")
-         self.assertEqual(self.LP.actP - self.EVU.P - 200, self.LP.setP, "Erhöhte Anforderung")
+         self.assertEqual(self.LP.actP + self.EVU.pvuberschuss, self.LP.setP, "Erhöhte Anforderung")
          self.assertEqual(self.PV.P + self.EVU.P - self.LP.actP, self.core.data.hausverbrauch, "LP Verbrauch nicht im Hausverbrauch") # XXX
 
       with self.subTest('Mehr PV-Leistung'):
@@ -191,7 +195,7 @@ class TEST_LP1(unittest.TestCase):
       self.LP.actP = 2000
 
       self.core.run(15)
-      self.assertEqual(self.LP.actP - self.EVU.P - 200, self.LP.setP, "Anforderung")
+      self.assertEqual(self.LP.actP + self.EVU.pvuberschuss, self.LP.setP, "Anforderung")
 
       with self.subTest('EVU stabilisiert'):
          self.LP.actP = self.LP.setP - 100
@@ -296,6 +300,83 @@ class TEST_LP1_PEAK(unittest.TestCase):
          self.assertNotEqual(0, self.LPregler.offcount, "Abchaltungszähler")
          self.core.run(6)
          self.assertEqual(0, self.LP.setP, "Anforderung Abschaltung")
+
+class TEST_LP2(unittest.TestCase):
+   """System mit 1 PV und 2 Ladepunkte im PV-mode"""
+   def setUp(self):
+      self.core = OpenWBCore(mypath + "/test.conf")
+      self.core.config["lpmodul1_mode"] = "pv"
+      self.core.config["lpmodul2_mode"] = "pv"
+      self.PV = StubPV(1)
+      self.LP1 = StubLP(1)
+      self.LP2 = StubLP(2)
+      self.EVU = StubEVU(1)
+      self.core.add_module(self.PV, 'wrmodul1')
+      self.core.add_module(self.LP1, 'lpmodul1')
+      self.core.add_module(self.LP2, 'lpmodul2')
+      self.core.add_module(self.EVU, 'bezugmodul1')
+
+      self.PV.P = 0
+      self.LP1.actP = 0
+      self.LP2.actP = 0
+      self.EVU.P = 0
+
+      # Zur leichteren Verfügbarkeit
+      self.LPregler1 = self.core.regelkreise['pv'].regler[1]
+      self.LPregler2 = self.core.regelkreise['pv'].regler[2]
+
+   def test_supply_start1(self):
+      """Überschuss, Ladestart erfolgreich"""
+      self.PV.P = 2300
+      self.EVU.P = -2000
+      self.core.run(5)
+      self.assertEqual(2000, self.core.data.uberschuss, "Überschuss")
+      self.assertNotEqual(0, self.LPregler1.oncount, "Ladestart LP1")
+      self.assertEqual(0, self.LPregler2.oncount, "kein Ladestart LP2")
+
+      self.core.run(6)
+      self.assertEqual(self.LP1.minP, self.LP1.setP, "Anforderung LP1")
+      self.assertEqual(0, self.LP2.setP, "keine Anforderung LP2")
+
+   def test_supply_start2(self):
+      """Überschuss, Ladestart 2 LPs erfolgreich"""
+      self.PV.P = 4000
+      self.EVU.P = -3800
+      self.core.run(5)
+      self.assertEqual(3800, self.core.data.uberschuss, "Überschuss")
+      self.assertNotEqual(0, self.LPregler1.oncount, "Ladestart LP1")
+      self.assertNotEqual(0, self.LPregler2.oncount, "Ladestart LP2")
+
+      self.core.run(6)
+      self.assertEqual(self.LP1.minP, self.LP1.setP, "Anforderung LP1")
+      self.assertEqual(self.LP2.minP, self.LP2.setP, "Anforderung LP2")
+
+   def test_raise(self):
+      """Wachsender Überschuss, LPs balanciert"""
+      self.PV.P = 2300
+      self.EVU.P = -2000
+      with self.subTest('LP1 on'):
+         self.core.run(12)
+         self.assertEqual(self.LP1.minP, self.LP1.setP, "Anforderung LP1")
+         self.assertEqual(0, self.LP2.setP, "keine Anforderung LP2")
+         self.LP1.actP = 1300
+         self.EVU.P += 1300
+         self.core.run(5)
+         self.assertEqual(0, self.LPregler2.oncount, "kein Ladestart LP2")
+         self.assertEqual(0, self.LP2.setP, "keine Anforderung LP2")
+         self.LP1.actP = 1800
+
+      with self.subTest('Raise power'):
+         self.EVU.P -= 1300
+         self.core.run(5)
+         self.assertEqual(self.LP1.actP + self.EVU.pvuberschuss, self.LP1.setP, "Erhöhe Anforderung LP1")
+         self.assertNotEqual(0, self.LPregler2.oncount, "Ladestart LP2")
+
+         deltaP = self.LP1.setP - self.LP1.actP - 100 # LP1 folgt Anforderung
+         self.EVU.P += deltaP
+         self.LP1.actP += deltaP
+         self.core.run(6)
+         self.assertEqual(self.LP2.minP, self.LP2.setP, "Einschalten LP2 über LP1-Budget")
 
 
 if __name__ == '__main__':
