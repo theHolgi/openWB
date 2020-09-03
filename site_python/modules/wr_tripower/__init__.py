@@ -14,9 +14,12 @@ class TRIPOWER(DataProvider, PVModul):
          self.instance = SMADASH(host)
 
    def trigger(self):
-      power, generation = self.instance.read()
-      self.core.sendData(DataPackage(self, {'pvwatt': power,
-                                            'pvkwh': generation}))
+      try:
+         power, generation = self.instance.read()
+         self.core.sendData(DataPackage(self, {'pvwatt': power,
+                                               'pvkwh': generation}))
+      except ConnectionError:
+         pass
 
    def event(self):
       pass

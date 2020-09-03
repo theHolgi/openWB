@@ -12,8 +12,10 @@ from openWB import *
 from openWB.OpenWBCore import OpenWBCore
 global core
 
-os.environ.pop('http_proxy')
-os.environ.pop('https_proxy')
+if 'http_proxy' in os.environ:
+   os.environ.pop('http_proxy')
+if 'https_proxy' in os.environ:
+   os.environ.pop('https_proxy')
 
 core = OpenWBCore(mypath + "/pyconfig.conf")
 
