@@ -3,7 +3,6 @@
 #  Pulse Width Modulation (PWM) demo to cycle brightness of an LED
 
 import Adafruit_PCA9685 as Ada
-import time
 import threading
 import time
 
@@ -21,8 +20,6 @@ OFF = 0
 # pwm.set_pwm(ch_green, 0, )
 # pwm.set_pwm(ch_red, 0, 4095)
 
-ramdisk = "/var/www/html/openWB/ramdisk/"
-
 def blink(port):
     t = threading.currentThread()
     t.do_run = True
@@ -35,15 +32,6 @@ def blink(port):
       time.sleep(1)
       state = ON-state
     print("Stop blinking.")
-
-def readfile(fileName):
-    with open(ramdisk + fileName) as f:
-        content = f.read()
-    try:
-        result = int(content)
-        return result
-    except ValueError:
-        return 0
 
 def scale(channel, val) -> int:
     table = { 'pv':   {     0: 0, 2000: 850, 4000: 1760, 6000: 2680, 8000: 3420, 9500: 4095 },
@@ -62,21 +50,17 @@ def scale(channel, val) -> int:
     return last_y
 
 last = {'pv': 0, 'grid': 0, 'green': 0, 'red': 0}
-def run(emparts, config):
+def publish(data, config):
       global last
-      pvwatt = -readfile("pvwatt")
-      bezug  = -emparts["pconsume"]
-      if bezug > -5:
-          bezug = emparts["psupply"]
+      pvwatt = -data.pvwatt
+      uberschuss = data.wattbezug
 
-      red = (bezug > 6400)
-      if bezug < 0 and pvwatt > 1000:
+      red = (uberschuss > 6400)
+      if uberschuss < 0 and pvwatt > 1000:
         red = "blink"
-      green = readfile("ladestatus") != 0
-      if green and readfile("mqttladeleistung") == 0:
+      green = data.ladestatus != 0
+      if green and data.mqttladeleistung == 0:
         green = "blink"
-      pvdc = 0
-      bezugdc = 0
       
       log = ""
       try:
@@ -87,13 +71,13 @@ def run(emparts, config):
           log += "PV: %dw = %.2f" % (pvwatt, pvdc/4095)
         else:
           log += "PV: %dw = ----" % pvwatt
-        if abs(last['grid'] - bezug) > 100:
-          bezugdc = scale('grid', bezug)
+        if abs(last['grid'] - uberschuss) > 100:
+          bezugdc = scale('grid', uberschuss)
           pwm.set_pwm(ch_grid, 0, bezugdc)
-          last['grid'] = bezug
-          log += " Grid: %dw = %.2f" % (bezug, bezugdc/4095)
+          last['grid'] = uberschuss
+          log += " Grid: %dw = %.2f" % (uberschuss, bezugdc/4095)
         else:
-          log += " Grid: %dw = ----" % bezug
+          log += " Grid: %dw = ----" % uberschuss
   
         if red == "blink":
           log += " r"
@@ -126,10 +110,5 @@ def run(emparts, config):
       except OSError:
         pass
       if config['verbose'] == '1':
-        print (log)
-
-def stopping(emparts, config):
-    pass
-def config(config):
-    pass
+        print(log)
 
