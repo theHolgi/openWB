@@ -2,6 +2,7 @@ from openWB import *
 from .speedwiredecoder import decode_speedwire
 import socket
 import struct
+from .pwm import publish
 
 class SMASHM(DataProvider):
    """SMA Smart home Meter (or Energy Meter)"""
@@ -66,6 +67,7 @@ class SMASHM(DataProvider):
                if empartskey in emparts:
                   data[datakey] = emparts[empartskey]
             self.core.sendData(data)
+            publish(self.core.data, {'verbose': 1})
             break
 
    def event(self):
