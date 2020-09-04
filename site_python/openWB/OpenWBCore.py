@@ -48,11 +48,12 @@ class OpenWBCore:
          self.logger.debug("Values: " + str(self.data))
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
+         self.logger.info("PV: %iW EVU: %iW Laden: %iW Überschuss: %iW" % (self.data.get("pvwatt"), -self.data.get("wattbezug"), self.data.get("llaktuell"), self.data.get("uberschuss")))
          time.sleep(20)
 
    def sendData(self, package: DataPackage):
       self.data.update(package)
-      self.logger.info('Daten von %s: ' % package.source.name + str(package))
+      self.logger.debug('Daten von %s: ' % package.source.name + str(package))
 
 
 

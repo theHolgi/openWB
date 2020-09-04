@@ -25,18 +25,21 @@ class SMADASH:
       power, generation = 0, 0
       context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
       context.verify_mode = ssl.CERT_NONE
-      with request.urlopen('https://' + self.host + self.valueURL, context = context) as r:
-         if r.getcode() == 200:
-            content = json.loads(r.read().decode())
-            for unitName, unitResult in content['result'].items():
-               # powerOut = getVal(unitResult, '6100_40463600')  # grid Supply
-               # powerIn  = getVal(unitResult, '6100_40463700')  # grid Consumption
-               power    = getVal(unitResult, '6100_40263F00')  # PV generation in W
-               if power is None:
-                  power = 0
-               else:
-                  power = -int(power) # generated power is negative
-               generation = getVal(unitResult, '6400_00260100')/1000  # Total yield in Wh
+      try:
+         with request.urlopen('https://' + self.host + self.valueURL, context = context) as r:
+            if r.getcode() == 200:
+               content = json.loads(r.read().decode())
+               for unitName, unitResult in content['result'].items():
+                  # powerOut = getVal(unitResult, '6100_40463600')  # grid Supply
+                  # powerIn  = getVal(unitResult, '6100_40463700')  # grid Consumption
+                  power    = getVal(unitResult, '6100_40263F00')  # PV generation in W
+                  if power is None:
+                     power = 0
+                  else:
+                     power = -int(power) # generated power is negative
+                  generation = getVal(unitResult, '6400_00260100')/1000  # Total yield in Wh
+      except:
+         pass
       return power, generation
 if __name__ == '__main__':
    power, generation = SMADASH(sys.argv[1]).read()

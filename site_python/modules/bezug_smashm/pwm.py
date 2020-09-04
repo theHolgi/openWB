@@ -52,14 +52,14 @@ def scale(channel, val) -> int:
 last = {'pv': 0, 'grid': 0, 'green': 0, 'red': 0}
 def publish(data, config):
       global last
-      pvwatt = -data.pvwatt
-      uberschuss = data.wattbezug
+      pvwatt = -data.get('pvwatt')
+      uberschuss = -data.get('wattbezug')
 
       red = (uberschuss > 6400)
       if uberschuss < 0 and pvwatt > 1000:
         red = "blink"
-      green = data.ladestatus != 0
-      if green and data.mqttladeleistung == 0:
+      green = data.get('ladestatus') != 0
+      if green and data.get('mqttladeleistung') == 0:
         green = "blink"
       
       log = ""

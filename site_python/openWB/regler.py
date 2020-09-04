@@ -123,6 +123,7 @@ class Regler:
    def req_charging(self, increment: int) -> None:
       """Set the given power"""
       power = self.wallbox.actP + increment
+      self.wallbox.core.logger.info("WB %i requested %iW" % (self.wallbox.id, power))
       if power < 100:
          self.offcount += 1
          if self.offcount >= self.config.abschaltverzoegerung:

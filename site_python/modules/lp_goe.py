@@ -6,6 +6,7 @@ from threading import Thread
 class GO_E_SET(Thread):
    """Threaded parameter setting on a GO-E charger"""
    def __init__(self, url, timeout):
+      super().__init__()
       self.url = url
       self.timeout = timeout
 
@@ -72,7 +73,6 @@ class GO_E(DataProvider, Ladepunkt):
    # Ladepunkt setter
    def set(self, power: int) -> None:
       ampere = power2amp(power, self.phasen)
-      self.core.logger.info("%i lädt mit %iW = %iA" % (self.id, ampere))
       aktiv = '1' if ampere > 0 else '0'
       if self.laststate['alw'] != aktiv:  # Allow
          GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()

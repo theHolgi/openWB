@@ -77,7 +77,7 @@ class Ladepunkt:
    type = "lp"
 
    # Diese Properties hat ein Ladepunkt und werden von ihm selbst verändert:
-   phasen = 3   # Init worst-case
+   phasen = 1   # Init worst-case
    charging = False   # Lädt gerade
    setP = 0  # Aktuell zugewiesene Leistung
    actP = 0  # Aktuell verwendete Leistung
