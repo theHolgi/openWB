@@ -48,7 +48,7 @@ class OpenWBCore:
          self.logger.debug("Values: " + str(self.data))
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
-#         time.sleep(5)
+         time.sleep(20)
 
    def sendData(self, package: DataPackage):
       self.data.update(package)
