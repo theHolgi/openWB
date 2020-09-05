@@ -35,7 +35,7 @@ class openWBconfig:
    Represents openwb.conf
    behaves like a dictionary (non-existent settings return None)
    """
-   def __init__(self, configfile:str = basepath + 'openwb.conf'):
+   def __init__(self, configfile: str = basepath + 'openwb.conf'):
       self.settings = {}
       self.configfile = configfile
       try:

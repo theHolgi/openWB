@@ -54,8 +54,10 @@ class GO_E(DataProvider, Ladepunkt):
                'lla1': a1, 'lla2': a2, 'lla3': a3,
                'llkwh': int(goe['eto'])/10,  # 0.1kWh
                'plugstat': self.plugged,
-               'chargestat': self.charging,
-               'llaktuell': self.actP}))
+               'ladestatus': self.charging,
+               'llaktuell': self.actP,
+               'lpphasen': self.phasen}))
+            # restzeitlp
       except error.URLError:
          pass
 

@@ -1,5 +1,6 @@
 from . import Modul, DataPackage, setCore, getCore
 from .openWBlib import *
+from .mqttpub import Mqttpublisher
 from .regler import *
 import logging
 from typing import Iterable
@@ -14,6 +15,7 @@ class OpenWBCore:
       self.modules = []
       self.data = openWBValues()
       self.config = openWBconfig(configFile)
+      self.mqtt = Mqttpublisher()
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
@@ -49,6 +51,7 @@ class OpenWBCore:
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
          self.logger.info("PV: %iW EVU: %iW Laden: %iW Überschuss: %iW" % (self.data.get("pvwatt"), -self.data.get("wattbezug"), self.data.get("llaktuell"), self.data.get("uberschuss")))
+         self.mqtt.publish(self.data)
          time.sleep(20)
 
    def sendData(self, package: DataPackage):

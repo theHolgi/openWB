@@ -136,6 +136,7 @@ class Regler:
          if self.blocked:
             power += self.wallbox.powerproperties().inc
          self.wallbox.set(power)
+         self.wallbox.zaehle_phasen()
 
 
 class Regelgruppe():
