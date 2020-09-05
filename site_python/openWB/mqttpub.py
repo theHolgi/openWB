@@ -120,16 +120,15 @@ class Mqttpublisher(object):
       for k,v in self.mapping.items():
         for mqttkey, datakey in self._loop(k,v):
           val = data.get(datakey)
+          if isinstance(val, bool):   # Convert booleans into 1/0
+            val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
             self.client.publish("openWB/" + mqttkey, payload=val, qos=self.qos, retain=self.retain)
+      # print("Last values:\n%s" % str(self.lastdata))
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
-      for key in self.all_live_fields:
-         if key.find('%n'):
-            last_live.extend(self.data.get(key.replace('%n', str(n))) for n in range(1, 8))
-         else:
-            last_live.append(self.data.get(key))
+      last_live.extend(str(data.get(key)) for key in self.all_live_fields)
       last_live = ",".join(last_live)
       self.all_live.append(last_live)
       self.client.publish("openWB/graph/lastlivevalues", payload=last_live, retain=self.retain)

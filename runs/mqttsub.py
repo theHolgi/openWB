@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import paho.mqtt.client as mqtt
 from subprocess import Popen
 import os
@@ -69,7 +71,8 @@ namenumballowed='^[0-9a-zA-Z ]+$'
 # connect to broker and subscribe to set topics
 def on_connect(client, userdata, flags, rc):
     #subscribe to all set topics
-    #client.subscribe("openWB/#", 2)
+    client.subscribe("openWB/#", 2)
+    client.subscribe("openWB/graph/#", 2)
     client.subscribe("openWB/set/#", 2)
     client.subscribe("openWB/config/set/#", 2)
 # handle each set topic
