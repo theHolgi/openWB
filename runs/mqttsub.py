@@ -71,12 +71,14 @@ namenumballowed='^[0-9a-zA-Z ]+$'
 # connect to broker and subscribe to set topics
 def on_connect(client, userdata, flags, rc):
     #subscribe to all set topics
-    client.subscribe("openWB/#", 2)
-    client.subscribe("openWB/graph/#", 2)
+    #client.subscribe("openWB/#", 2)
+    #client.subscribe("openWB/graph/#", 2)
     client.subscribe("openWB/set/#", 2)
     client.subscribe("openWB/config/set/#", 2)
+    print("Subscribed.")
 # handle each set topic
 def on_message(client, userdata, msg):
+    print("Message for you! Topic %s payload %s" % (msg.topic, msg.payload.decode()))
 
     if (( "openWB/set/lp" in msg.topic) and ("ChargePointEnabled" in msg.topic)):
         devicenumb=re.sub('\D', '', msg.topic)
@@ -955,10 +957,8 @@ def on_message(client, userdata, msg):
     if (len(msg.payload) >= 1):
         theTime = datetime.now()
         timestamp = theTime.strftime(format = "%Y-%m-%d %H:%M:%S")
-        file = open('/var/www/html/openWB/ramdisk/mqtt.log', 'a')
-        sys.stdout = file
-        print(timestamp + " Topic: " + msg.topic + "\nMessage: " + str(msg.payload.decode("utf-8")))
-        file.close()
+        with open('/var/www/html/openWB/ramdisk/mqtt.log', 'a') as f:
+           f.write(timestamp + " Topic: " + msg.topic + "\nMessage: " + str(msg.payload.decode("utf-8")))
 
 client.on_connect = on_connect
 client.on_message = on_message

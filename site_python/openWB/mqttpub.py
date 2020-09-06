@@ -3,6 +3,7 @@ import paho.mqtt.client as mqtt
 from .openWBlib import openWBValues 
 from typing import Iterator, Tuple, overload
 from datetime import datetime
+import logging
 
 basePath = os.path.dirname(os.path.realpath(__file__)) + '/'
 projectPath = os.path.realpath(os.path.dirname(__file__) + '/../../ramdisk/')
@@ -75,12 +76,26 @@ class Mqttpublisher(object):
                       )
    qos = 0
    retain = True
+   data = None
+   config = None
 
-   def __init__(self, hostname: str = "localhost"):
-      self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
-      self.client.connect(hostname)
+   def __init__(self, core, hostname: str = "localhost"):
+      def on_connect(client, userdata, flags, rc):
+         """Subscribe to set topics"""
+         self.logger.info('Subscribing.')
+         client.subscribe("openWB/set/#", 2)
+         client.subscribe("openWB/config/set/#", 2)
+
+      self.config = core.config
+      self.data = core.data
+      self.logger = logging.getLogger('MQTT')
       self.lastdata = {}
       self._init_data()
+      self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
+      self.client.on_message = self.messagehandler
+      self.client.on_connect = on_connect
+      self.client.connect(hostname)
+      self.client.loop_start()
 
    @overload
    @staticmethod
@@ -119,22 +134,23 @@ class Mqttpublisher(object):
          self.lastdata.update((mqttkey, 0) for mqttkey in self._loop(key))
       self.all_live = read_ramdisk('all-live.graph').split('\n')
 
-   def publish(self, data: openWBValues):
-      for k,v in self.mapping.items():
+   def publish(self):
+      for k, v in self.mapping.items():
         for mqttkey, datakey in self._loop(k,v):
-          val = data.get(datakey)
+          val = self.data.get(datakey)
           if isinstance(val, bool):   # Convert booleans into 1/0
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
-            if isinstance(bool, val)
+            if isinstance(val, bool):
+               val = 1 if val else 0
             self.client.publish("openWB/" + mqttkey, payload=val, qos=self.qos, retain=self.retain)
       # print("Last values:\n%s" % str(self.lastdata))
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
       #last_live.extend(str(-data.get(key)) if key[0]=='-' else str(data.get(key)) for key in self.all_live_fields)
       for key in self.all_live_fields:
-         last_live.append(str(-data.get(key[1:])) if key[0] == '-' else str(data.get(key)))
+         last_live.append(str(-self.data.get(key[1:])) if key[0] == '-' else str(self.data.get(key)))
          
       last_live = ",".join(last_live)
       self.all_live.append(last_live)
@@ -150,10 +166,18 @@ class Mqttpublisher(object):
          else:
             pl = "-\n"
          self.client.publish("openWB/graph/%ialllivevalues" % index, payload=pl, retain=self.retain)
-      self.client.loop(timeout=2.0)
 
       # Graphen aus der Ramdisk
       ramdisk('all-live.graph', "\n".join(self.all_live))
-      ramdisk('pv-live.graph', data.get("pvwatt"), 'a')
-      ramdisk('evu-live.graph', data.get("uberschuss"), 'a')
-      ramdisk('ev-live.graph', data.get("llaktuell"), 'a')
+      ramdisk('pv-live.graph', self.data.get("pvwatt"), 'a')
+      ramdisk('evu-live.graph', self.data.get("uberschuss"), 'a')
+      ramdisk('ev-live.graph', self.data.get("llaktuell"), 'a')
+
+   @staticmethod
+   def messagehandler(client, userdata, msg):
+      """Handle incoming requests"""
+      logging.getLogger('MQTT').info("receive: %s = %s" % (msg.topic, msg.payload))
+      if msg.topic == "openWB/config/set/pv/regulationPoint":
+         val = int(msg.payload)
+         if val >= -300000 and val <= 300000:
+            Mqttpublisher.config['offsetpv'] = val

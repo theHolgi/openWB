@@ -2,6 +2,7 @@ import enum
 from typing import Set, Optional
 from . import getCore
 from itertools import groupby
+from dataclasses import dataclass
 
 class Priority(enum.IntEnum):
    low = 1
@@ -9,21 +10,21 @@ class Priority(enum.IntEnum):
    high = 3
    forced = 4
 
-# dataclass would be great here, but requires Python 3.7
+@dataclass
 class RequestPoint:
-   def __init__(self, key: str, value: int, priority: Optional[Priority] = None):
-      self.key = key
-      self.value = value
-      self.priority = priority
+   key: str
+   value: int
+   priority: Optional[Priority] = None
 
    def __str__(self):
       return str(self.value)
+
 
 class Request(dict):
    """
    Ein Request bildet die Möglichkeiten eines Ladepunktes ab, seine Leistung zu verändern.
    - min+P Mindest Leistungsinkrement
-   - max+P Maximum Listungsinkrement
+   - max+P Maximum Leistungsinkrement
    - min-P Mindest Leistungsdekrement
    - max-P Maximum Leistungsdekrement
    jeder dieser Schlüssel hat einen Wert und eine Priorität.
