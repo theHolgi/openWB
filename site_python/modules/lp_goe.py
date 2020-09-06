@@ -58,7 +58,7 @@ class GO_E(DataProvider, Ladepunkt):
                'llaktuell': self.actP,
                'lpphasen': self.phasen}))
             # restzeitlp
-      except error.URLError:
+      except:
          pass
 
    def event(self):

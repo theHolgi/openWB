@@ -12,6 +12,9 @@ def ramdisk(fileName: str, content, mode: str = 'w'):
    with open(projectPath + '/' + fileName, mode) as f:
       f.write(str(content) + "\n")
 
+def read_ramdisk(fileName: str) -> str:
+   with open(projectPath + '/' + fileName) as f:
+      return f.read()
 
 class Mqttpublisher(object):
    mapping = {
@@ -61,7 +64,7 @@ class Mqttpublisher(object):
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
       "global/DailyYieldAllChargePointsKwh": "xxx"  # Lademenge daily
    }
-   all_live_fields = ("uberschuss", "ladeleistung", "pvwatt",
+   all_live_fields = ("uberschuss", "ladeleistung", "-pvwatt",
                       "llaktuell1", "llaktuell2", "llaktuell",
                       "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch",
                       "verbraucher1_watt", "verbraucher2_watt",
@@ -78,7 +81,6 @@ class Mqttpublisher(object):
       self.client.connect(hostname)
       self.lastdata = {}
       self._init_data()
-      self.all_live = []
 
    @overload
    @staticmethod
@@ -115,6 +117,7 @@ class Mqttpublisher(object):
    def _init_data(self):
       for key in self.mapping.keys():
          self.lastdata.update((mqttkey, 0) for mqttkey in self._loop(key))
+      self.all_live = read_ramdisk('all-live.graph').split('\n')
 
    def publish(self, data: openWBValues):
       for k,v in self.mapping.items():
@@ -128,14 +131,19 @@ class Mqttpublisher(object):
       # print("Last values:\n%s" % str(self.lastdata))
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
-      last_live.extend(str(data.get(key)) for key in self.all_live_fields)
+      #last_live.extend(str(-data.get(key)) if key[0]=='-' else str(data.get(key)) for key in self.all_live_fields)
+      for key in self.all_live_fields:
+         last_live.append(str(-data.get(key[1:])) if key[0] == '-' else str(data.get(key)))
+         
       last_live = ",".join(last_live)
       self.all_live.append(last_live)
+      print("Live:\n%s" % last_live)
+      if len(self.all_live) > 800:
+         self.all_live = self.all_live[-800:]
       self.client.publish("openWB/graph/lastlivevalues", payload=last_live, retain=self.retain)
       for index, n in enumerate(range(0, 800, 50)):
-         if len(self.all_live) >= n+50:
+         if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
-            print("Segment %i:\n%s" % (index, pl))
             self.client.publish("openWB/graph/%ialllivevalues" % index,
                                 payload="\n".join(self.all_live[n:n+50]), retain=self.retain)
          else:
@@ -144,6 +152,7 @@ class Mqttpublisher(object):
       self.client.loop(timeout=2.0)
 
       # Graphen aus der Ramdisk
+      ramdisk('all-live.graph', "\n".join(self.all_live))
       ramdisk('pv-live.graph', data.get("pvwatt"), 'a')
       ramdisk('evu-live.graph', data.get("uberschuss"), 'a')
       ramdisk('ev-live.graph', data.get("llaktuell"), 'a')
