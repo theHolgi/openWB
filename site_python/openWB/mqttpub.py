@@ -37,10 +37,10 @@ class Mqttpublisher(object):
       "lp/%n/APhase%p": "lla%p%n",
       "lp/%n/PfPhase%p": "llpf%p%n",
       "lp/%n/kWhCounter": "llkwh%n",
-      "lp/%n/AConfigured": "llsoll%n",
-      "lp/%n/ChargeStatus": "ladestatus%n",
-      "lp/%n/boolPlugStat": "plugstat%n",
-      "lp/%n/boolChargeStat": "chargestat%n",
+      "lp/%n/AConfigured": "llsoll%n",         # Soll Strom
+      "lp/%n/ChargeStatus": "ladestatus%n",    # Soll geladen werden
+      "lp/%n/boolPlugStat": "plugstat%n",      # plugged
+      "lp/%n/boolChargeStat": "chargestat%n",  # charging
 
       "lp/%n/countPhasesInUse": "lpphasen%n",
       "lp/%n/kWhActualCharged": "aktgeladen%n",
@@ -61,14 +61,14 @@ class Mqttpublisher(object):
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
       "global/DailyYieldAllChargePointsKwh": "xxx"  # Lademenge daily
    }
-   all_live_fields = ("uberschuss", "ladeleistung", "pvwatt",
-                      "llaktuell1", "llaktuell2", "llaktuell",
-                      "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch",
-                      "verbraucher1_watt", "verbraucher2_watt",
-                      "llaktuell3", "llaktuell4", "llaktuell5",
-                      "llaktuell6", "llaktuell7", "llaktuell8",
-                      "shd1_w", "shd2_w", "shd3_w", "shd4_w",
-                      "shd5_w", "shd6_w", "shd7_w", "shd8_w"
+   all_live_fields = ("uberschuss", "ladeleistung", "pvwatt", #3
+                      "llaktuell1", "llaktuell2", "llaktuell", #6
+                      "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
+                      "verbraucher1_watt", "verbraucher2_watt", #13
+                      "llaktuell3", "llaktuell4", "llaktuell5", #16
+                      "llaktuell6", "llaktuell7", "llaktuell8", # 19
+                      "shd1_w", "shd2_w", "shd3_w", "shd4_w", #23
+                      "shd5_w", "shd6_w", "shd7_w", "shd8_w" #27
                       )
    qos = 0
    retain = True
@@ -124,6 +124,7 @@ class Mqttpublisher(object):
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
+            if isinstance(bool, val)
             self.client.publish("openWB/" + mqttkey, payload=val, qos=self.qos, retain=self.retain)
       # print("Last values:\n%s" % str(self.lastdata))
       # Live values

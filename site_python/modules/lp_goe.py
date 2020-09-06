@@ -25,6 +25,7 @@ class GO_E(DataProvider, Ladepunkt):
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
       self.plugged = False
+      self.charging = False
 
    # DataProvier trigger
    def trigger(self):
@@ -54,7 +55,7 @@ class GO_E(DataProvider, Ladepunkt):
                'lla1': a1, 'lla2': a2, 'lla3': a3,
                'llkwh': int(goe['eto'])/10,  # 0.1kWh
                'plugstat': self.plugged,
-               'ladestatus': self.charging,
+               'chargestat': self.charging,
                'llaktuell': self.actP,
                'lpphasen': self.phasen}))
             # restzeitlp
@@ -76,6 +77,7 @@ class GO_E(DataProvider, Ladepunkt):
    def set(self, power: int) -> None:
       ampere = power2amp(power, self.phasen)
       aktiv = '1' if ampere > 0 else '0'
+      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': aktiv}))
       if self.laststate['alw'] != aktiv:  # Allow
          GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()
       if self.laststate['amp'] != str(ampere):  # Power

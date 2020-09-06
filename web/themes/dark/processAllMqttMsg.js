@@ -268,10 +268,10 @@ function processEvuMessages(mqttmsg, mqttpayload) {
 			powerEvu = 0;
 		}
 		if ( powerEvu > 0 ) {
-			prefix = ' Imp: ';
+			prefix = ' ⬇️ ';
 		} else if ( powerEvu < 0 ) {
 			powerEvu *= -1;
-			prefix = ' Exp: ';
+			prefix = ' ⬆️: ';
 		}
 		if ( powerEvu > 999 ) {
 			powerEvu = (powerEvu / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
