@@ -3,6 +3,7 @@ from urllib import request, error
 import json
 from threading import Thread
 
+
 class GO_E_SET(Thread):
    """Threaded parameter setting on a GO-E charger"""
    def __init__(self, url, timeout):
@@ -65,7 +66,7 @@ class GO_E(DataProvider, Ladepunkt):
    def event(self):
       pass
 
-   def powerproperties(self):
+   def powerproperties(self) -> PowerProperties:
       if not self.plugged:
          return PowerProperties(0, 0, 0)
       else:
