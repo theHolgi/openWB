@@ -20,21 +20,21 @@ class LP_FHEMSWITCH(DataProvider, Ladepunkt):
       self.setP = 0
 
    @property
-   def blocked(self):
+   def is_blocked(self):
       return self.blockcnt <= 5
 
    def trigger(self):
       # Da wir den Verbrauch selber nicht messen können, erkenne wenigstens unplausiblen Hausverbrauch
       if self.core.data.get('hausverbrauch') < 0:
          self.blockcnt += 1
-         if self.blocked:
+         if self.is_blocked:
             self.actP = 0
       else:
          if self.blockcnt > 0:
             self.blockcnt -= 1
          
       self.core.sendData(DataPackage(self, {
-         'plugstat': not self.blocked,
+         'plugstat': not self.is_blocked,
          'chargestat': self.is_charging,
          'llaktuell': self.actP,
          'lpphasen': 1}))
@@ -49,7 +49,7 @@ class LP_FHEMSWITCH(DataProvider, Ladepunkt):
       ampere = power2amp(power, self.phasen)
       self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': 1 if charging else 0 }))
       self.setP = power
-      if (charging and not self.is_charging and not self.blocked) \
+      if (charging and not self.is_charging and not self.is_blocked) \
             or (not charging and self.setP > 0):
          fhem_send(self.ip, "set %s on" % self.swname)
          self.actP = power

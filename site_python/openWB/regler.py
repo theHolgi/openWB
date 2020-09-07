@@ -68,43 +68,42 @@ class Regler:
       self.request = self.req_idle
 
    @property
-   def blocked(self):
-      return self.blockcount >= 10
+   def blocked(self) -> bool:
+      return self.wallbox.is_blocked
 
    def get_props(self) -> Request:
       props = self.wallbox.powerproperties()
       request = Request(self.wallbox.id, prio=self.wallbox.prio)
       if self.wallbox.is_charging:
          request.flags.add('on')
-         # Erkennung blockierter Ladepunkt
-         if self.wallbox.setP - self.wallbox.actP > 200 * self.wallbox.phasen:
-            self.blockcount += 1
-         else:
-            self.blockcount = 0
-         if self.wallbox.actP - props.inc >= props.minP:  # Verringerung noch möglich
+
+         if self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
             request += RequestPoint('min-P', props.inc)
-            request += RequestPoint('max-P', self.wallbox.actP - props.minP)
+            request += RequestPoint('max-P', self.wallbox.setP - props.minP)
          else:  # Nein, nur ganz ausschalten
             request.flags.add('min')
-            # Wenn actP noch über Min ist, lasse Reduzierung noch zu
-            if self.wallbox.actP > props.minP:
-               request += RequestPoint('min-P', self.wallbox.actP - props.minP)
+            # Wenn noch über Min, lasse Reduzierung noch zu
+            if self.wallbox.setP > props.minP:
+               request += RequestPoint('min-P', self.wallbox.setP - props.minP)
             else:
-               request += RequestPoint('min-P', self.wallbox.actP)
-            request += RequestPoint('max-P', self.wallbox.actP)
-         if self.blocked:
+               request += RequestPoint('min-P', self.wallbox.setP)
+            request += RequestPoint('max-P', self.wallbox.setP)
+         if self.blocked:                 # Blockierter Ladepunkt bietet keine Leistungserhöhung an
             request.flags.add('blocked')  # Nicht wirklich benötigt
          elif self.wallbox.actP + props.inc <= props.maxP:  # Erhöhung noch möglich
             request += RequestPoint('min+P', props.inc)
-            request += RequestPoint('max+P', props.maxP - self.wallbox.actP)
+            request += RequestPoint('max+P', props.maxP - self.wallbox.setP)
          else:
             request.flags.add('max')  # Nicht wirklich benötigt
       else:
          request.flags.add('off')
-         self.blockcount = 0
-         # actP i.d.R 0, aber könnte schon etwas Strom haben
-         request += RequestPoint('min+P', props.minP - self.wallbox.actP)
-         request += RequestPoint('max+P', props.maxP - self.wallbox.actP)
+         if self.wallbox.setP < props.minP:   # Noch nicht eingeschaltet
+            request += RequestPoint('min+P', props.minP - self.wallbox.setP)
+            request += RequestPoint('max+P', props.maxP - self.wallbox.setP)
+         else:   # Ladeende - versuche Leistung freizugeben
+            request += RequestPoint('min-P', self.wallbox.setP)
+            request += RequestPoint('max-P', self.wallbox.setP)
+
       return request
 
    def req_idle(self, increment: int) -> None:
@@ -118,12 +117,12 @@ class Regler:
             self.state = 'init'
             self.oncount = 0
             self.request = self.req_charging
-            power = self.wallbox.actP + increment
+            power = self.wallbox.setP + increment
             self.wallbox.set(power)
 
    def req_charging(self, increment: int) -> None:
       """Set the given power"""
-      power = self.wallbox.actP + increment
+      power = self.wallbox.setP + increment
       self.wallbox.core.logger.info("WB %i requested %iW" % (self.wallbox.id, power))
       if power < 100:
          self.offcount += 1
@@ -134,8 +133,6 @@ class Regler:
             self.wallbox.set(power)
       else:
          self.offcount = 0
-         if self.blocked:
-            power += self.wallbox.powerproperties().inc
          self.wallbox.set(power)
          self.wallbox.zaehle_phasen()
 

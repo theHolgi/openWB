@@ -76,6 +76,7 @@ class GO_E(DataProvider, Ladepunkt):
 
    # Ladepunkt setter
    def set(self, power: int) -> None:
+      self.setP = power
       ampere = power2amp(power, self.phasen)
       self.core.logger.info(f"GO-E request {power}W ({ampere}A)")
       aktiv = '1' if ampere > 0 else '0'

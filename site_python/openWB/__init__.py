@@ -70,8 +70,9 @@ class DataProvider(Modul):
       ...
 
 class Ladepunkt:
-   """Mix-in Klasse eines Ladepunktes.
-   Konkrete Ladepunkte leiten sich von "DataProvider" und "Ladepunkt" ab.
+   """
+     Mix-in Klasse eines Ladepunktes.
+     Konkrete Ladepunkte leiten sich von "DataProvider" und "Ladepunkt" ab.
    """
    multiinstance = True
    type = "lp"
@@ -86,7 +87,7 @@ class Ladepunkt:
       """Liefert Möglichkeiten/Wünsche der Leistungsanpassung"""
       ...
 
-   def set(self, power:int) -> None:
+   def set(self, power: int) -> None:
       """Setze zugewiesene Leistung"""
       self.setP = power
       ...
@@ -101,15 +102,23 @@ class Ladepunkt:
             self.phasen = phasen
 
    @property
-   def is_charging(self):
+   def is_charging(self) -> bool:
+      """Fehrzeug lädt"""
       return self.actP > 300
 
    @property
-   def minP(self):
+   def is_blocked(self) -> bool:
+      """Fahrzeug folgt dem Sollstrom nicht"""
+      return self.core.data.get('lla1', id=self.id) <= self.core.data.get('llsoll', id=self.id) - 1
+
+   @property
+   def minP(self) -> int:
+      """Minimalleistung"""
       return self.core.config.minimalstromstaerke * self.phasen * 230
 
    @property
-   def maxP(self):
+   def maxP(self) -> int:
+      """Maximalleistung"""
       return self.core.config.maximalstromstaerke * self.phasen * 230
 
 
@@ -138,10 +147,12 @@ class PVModul:
 # - pvkwh: Gesamte Einspeiseleistung (kWh)
 
 
-def amp2amp(amp: Union[float,int]) -> int:
+def amp2amp(amp: Union[float, int]) -> int:
    """Limitiere Ampere auf min/max und runde ab auf Ganze"""
    config = getCore().config
-   if amp < config.minimalstromstaerke:
+   if amp < 1:
+      return 0
+   elif amp < config.minimalstromstaerke:
       amp = config.minimalstromstaerke
    elif amp > config.maximalstromstaerke:
       amp = config.maximalstromstaerke
