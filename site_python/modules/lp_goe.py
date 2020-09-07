@@ -20,7 +20,7 @@ class GO_E_SET(Thread):
 
 
 class GO_E(DataProvider, Ladepunkt):
-   """SMA Smart home Meter (or Energy Meter)"""
+   """GO-E wallbox"""
    def setup(self, config):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)

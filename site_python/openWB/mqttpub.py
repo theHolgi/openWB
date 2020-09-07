@@ -50,7 +50,8 @@ class Mqttpublisher(object):
       "lp/%n/kWhActualCharged": "aktgeladen%n",
       "lp/%n/kWhChargedSincePlugged": "pluggedladungbishergeladen%n",
       "lp/%n/TimeRemaining": "restzeitlp%n",
-      "lp/%n/ChargePointEnabled": "lp%nenabled",     # Eher Konfiguration
+      "lp/%n/ChargePointEnabled": "lp%nenabled",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
+      "lp/%n/boolChargePointConfigured": "lpconf%n",   # Configured -> Geräte konfiguriert
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
       "config/get/sofort/lp/%n/current": "lpsofortll%n",
@@ -74,10 +75,10 @@ class Mqttpublisher(object):
                       "shd1_w", "shd2_w", "shd3_w", "shd4_w", #23
                       "shd5_w", "shd6_w", "shd7_w", "shd8_w" #27
                       )
-   qos = 0
    retain = True
    data = None
    config = None
+   num_lps = 0   # Anzahl Ladepunkte
 
    def __init__(self, core, hostname: str = "localhost"):
       def on_connect(client, userdata, flags, rc):
@@ -96,6 +97,7 @@ class Mqttpublisher(object):
       self.client.on_connect = on_connect
       self.client.connect(hostname)
       self.client.loop_start()
+      self.num_lps = sum(1 if self.data.get('lpconf', id=n) else 0 for n in range(1, 9))
 
    @overload
    @staticmethod
@@ -110,7 +112,7 @@ class Mqttpublisher(object):
    @staticmethod
    def _loop(key: str, key2: str = None) -> Iterator[str]:
       if key.find('%n') >= 0:  # Instance
-         for n in range(1, 9):
+         for n in range(1, 9):   # Mqttpublisher.num_lps + 1
             if key2 is None:
                for k1 in Mqttpublisher._loop(key.replace('%n', str(n))):
                  yield k1
@@ -136,13 +138,14 @@ class Mqttpublisher(object):
 
    def publish(self):
       for k, v in self.mapping.items():
-        for mqttkey, datakey in self._loop(k,v):
+        for mqttkey, datakey in self._loop(k, v):
           val = self.data.get(datakey)
           if isinstance(val, bool):   # Convert booleans into 1/0
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
-            self.client.publish("openWB/" + mqttkey, payload=val, qos=self.qos, retain=self.retain)
+            self.client.publish("openWB/" + mqttkey, payload=val, qos=0, retain=self.retain)
+
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
       #last_live.extend(str(-data.get(key)) if key[0]=='-' else str(data.get(key)) for key in self.all_live_fields)
