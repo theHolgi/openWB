@@ -57,7 +57,8 @@ class OpenWBCore:
          for kreis in self.regelkreise.values():
             for lp in kreis.regler.values():
                id = lp.wallbox.id
-               debug += f"({id}: {lp.mode} {self.data.get('lla1', id)}A {self.data.get('llaktuell',id)}W"
+               on = "*" if self.data.get('ladestatus', id) else ""
+               debug += f"({id}{on}: {lp.mode} {self.data.get('lla1', id)}A {self.data.get('llaktuell',id)}W"
                if lp.oncount > 0:
                   debug += f" +{lp.oncount}"
                if lp.offcount > 0:

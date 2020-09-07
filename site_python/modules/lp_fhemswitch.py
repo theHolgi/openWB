@@ -9,6 +9,7 @@ def fhem_send(ip: str, cmd: str) -> None:
    s.shutdown(1)
    s.close()
 
+ON_DELAY = 5
 
 class LP_FHEMSWITCH(DataProvider, Ladepunkt):
    """Ladepunkt als FHEM-Schaltsteckdose"""
@@ -17,11 +18,12 @@ class LP_FHEMSWITCH(DataProvider, Ladepunkt):
       self.swname = config.get(self.configprefix + '_name')
       self.power = config.get(self.configprefix + '_power', 2000)
       self.blockcnt = 0
+      self.on_delay = 0
       self.setP = 0
 
    @property
    def is_blocked(self):
-      return self.blockcnt <= 5
+      return self.blockcnt >= 5
 
    def trigger(self):
       # Da wir den Verbrauch selber nicht messen können, erkenne wenigstens unplausiblen Hausverbrauch
@@ -29,7 +31,7 @@ class LP_FHEMSWITCH(DataProvider, Ladepunkt):
          self.blockcnt += 1
          if self.is_blocked:
             self.actP = 0
-      else:
+      elif not self.is_blocked:
          if self.blockcnt > 0:
             self.blockcnt -= 1
          
@@ -48,14 +50,25 @@ class LP_FHEMSWITCH(DataProvider, Ladepunkt):
       charging = power > self.power/2
       ampere = power2amp(power, self.phasen)
       self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': 1 if charging else 0 }))
+      self.core.logger.info("FHEM send %i W" % power)
+      if charging and not self.is_charging and not self.is_blocked:
+         if self.on_delay == 0:
+            cmd = "set %s on" % self.swname
+            self.core.logger.info("FHEM cmd " + cmd)
+            fhem_send(self.ip, cmd)
+         if self.on_delay < ON_DELAY:
+            self.on_delay += 1
+         else:
+            self.actP = power
+      elif not charging and self.setP > 0:
+            cmd = "set %s off" % self.swname
+            self.core.logger.info("FHEM cmd " + cmd)
+            fhem_send(self.ip, cmd)
       self.setP = power
-      if (charging and not self.is_charging and not self.is_blocked) \
-            or (not charging and self.setP > 0):
-         fhem_send(self.ip, "set %s on" % self.swname)
-         self.actP = power
       # Blockierung wird bei Abschaltung aufgehoben
       if not charging:
          self.blockcnt = 0
+         self.on_delay = 0
          self.actP = 0
 
 

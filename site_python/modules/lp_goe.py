@@ -80,7 +80,6 @@ class GO_E(DataProvider, Ladepunkt):
       ampere = power2amp(power, self.phasen)
       self.core.logger.info(f"GO-E request {power}W ({ampere}A)")
       aktiv = '1' if ampere > 0 else '0'
-      self.core.logger.info(f"GO-E request {power}W ({ampere}A)")
       self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': aktiv}))
       if self.laststate['alw'] != aktiv:  # Allow
          GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()

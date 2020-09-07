@@ -134,7 +134,7 @@ class Mqttpublisher(object):
 
    def _init_data(self):
       for key in self.mapping.keys():
-         self.lastdata.update((mqttkey, 0) for mqttkey in self._loop(key))
+         self.lastdata.update((mqttkey, None) for mqttkey in self._loop(key))
       self.all_live = read_ramdisk('all-live.graph').split('\n')
 
    def publish(self):

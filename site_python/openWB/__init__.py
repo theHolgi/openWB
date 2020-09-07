@@ -160,4 +160,7 @@ def amp2amp(amp: Union[float, int]) -> int:
 
 def power2amp(power:int, phasen: int) -> int:
    """Konvertiere Leistung zu (ganzen) Ampere"""
-   return amp2amp(power/phasen/230)
+   if power < 100:
+      return 0
+   else:
+      return amp2amp(power/phasen/230)
