@@ -142,10 +142,7 @@ class Mqttpublisher(object):
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
-            if isinstance(val, bool):
-               val = 1 if val else 0
             self.client.publish("openWB/" + mqttkey, payload=val, qos=self.qos, retain=self.retain)
-      # print("Last values:\n%s" % str(self.lastdata))
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
       #last_live.extend(str(-data.get(key)) if key[0]=='-' else str(data.get(key)) for key in self.all_live_fields)
@@ -154,7 +151,7 @@ class Mqttpublisher(object):
          
       last_live = ",".join(last_live)
       self.all_live.append(last_live)
-      print("Live:\n%s" % last_live)
+      print("Live: %s" % last_live)
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
       self.client.publish("openWB/graph/lastlivevalues", payload=last_live, retain=self.retain)
