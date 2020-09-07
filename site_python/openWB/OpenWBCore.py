@@ -52,7 +52,18 @@ class OpenWBCore:
          self.logger.debug("Values: " + str(self.data))
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
-         self.logger.info("PV: %iW EVU: %iW Laden: %iW Überschuss: %iW" % (self.data.get("pvwatt"), -self.data.get("wattbezug"), self.data.get("llaktuell"), self.data.get("uberschuss")))
+         debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
+         debug += "Laden: %iW" % self.data.get("llaktuell")
+         for kreis in self.regelkreise.values():
+            for lp in kreis.regler.values():
+               debug += f"({lp.wallbox.id}: {lp.mode} {lp.wallbox.I}A {lp.wallbox.actP}W"
+               if lp.oncount > 0:
+                  debug += f" +{lp.oncount}"
+               if lp.offcount > 0:
+                  debug += f" -{lp.offcount}"
+               debug += ")"
+         debug += " Haus: %iW" % self.data.get("hausverbrauch")
+         self.logger.info(debug)
          if self.config.get('testmode') is None:
             self.mqtt.publish()
             time.sleep(20)

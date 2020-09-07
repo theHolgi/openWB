@@ -36,6 +36,7 @@ class Mqttpublisher(object):
       "pv/WhCounter": "pvkwh",
 
       # LP
+      "global/WAllChargePoints": "llaktuell",
       "lp/%n/W": "llaktuell%n",
       "lp/%n/VPhase%p": "llv%p%n",
       "lp/%n/APhase%p": "lla%p%n",
@@ -177,7 +178,15 @@ class Mqttpublisher(object):
    def messagehandler(client, userdata, msg):
       """Handle incoming requests"""
       logging.getLogger('MQTT').info("receive: %s = %s" % (msg.topic, msg.payload))
-      if msg.topic == "openWB/config/set/pv/regulationPoint":
+      if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
          val = int(msg.payload)
          if val >= -300000 and val <= 300000:
             Mqttpublisher.config['offsetpv'] = val
+
+      elif msg.topic == "openWB/set/lp/2/ChargePointEnabled":     # Chargepoint en/disable
+         pass
+"""
+INFO:MQTT:receive: openWB/config/set/pv/regulationPoint = b'200'
+INFO:MQTT:receive: openWB/config/set/pv/stopDelay = b'60'
+INFO:MQTT:receive: openWB/config/set/pv/nurpv70dynw = b'6500'
+"""
