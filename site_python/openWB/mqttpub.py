@@ -4,9 +4,9 @@ import re
 import paho.mqtt.client as mqtt
 
 from . import DataPackage
-from .openWBlib import openWBValues 
 from typing import Iterator, Tuple, overload
 from datetime import datetime
+from time import time
 import logging
 
 basePath = os.path.dirname(os.path.realpath(__file__)) + '/'
@@ -22,7 +22,10 @@ def read_ramdisk(fileName: str) -> str:
       return f.read()
 
 class Mqttpublisher(object):
-   mapping = {
+   configmapping = {
+      "lp/1/strChargePointName": "lp%nname"
+   }
+   datamapping = {
       # EVU
       "evu/W": "wattbezug",
       "evu/WhExported": "einspeisungkwh",
@@ -55,7 +58,7 @@ class Mqttpublisher(object):
       "lp/%n/kWhActualCharged": "aktgeladen%n",
       "lp/%n/kWhChargedSincePlugged": "pluggedladungbishergeladen%n",
       "lp/%n/TimeRemaining": "restzeitlp%n",
-      "lp/%n/ChargePointEnabled": "lpenabled%n",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
+      "set/lp/%n/ChargePointEnabled": "lpenabled%n",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
       "lp/%n/boolChargePointConfigured": "lpconf%n",   # Configured -> Geräte konfiguriert
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
@@ -83,6 +86,7 @@ class Mqttpublisher(object):
    retain = True
    core = None
    num_lps = 0   # Anzahl Ladepunkte
+   configqos = 2
 
    def __init__(self, core, hostname: str = "localhost"):
       def on_connect(client, userdata, flags, rc):
@@ -104,6 +108,7 @@ class Mqttpublisher(object):
       self.client.on_connect = on_connect
       self.client.connect(hostname)
       self.client.loop_start()
+      self.publish_config()
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
 
    @overload
@@ -139,12 +144,12 @@ class Mqttpublisher(object):
             yield key, key2
 
    def _init_data(self):
-      for key in self.mapping.keys():
+      for key in self.datamapping.keys():
          self.lastdata.update((mqttkey, None) for mqttkey in self._loop(key))
       self.all_live = read_ramdisk('all-live.graph').split('\n')
 
    def publish(self):
-      for k, v in self.mapping.items():
+      for k, v in self.datamapping.items():
         for mqttkey, datakey in self._loop(k, v):
           val = self.core.data.get(datakey)
           if isinstance(val, bool):   # Convert booleans into 1/0
@@ -165,6 +170,7 @@ class Mqttpublisher(object):
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
       self.client.publish("openWB/graph/lastlivevalues", payload=last_live)
+      self.client.publish("openWB/system/Timestamp", int(time()) , qos=0)
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
@@ -180,9 +186,18 @@ class Mqttpublisher(object):
       ramdisk('evu-live.graph', self.core.data.get("uberschuss"), 'a')
       ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
 
+   def publish_config(self):
+      """Sende Config als MQTT"""
+      for k, v in self.configmapping.items():
+         for mqttkey, datakey in self._loop(k, v):
+            val = self.core.config.get(datakey)
+            if isinstance(val, bool):   # Convert booleans into 1/0
+               val = 1 if val else 0
+            if val is not None:
+               self.client.publish("openWB/" + mqttkey, payload=val, qos=self.configqos, retain=True)
+
    def messagehandler(self, msg):
       """Handle incoming requests"""
-      configqos = 2
       republish = False
       logging.getLogger('MQTT').info("receive: %s = %s" % (msg.topic, msg.payload))
       val = int(msg.payload)
@@ -207,7 +222,7 @@ class Mqttpublisher(object):
             republish = True
 
       if republish:
-         self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=configqos, retain=True)
+         self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=self.configqos, retain=True)
 
 """
 INFO:MQTT:receive: openWB/config/set/pv/stopDelay = b'60'
