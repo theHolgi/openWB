@@ -1,5 +1,9 @@
 import os
+import re
+
 import paho.mqtt.client as mqtt
+
+from . import DataPackage
 from .openWBlib import openWBValues 
 from typing import Iterator, Tuple, overload
 from datetime import datetime
@@ -51,7 +55,7 @@ class Mqttpublisher(object):
       "lp/%n/kWhActualCharged": "aktgeladen%n",
       "lp/%n/kWhChargedSincePlugged": "pluggedladungbishergeladen%n",
       "lp/%n/TimeRemaining": "restzeitlp%n",
-      "lp/%n/ChargePointEnabled": "lp%nenabled",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
+      "lp/%n/ChargePointEnabled": "lpenabled%n",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
       "lp/%n/boolChargePointConfigured": "lpconf%n",   # Configured -> Geräte konfiguriert
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
@@ -77,8 +81,7 @@ class Mqttpublisher(object):
                       "shd5_w", "shd6_w", "shd7_w", "shd8_w" #27
                       )
    retain = True
-   data = None
-   config = None
+   core = None
    num_lps = 0   # Anzahl Ladepunkte
 
    def __init__(self, core, hostname: str = "localhost"):
@@ -88,17 +91,20 @@ class Mqttpublisher(object):
          client.subscribe("openWB/set/#", 2)
          client.subscribe("openWB/config/set/#", 2)
 
-      self.config = core.config
-      self.data = core.data
+      def on_message(client, userdata, msg):
+         """Handle incoming messages"""
+         self.messagehandler(msg)
+
+      self.core = core
       self.logger = logging.getLogger('MQTT')
       self.lastdata = {}
       self._init_data()
       self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
-      self.client.on_message = self.messagehandler
+      self.client.on_message = on_message
       self.client.on_connect = on_connect
       self.client.connect(hostname)
       self.client.loop_start()
-      self.num_lps = sum(1 if self.data.get('lpconf', id=n) else 0 for n in range(1, 9))
+      self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
 
    @overload
    @staticmethod
@@ -140,25 +146,25 @@ class Mqttpublisher(object):
    def publish(self):
       for k, v in self.mapping.items():
         for mqttkey, datakey in self._loop(k, v):
-          val = self.data.get(datakey)
+          val = self.core.data.get(datakey)
           if isinstance(val, bool):   # Convert booleans into 1/0
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
-            self.client.publish("openWB/" + mqttkey, payload=val, qos=0, retain=self.retain)
+            self.client.publish("openWB/" + mqttkey, payload=val, qos=0, retain=True)
 
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
       #last_live.extend(str(-data.get(key)) if key[0]=='-' else str(data.get(key)) for key in self.all_live_fields)
       for key in self.all_live_fields:
-         last_live.append(str(-self.data.get(key[1:])) if key[0] == '-' else str(self.data.get(key)))
+         last_live.append(str(-self.core.data.get(key[1:])) if key[0] == '-' else str(self.core.data.get(key)))
          
       last_live = ",".join(last_live)
       self.all_live.append(last_live)
       print("Live: %s" % last_live)
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
-      self.client.publish("openWB/graph/lastlivevalues", payload=last_live, retain=self.retain)
+      self.client.publish("openWB/graph/lastlivevalues", payload=last_live)
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
@@ -170,23 +176,40 @@ class Mqttpublisher(object):
 
       # Graphen aus der Ramdisk
       ramdisk('all-live.graph', "\n".join(self.all_live))
-      ramdisk('pv-live.graph', self.data.get("pvwatt"), 'a')
-      ramdisk('evu-live.graph', self.data.get("uberschuss"), 'a')
-      ramdisk('ev-live.graph', self.data.get("llaktuell"), 'a')
+      ramdisk('pv-live.graph', self.core.data.get("pvwatt"), 'a')
+      ramdisk('evu-live.graph', self.core.data.get("uberschuss"), 'a')
+      ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
 
-   @staticmethod
-   def messagehandler(client, userdata, msg):
+   def messagehandler(self, msg):
       """Handle incoming requests"""
+      configqos = 2
+      republish = False
       logging.getLogger('MQTT').info("receive: %s = %s" % (msg.topic, msg.payload))
+      val = int(msg.payload)
       if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
-         val = int(msg.payload)
-         if val >= -300000 and val <= 300000:
-            Mqttpublisher.config['offsetpv'] = val
+         if -300000 <= val <= 300000:
+            self.core.config['offsetpv'] = val
+            republish = True
+      elif m := re.match("openWB/set/lp/(\\d)/ChargePointEnabled", msg.topic):     # Chargepoint en/disable
+         self.core.sendData(DataPackage(self, {'lpenabled%i' % m.group(1): val}))
+      elif m := re.search("^openWB/config/set/sofort/lp/(\\d)/", msg.topic):  # Sofortladen...
+         device = m.group(1)
+         if 1 <= device <= 8:
+            if msg.topic.endswith('current'):
+               self.core.config['lp%isofortll' % device] = val
+            elif msg.topic.endswith('energyToCharge'):
+               self.core.config['lademkwh%i' % device] = val
+            elif msg.topic.endswith('resetEnergyToCharge'):
+               self.core.sendData(DataPackage(self, {'aktgeladen%i' % device: 0}))
+      elif msg.topic == "openWB/config/set/pv/stopDelay":
+         if 0 <= val <= 10000:
+            self.core.config['abschaltverzoegerung'] = val
+            republish = True
 
-      elif msg.topic == "openWB/set/lp/2/ChargePointEnabled":     # Chargepoint en/disable
-         pass
+      if republish:
+         self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=configqos, retain=True)
+
 """
-INFO:MQTT:receive: openWB/config/set/pv/regulationPoint = b'200'
 INFO:MQTT:receive: openWB/config/set/pv/stopDelay = b'60'
 INFO:MQTT:receive: openWB/config/set/pv/nurpv70dynw = b'6500'
 """

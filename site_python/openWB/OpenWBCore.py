@@ -34,7 +34,7 @@ class OpenWBCore:
             if lpmode not in core.regelkreise:
                core.regelkreise[lpmode] = Regelgruppe(lpmode)
             core.regelkreise[lpmode].add(module)
-            core.sendData(DataPackage(module, {'lpconf': True}))   # LP Konfiguriert
+            core.sendData(DataPackage(module, {'lpconf': True, 'lpenabled': True }))   # LP Konfiguriert und enabled
       module.configprefix = configprefix
       module.setup(core.config)
 
