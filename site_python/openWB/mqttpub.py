@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 
 import paho.mqtt.client as mqtt
 
@@ -58,7 +59,7 @@ class Mqttpublisher(object):
       "lp/%n/kWhActualCharged": "aktgeladen%n",
       "lp/%n/kWhChargedSincePlugged": "pluggedladungbishergeladen%n",
       "lp/%n/TimeRemaining": "restzeitlp%n",
-      "set/lp/%n/ChargePointEnabled": "lpenabled%n",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
+      "lp/%n/ChargePointEnabled": "lpenabled%n",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
       "lp/%n/boolChargePointConfigured": "lpconf%n",   # Configured -> Geräte konfiguriert
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
@@ -100,6 +101,7 @@ class Mqttpublisher(object):
          self.messagehandler(msg)
 
       self.core = core
+      self.name = "MQTT"
       self.logger = logging.getLogger('MQTT')
       self.lastdata = {}
       self._init_data()
@@ -199,32 +201,41 @@ class Mqttpublisher(object):
    def messagehandler(self, msg):
       """Handle incoming requests"""
       republish = False
-      logging.getLogger('MQTT').info("receive: %s = %s" % (msg.topic, msg.payload))
-      val = int(msg.payload)
-      if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
-         if -300000 <= val <= 300000:
-            self.core.config['offsetpv'] = val
+      logger = logging.getLogger('MQTT')
+      logger.info("receive: %s (%s) = %s (%i)" % (repr(msg.topic), type(msg.topic), repr(msg.payload), val))
+      try:
+         val = int(msg.payload)
+         if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
+            if -300000 <= val <= 300000:
+               republish = True
+               self.core.config['offsetpv'] = val
+         elif msg.topic == "openWB/config/set/pv/nurpv70dynw":
             republish = True
-      elif m := re.match("openWB/set/lp/(\\d)/ChargePointEnabled", msg.topic):     # Chargepoint en/disable
-         self.core.sendData(DataPackage(self, {'lpenabled%i' % m.group(1): val}))
-      elif m := re.search("^openWB/config/set/sofort/lp/(\\d)/", msg.topic):  # Sofortladen...
-         device = m.group(1)
-         if 1 <= device <= 8:
-            if msg.topic.endswith('current'):
-               self.core.config['lp%isofortll' % device] = val
-            elif msg.topic.endswith('energyToCharge'):
-               self.core.config['lademkwh%i' % device] = val
-            elif msg.topic.endswith('resetEnergyToCharge'):
-               self.core.sendData(DataPackage(self, {'aktgeladen%i' % device: 0}))
-      elif msg.topic == "openWB/config/set/pv/stopDelay":
-         if 0 <= val <= 10000:
-            self.core.config['abschaltverzoegerung'] = val
+            self.core.config['offsetpvpeak'] = val
+         elif re.match("openWB/set/lp/(\\d)/ChargePointEnabled", msg.topic):     # Chargepoint en/disable
+            device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             republish = True
-
+            self.core.sendData(DataPackage(self, {'lpenabled%i' % device: val}))
+         elif re.match("openWB/config/set/sofort/", msg.topic):  # Sofortladen...
+            device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
+            if 1 <= device <= 8:
+               republish = True
+               if msg.topic.endswith('current'):
+                  self.core.config['lp%isofortll' % device] = val
+               elif msg.topic.endswith('energyToCharge'):
+                  self.core.config['lademkwh%i' % device] = val
+               elif msg.topic.endswith('resetEnergyToCharge'):
+                  self.core.sendData(DataPackage(self, {'aktgeladen%i' % device: 0}))
+         elif msg.topic == "openWB/config/set/pv/stopDelay":
+            if 0 <= val <= 10000:
+               republish = True
+               self.core.config['abschaltverzoegerung'] = val
+         else:
+            logger.info("Nix gefunden.")
+      except Exception as e:
+         logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
       if republish:
          self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=self.configqos, retain=True)
 
 """
-INFO:MQTT:receive: openWB/config/set/pv/stopDelay = b'60'
-INFO:MQTT:receive: openWB/config/set/pv/nurpv70dynw = b'6500'
 """

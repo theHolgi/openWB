@@ -59,6 +59,7 @@ class openWBconfig:
    def __setitem__(self, key, value):
       import re
       self.settings[key] = value
+      log("Config: %s = %s" % (key, value))
       try:
          with open(self.configfile, 'r') as f:
             content = f.read()

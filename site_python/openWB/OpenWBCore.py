@@ -6,7 +6,7 @@ import logging
 from typing import Iterable
 import time
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class OpenWBCore:
