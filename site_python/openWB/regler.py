@@ -56,7 +56,6 @@ class Request(dict):
 
 class Regler:
    """Eine Reglerinstanz"""
-   mode = "pv"
 
    def __init__(self, wallbox: "Ladepunkt"):
       self.wallbox = wallbox
@@ -208,8 +207,10 @@ class Regelgruppe():
 
    def pop(self, id: int):
       """Lösche Ladepunkt mit der ID <id>"""
+      # TODO: Beibehaltung aktiver Lademodus
+      print("%i in %s??" % (id, self.regler))
       if id in self.regler:
-         return self.regler.pop(id)
+         return self.regler.pop(id).wallbox
 
    def controlcycle(self, data) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]

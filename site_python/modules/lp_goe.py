@@ -63,7 +63,7 @@ class GO_E(DataProvider, Ladepunkt):
       except:
          pass
 
-   def event(self):
+   def event(self, event):
       pass
 
    def powerproperties(self) -> PowerProperties:

@@ -21,7 +21,7 @@ class TRIPOWER(DataProvider, PVModul):
       except ConnectionError:
          pass
 
-   def event(self):
+   def event(self, event):
       pass
 
 def getClass():

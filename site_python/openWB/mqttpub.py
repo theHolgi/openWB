@@ -73,7 +73,10 @@ class Mqttpublisher(object):
       "housebattery/DailyYieldExportKwh": "daily_sekwh",
 
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
-      "global/DailyYieldAllChargePointsKwh": "xxx"  # Lademenge daily
+      "global/DailyYieldAllChargePointsKwh": "xxx",  # Lademenge daily
+      
+      # Config
+      "pv/bool70PVDynStatus": "nurPV70Status"
    }
    all_live_fields = ("uberschuss", "ladeleistung", "-pvwatt", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
@@ -111,7 +114,6 @@ class Mqttpublisher(object):
       self.client.connect(hostname)
       self.client.loop_start()
       self.publish_config()
-      self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
 
    @overload
    @staticmethod
@@ -151,6 +153,7 @@ class Mqttpublisher(object):
       self.all_live = read_ramdisk('all-live.graph').split('\n')
 
    def publish(self):
+      self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
       for k, v in self.datamapping.items():
         for mqttkey, datakey in self._loop(k, v):
           val = self.core.data.get(datakey)
@@ -201,8 +204,7 @@ class Mqttpublisher(object):
    def messagehandler(self, msg):
       """Handle incoming requests"""
       republish = False
-      logger = logging.getLogger('MQTT')
-      logger.info("receive: %s (%s) = %s (%i)" % (repr(msg.topic), type(msg.topic), repr(msg.payload), val))
+      self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
       try:
          val = int(msg.payload)
          if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
@@ -221,7 +223,7 @@ class Mqttpublisher(object):
             if 1 <= device <= 8:
                republish = True
                if msg.topic.endswith('current'):
-                  self.core.setconfig('lp%isofortll' % device, val)
+                  self.core.setconfig('lpmodul%i_sofortll' % device, val)
                elif msg.topic.endswith('energyToCharge'):
                   self.core.setconfig('lademkwh%i' % device, val)
                elif msg.topic.endswith('resetEnergyToCharge'):
@@ -232,11 +234,15 @@ class Mqttpublisher(object):
                self.core.setconfig('abschaltverzoegerung', val)
          elif msg.topic == "openWB/set/pv/NurPV70Status":   # 70% mode
             self.core.data["nurPV70Status"] = val == 1
+            self.logger.info("Konfiguriere %i Ladepunkte" % self.num_lps)
             for n in range(1, self.num_lps+1):
-               if self.core.config['lp%i_mode' % n] == "pv" and val == 1:
-                  self.core.setconfig('lp%i_mode' % n, "peak")
-               elif self.core.config['lp%i_mode' % n] == "peak" and val == 0:
-                  self.core.setconfig('lp%i_mode' % n, "pv")
+               self.logger.info("LP %i" % n)
+               if self.core.config.get('lpmodul%i_mode' % n) == "pv" and val == 1:
+                  self.logger.info("LP %i = peak" % n)
+                  self.core.setconfig('lpmodul%i_mode' % n, "peak")
+               elif self.core.config.get('lpmodul%i_mode' % n) == "peak" and val == 0:
+                  self.logger.info("LP %i = pv" % n)
+                  self.core.setconfig('lpmodul%i_mode' % n, "pv")
          elif msg.topic == "openWB/set/ChargeMode":         # Globaler Lademodus
             #        sofort  min-pv  pv standby stop
             mode = ['sofort', 'pv', 'pv', 'standby', 'stop'][val]
@@ -244,13 +250,13 @@ class Mqttpublisher(object):
                if self.core.data["nurPV70Status"]:
                  mode = "peak"
             for n in range(1, self.num_lps+1):
-               self.core.setconfig('lp%i_mode' % n, mode)
+               self.core.setconfig('lpmodul%i_mode' % n, mode)
             if val == 1:   # min-PV
                for n in range(1, self.num_lps + 1):
-                  self.core.setconfig('lp%i_alwayson' % n, True)
+                  self.core.setconfig('lpmodul%i_alwayson' % n, True)
             elif val == 2:  # PV
                for n in range(1, self.num_lps + 1):
-                  self.core.setconfig('lp%i_alwayson' % n, False)
+                  self.core.setconfig('lpmodul%i_alwayson' % n, False)
          else:
             logger.info("Nix gefunden.")
       except Exception as e:

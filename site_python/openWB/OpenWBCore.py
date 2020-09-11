@@ -8,7 +8,7 @@ import logging
 import time
 import re
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 class EventType(Enum):
    configupdate = 1
@@ -69,7 +69,7 @@ class OpenWBCore:
             for lp in kreis.regler.values():
                id = lp.wallbox.id
                on = "*" if self.data.get('ladestatus', id) else ""
-               debug += f"({id}{on}: {lp.mode} {self.data.get('lla1', id)}A {self.data.get('llaktuell',id)}W"
+               debug += f"({id}{on}: {kreis.mode} {self.data.get('lla1', id)}A {self.data.get('llaktuell',id)}W"
                if lp.oncount > 0:
                   debug += f" +{lp.oncount}"
                if lp.offcount > 0:
@@ -85,21 +85,26 @@ class OpenWBCore:
       self.data.update(package)
       self.logger.debug(f'Daten von {package.source.name }: {package}')
 
-   def setConfig(self, key:str, value) -> None:
+   def setconfig(self, key:str, value) -> None:
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
+      self.logger.info("Config updated %s = %s" % (key, value))
       self.triggerEvent(Event(EventType.configupdate, key, value))
 
    def triggerEvent(self, event: Event):
+      self.logger.info("triggerEvent")
       for module in self.modules:
+         self.logger.info("... to %s" % module)
          module.event(event)
       self.event(event)
 
    def event(self, event: Event):
-      if event.type == EventType.configupdate:
-         m = re.match('lpmodul\\d_mode', event.info)
+      self.logger.info("Event: %s = %s" % (event.info, event.payload))
+      try:
+       if event.type == EventType.configupdate:
+         m = re.match('lpmodul(\\d)_mode', event.info)
          if m:
-            id = m.group(1)
+            id = int(m.group(1))
             new_mode = event.payload
             for mode, regelkreis in self.regelkreise.items():
                if mode == new_mode:   # Wenn neu = alt, dann keine Aktion
@@ -114,3 +119,6 @@ class OpenWBCore:
                   self.regelkreise[new_mode].add(lp)
                   self.logger.info("LP %i zu %s hinzugefügt" % (id, new_mode))
                   break
+            self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
+      except Exception as e:
+         print("BAM!!! %s" % e)

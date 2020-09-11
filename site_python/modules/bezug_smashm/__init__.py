@@ -70,7 +70,7 @@ class SMASHM(DataProvider):
             publish(self.core.data, {'verbose': 1})
             break
 
-   def event(self):
+   def event(self, event):
       pass
 
 def getClass():
