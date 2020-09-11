@@ -1,0 +1,6 @@
+Config rename:
+ lademkwh, lademkwhs1, lademkwhs2, lademwhlp4 ... -> lademkwh%n   # Ladeziel
+
+Data rename:
+ aktgeladen, aktgeladens1, ...  -> # Geladen (kwh) ??
+ gelrlp1, gelrlp2, ...   -> # Geladen (kwh) ??

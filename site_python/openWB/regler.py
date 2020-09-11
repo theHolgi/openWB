@@ -203,7 +203,13 @@ class Regelgruppe():
 
 
    def add(self, ladepunkt: "Ladepunkt") -> None:
+      """Füge Ladepunkt hinzu"""
       self.regler[ladepunkt.id] = Regler(ladepunkt)
+
+   def pop(self, id: int):
+      """Lösche Ladepunkt mit der ID <id>"""
+      if id in self.regler:
+         return self.regler.pop(id)
 
    def controlcycle(self, data) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]

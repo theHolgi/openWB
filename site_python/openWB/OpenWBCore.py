@@ -2,11 +2,22 @@ from . import Modul, DataPackage, setCore, getCore
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .regler import *
+from dataclasses import dataclass
+from enum import Enum
 import logging
-from typing import Iterable
 import time
+import re
 
 logging.basicConfig(level=logging.DEBUG)
+
+class EventType(Enum):
+   configupdate = 1
+
+@dataclass
+class Event:
+   type: EventType
+   info: str
+   payload: str
 
 
 class OpenWBCore:
@@ -38,7 +49,7 @@ class OpenWBCore:
       module.configprefix = configprefix
       module.setup(core.config)
 
-   def run(self, loops: int = 0):
+   def run(self, loops: int = 0) -> None:
       """Run the given number of loops (0=infinite)"""
       if loops == 0:
          condition = lambda: True
@@ -70,9 +81,36 @@ class OpenWBCore:
             self.mqtt.publish()
             time.sleep(20)
 
-   def sendData(self, package: DataPackage):
+   def sendData(self, package: DataPackage) -> None:
       self.data.update(package)
       self.logger.debug(f'Daten von {package.source.name }: {package}')
 
+   def setConfig(self, key:str, value) -> None:
+      """Set the configuration, but also announce this in the system."""
+      self.config[key] = value
+      self.triggerEvent(Event(EventType.configupdate, key, value))
 
+   def triggerEvent(self, event: Event):
+      for module in self.modules:
+         module.event(event)
+      self.event(event)
 
+   def event(self, event: Event):
+      if event.type == EventType.configupdate:
+         m = re.match('lpmodul\\d_mode', event.info)
+         if m:
+            id = m.group(1)
+            new_mode = event.payload
+            for mode, regelkreis in self.regelkreise.items():
+               if mode == new_mode:   # Wenn neu = alt, dann keine Aktion
+                  continue
+               # Aus altem Regelkreis entfernen
+               lp = self.regelkreise[mode].pop(id)
+               if lp is not None:
+                  self.logger.info("LP %i aus %s entfernt" % (id, mode))
+                  # In neuem Regelkreis hinzufügen
+                  if new_mode not in self.regelkreise:
+                     self.regelkreise[new_mode] = Regelgruppe(new_mode)
+                  self.regelkreise[new_mode].add(lp)
+                  self.logger.info("LP %i zu %s hinzugefügt" % (id, new_mode))
+                  break

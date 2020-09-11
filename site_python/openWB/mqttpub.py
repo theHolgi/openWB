@@ -208,10 +208,10 @@ class Mqttpublisher(object):
          if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
             if -300000 <= val <= 300000:
                republish = True
-               self.core.config['offsetpv'] = val
+               self.core.setconfig('offsetpv', val)
          elif msg.topic == "openWB/config/set/pv/nurpv70dynw":
             republish = True
-            self.core.config['offsetpvpeak'] = val
+            self.core.setconfig('offsetpvpeak', val)
          elif re.match("openWB/set/lp/(\\d)/ChargePointEnabled", msg.topic):     # Chargepoint en/disable
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             republish = True
@@ -221,15 +221,36 @@ class Mqttpublisher(object):
             if 1 <= device <= 8:
                republish = True
                if msg.topic.endswith('current'):
-                  self.core.config['lp%isofortll' % device] = val
+                  self.core.setconfig('lp%isofortll' % device, val)
                elif msg.topic.endswith('energyToCharge'):
-                  self.core.config['lademkwh%i' % device] = val
+                  self.core.setconfig('lademkwh%i' % device, val)
                elif msg.topic.endswith('resetEnergyToCharge'):
                   self.core.sendData(DataPackage(self, {'aktgeladen%i' % device: 0}))
          elif msg.topic == "openWB/config/set/pv/stopDelay":
             if 0 <= val <= 10000:
                republish = True
-               self.core.config['abschaltverzoegerung'] = val
+               self.core.setconfig('abschaltverzoegerung', val)
+         elif msg.topic == "openWB/set/pv/NurPV70Status":   # 70% mode
+            self.core.data["nurPV70Status"] = val == 1
+            for n in range(1, self.num_lps+1):
+               if self.core.config['lp%i_mode' % n] == "pv" and val == 1:
+                  self.core.setconfig('lp%i_mode' % n, "peak")
+               elif self.core.config['lp%i_mode' % n] == "peak" and val == 0:
+                  self.core.setconfig('lp%i_mode' % n, "pv")
+         elif msg.topic == "openWB/set/ChargeMode":         # Globaler Lademodus
+            #        sofort  min-pv  pv standby stop
+            mode = ['sofort', 'pv', 'pv', 'standby', 'stop'][val]
+            if val == 1 or val == 2:
+               if self.core.data["nurPV70Status"]:
+                 mode = "peak"
+            for n in range(1, self.num_lps+1):
+               self.core.setconfig('lp%i_mode' % n, mode)
+            if val == 1:   # min-PV
+               for n in range(1, self.num_lps + 1):
+                  self.core.setconfig('lp%i_alwayson' % n, True)
+            elif val == 2:  # PV
+               for n in range(1, self.num_lps + 1):
+                  self.core.setconfig('lp%i_alwayson' % n, False)
          else:
             logger.info("Nix gefunden.")
       except Exception as e:
