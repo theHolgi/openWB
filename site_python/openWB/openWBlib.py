@@ -85,7 +85,7 @@ class openWBValues(dict):
    behaves like a dictionary
    """
    def __init__(self):
-      self.sumvalues = set(['pvwatt', 'llaktuell'])
+      self.sumvalues = set(['pvwatt', 'llaktuell', 'ladestatus'])
 
    def update(self, data: "DataPackage"):
       if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
@@ -103,7 +103,7 @@ class openWBValues(dict):
    def __setattr__(self, item, value):
       self[item] = value
 
-   def get(self, key, id: Optional[int]=None, default=0) -> Any:
+   def get(self, key, id: Optional[int] = None, default=0) -> Any:
       """Returns the value or the given default, if not available"""
       if id is not None:
          key = key+str(id)
@@ -128,6 +128,8 @@ class openWBValues(dict):
             value = self.get(key + str(instance))
             if value is None:
                break
+            if isinstance(value, bool):
+               value = 1 if value else 0
             sumVal += value
          self[key] = sumVal
       self.uberschuss = -self.wattbezug

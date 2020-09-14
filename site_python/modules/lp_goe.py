@@ -19,7 +19,7 @@ class GO_E_SET(Thread):
          pass
 
 
-class GO_E(DataProvider, Ladepunkt):
+class GO_E(Ladepunkt):
    """GO-E wallbox"""
    def setup(self, config):
       self.ip = config.get(self.configprefix + '_ip')

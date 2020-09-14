@@ -34,7 +34,7 @@ def blink(port):
     print("Stop blinking.")
 
 def scale(channel, val) -> int:
-    table = { 'pv':   {     0: 0, 2000: 850, 4000: 1760, 6000: 2680, 8000: 3420, 9500: 4095 },
+    table = { 'pv':   {     0: 0, 2000: 850, 4000: 1760, 6000: 2680, 8000: 3420, 9500: 4095},
               'grid': { -2000: 0,    0: 850, 2000: 1760, 4000: 2580, 6000: 3420, 7500: 4095}
             }
     t = table[channel]
@@ -59,7 +59,7 @@ def publish(data, config):
       if uberschuss < 0 and pvwatt > 1000:
         red = "blink"
       green = data.get('ladestatus') != 0
-      if green and data.get('mqttladeleistung') == 0:
+      if green and data.get('llaktuell') == 0:
         green = "blink"
       
       log = ""

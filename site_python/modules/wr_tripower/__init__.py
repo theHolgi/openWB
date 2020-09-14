@@ -2,7 +2,7 @@ from openWB import *
 from .modbuswr import ModbusWR
 from .smadash import SMADASH
 
-class TRIPOWER(DataProvider, PVModul):
+class TRIPOWER(PVModul):
    """SMA Tripower"""
 
    def setup(self, config):

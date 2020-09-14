@@ -11,7 +11,7 @@ def fhem_send(ip: str, cmd: str) -> None:
 
 ON_DELAY = 5
 
-class LP_FHEMSWITCH(DataProvider, Ladepunkt):
+class LP_FHEMSWITCH(Ladepunkt):
    """Ladepunkt als FHEM-Schaltsteckdose"""
    def setup(self, config):
       self.ip = config.get(self.configprefix + '_ip')
@@ -49,7 +49,7 @@ class LP_FHEMSWITCH(DataProvider, Ladepunkt):
    def set(self, power: int) -> None:
       charging = power > self.power/2
       ampere = power2amp(power, self.phasen)
-      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': 1 if charging else 0 }))
+      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': 1 if charging else 0}))
       self.core.logger.info("FHEM send %i W" % power)
       if charging and not self.is_charging and not self.is_blocked:
          if self.on_delay == 0:

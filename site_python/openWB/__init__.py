@@ -59,7 +59,7 @@ class DataPackage(dict):
 
 class DataProvider(Modul):
    """Abstrakte Klasse eines Daten sendenden Moduls.
-   Ein EVU- (Bezug-)Modul leitet sich von DataProvider und keinem Mix-in ab.
+   Ein EVU- (Bezug-)Modul leitet sich direkt von DataProvider ab.
    """
 
    def trigger(self):
@@ -69,10 +69,9 @@ class DataProvider(Modul):
       """
       ...
 
-class Ladepunkt:
+class Ladepunkt(DataProvider):
    """
-     Mix-in Klasse eines Ladepunktes.
-     Konkrete Ladepunkte leiten sich von "DataProvider" und "Ladepunkt" ab.
+     Superklasse eines Ladepunktes.
    """
    multiinstance = True
    type = "lp"
@@ -96,7 +95,7 @@ class Ladepunkt:
       if self.is_charging:
          phasen = 0
          for p in range(1, 4):
-            if self.core.data.get('lla%i' % p, id=self.id) > 4:
+            if self.core.data.get('lla%i' % p, self.id) > 4:
                phasen += 1
          if phasen != 0:
             self.phasen = phasen
@@ -109,7 +108,7 @@ class Ladepunkt:
    @property
    def is_blocked(self) -> bool:
       """Fahrzeug folgt dem Sollstrom nicht"""
-      return self.core.data.get('lla1', id=self.id) <= self.core.data.get('llsoll', id=self.id) - 1
+      return self.core.data.get('lla1', self.id) <= self.core.data.get('llsoll', self.id) - 1
 
    @property
    def minP(self) -> int:
@@ -134,14 +133,13 @@ class Ladepunkt:
 # - lla1, lla2, lla3 - Strom
 
 
-class PVModul:
-   """Mix-in Klasse eines Wechselrichters.
-      Konkrete Wechselrichter leiten sich von "DataProvider" und "PVModul" ab.
+class PVModul(DataProvider):
+   """Superklasse eines Wechselrichters.
    """
    multiinstance = True
    type = "wr"
 
-# Ein Wechselrichter sollte folgende Datenpunkte senden:
+# Ein Wechselrichter muss folgende Datenpunkte senden:
 # - pvwatt: Momentanleistung (W)
 # Optional:
 # - pvkwh: Gesamte Einspeiseleistung (kWh)
