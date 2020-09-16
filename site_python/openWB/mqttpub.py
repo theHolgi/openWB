@@ -205,8 +205,13 @@ class Mqttpublisher(object):
       """Handle incoming requests"""
       republish = False
       self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
+      found = msg.topic.startswith('openWB/set/ChargeMode/lp/')
       try:
          val = int(msg.payload)
+         self.logger.info("Value: %i" % val)
+      except ValueError:
+         val = None
+      try:
          if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
             if -300000 <= val <= 300000:
                republish = True
@@ -218,7 +223,7 @@ class Mqttpublisher(object):
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             republish = True
             self.core.sendData(DataPackage(self, {'lpenabled%i' % device: val}))
-         elif re.match("openWB/config/set/sofort/", msg.topic):  # Sofortladen...
+         elif msg.topic.startswith("openWB/config/set/sofort/"):  # Sofortladen...
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             if 1 <= device <= 8:
                republish = True
@@ -243,6 +248,11 @@ class Mqttpublisher(object):
                elif self.core.config.get('lpmodul%i_mode' % n) == "peak" and val == 0:
                   self.logger.info("LP %i = pv" % n)
                   self.core.setconfig('lpmodul%i_mode' % n, "pv")
+         elif msg.topic.startswith('openWB/set/ChargeMode/lp/'):   # Individueller Lademodus
+            device = int(re.search('/lp/(\\d)', msg.topic).group(1))
+            self.logger.info(f'ChargeMode lp{device} = {msg.payload.decode()}')
+            if 1 <= device <= 8:
+               self.core.setconfig('lpmodul%i_mode' % device, msg.payload.decode())            
          elif msg.topic == "openWB/set/ChargeMode":         # Globaler Lademodus
             #        sofort  min-pv  pv standby stop
             mode = ['sofort', 'pv', 'pv', 'standby', 'stop'][val]
@@ -265,4 +275,5 @@ class Mqttpublisher(object):
          self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=self.configqos, retain=True)
 
 """
+openWB/set/ChargeMode/lp/1
 """

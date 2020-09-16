@@ -50,6 +50,22 @@ function setInputValue(elementId, value) {
     }
 }
 
+function setInputText(elementId, value) {
+  /** @function setInputText
+   * sets the value-label (if exists) attached to the element to the given value
+   **/
+  var element = $('#' + $.escapeSelector(elementId));
+  element.text(value);
+}
+
+function setInputText(elementId, value) {
+  /** @function setInputText
+   * sets the value-label (if exists) attached to the element to the given value
+   **/
+  var element = $('#' + $.escapeSelector(elementId));
+  element.text(value);
+}
+
 function getTopicToSendTo (elementId) {
     var element = $('#' + $.escapeSelector(elementId));
     var topic = element.data('topicprefix') + elementId;
@@ -62,7 +78,8 @@ function setToggleBtnGroup(groupId, option) {
      * sets the value-label (if exists) attached to the element to the element value
      * @param {string} elementId - the id of the button group
      * @param {string} option - the option the group btns will be set to
-     * @requires data-attribute 'option' (unique for group) assigned to every radio-btn
+     * @requires
+ data-attribute 'option' (unique for group) assigned to every radio-btn
      */
     $('input[name="' + groupId + '"][data-option="' + option + '"]').prop('checked', true);
     $('input[name="' + groupId + '"][data-option="' + option + '"]').closest('label').addClass('active');

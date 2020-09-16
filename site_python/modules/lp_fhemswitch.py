@@ -49,7 +49,7 @@ class LP_FHEMSWITCH(Ladepunkt):
    def set(self, power: int) -> None:
       charging = power > self.power/2
       ampere = power2amp(power, self.phasen)
-      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': 1 if charging else 0}))
+      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': charging}))
       self.core.logger.info("FHEM send %i W" % power)
       if charging and not self.is_charging and not self.is_blocked:
          if self.on_delay == 0:

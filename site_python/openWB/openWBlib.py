@@ -128,9 +128,7 @@ class openWBValues(dict):
             value = self.get(key + str(instance))
             if value is None:
                break
-            if isinstance(value, bool):
-               value = 1 if value else 0
-            sumVal += value
+            sumVal += int(value)
          self[key] = sumVal
       self.uberschuss = -self.wattbezug
       self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
