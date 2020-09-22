@@ -1,6 +1,6 @@
 import enum
 from typing import Set, Optional
-from . import getCore
+from . import getCore, amp2power
 from itertools import groupby
 from dataclasses import dataclass
 
@@ -200,6 +200,18 @@ class Regelgruppe():
          self.get_increment = get_increment
          self.get_decrement = get_decrement
 
+      elif self.mode == 'sofort':
+         """
+         Sofort-Lade-Modus:
+         Keine Regelung,
+         - setze auf Ladestrom lpmodul%i_sofortll (A)
+         - bis zu kwH: lademkwh%i
+         """
+         def get_delta(r: Request, deltaP: int) -> int:
+            return
+         self.limit = 1  # dummy
+         self.get_increment = get_delta
+         self.get_decrement = get_delta
 
    def add(self, ladepunkt: "Ladepunkt") -> None:
       """Füge Ladepunkt hinzu"""
@@ -215,7 +227,12 @@ class Regelgruppe():
    def controlcycle(self, data) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
-      if data.uberschuss > self.limit:  # Leistungserhöhung
+      if self.mode == 'sofort':
+         for id, regler in self.regler.items():
+            power = amp2power(getCore().config.get("lpmodul%i_sofortll" % id), regler.wallbox.phasen)
+            if regler.wallbox.setP != power:
+               regler.wallbox.set(power)
+      elif data.uberschuss > self.limit:  # Leistungserhöhung
          deltaP = data.uberschuss - self.limit
          # Erhöhe eingeschaltete LPs
          for r in sorted(filter(lambda r: 'min+P' in r and 'on' in r.flags, properties), key=lambda r: r['min+P'].priority):

@@ -97,11 +97,11 @@ class openWBValues(dict):
             self[key] = value
       self.fast_derive_values(data)
 
-   def __getattr__(self, item):
-      return self[item]
+   def __getattr__(self, key):
+      return self[key] if key in self else 0
 
-   def __setattr__(self, item, value):
-      self[item] = value
+   def __setattr__(self, key, value):
+      self[key] = value
 
    def get(self, key, id: Optional[int] = None, default=0) -> Any:
       """Returns the value or the given default, if not available"""

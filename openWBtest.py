@@ -10,12 +10,12 @@ mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 class StubCore():
    config = openWBconfig('test.conf')
 
-class StubPV(DataProvider, PVModul):
+class StubPV(PVModul):
    P = 0
    def trigger(self):
       self.core.sendData(DataPackage(self, {'pvwatt': -self.P}))
 
-class StubLP(DataProvider, Ladepunkt):
+class StubLP(Ladepunkt):
    actP = 0
    phasen = 1
    override_blocked = None
@@ -423,6 +423,28 @@ class TEST_LP2(unittest.TestCase):
          self.core.run(6)
          self.assertEqual(self.LP2.minP, self.LP2.setP, "Einschalten LP2 über LP1-Budget")
 
+class TEST_LP1_SOFORT(unittest.TestCase):
+   """System mit 1 PV und 1 Ladepunkt im Sofort-mode"""
+   def setUp(self):
+      self.core = OpenWBCore(mypath + "/test.conf")
+      self.core.config["lpmodul1_mode"] = "sofort"
+      self.LP = StubLP(1)
+      self.core.add_module(self.LP, 'lpmodul1')
+
+      self.LP.actP = 0
+
+      # Zur leichteren Verfügbarkeit
+      self.LPregler = self.core.regelkreise['sofort'].regler[1]
+
+   def test_startup(self):
+      """Initialisierung"""
+      self.core.config["lpmodul1_sofortll"] = 10
+      self.core.run(1)
+      self.assertEqual(2300, self.LP.setP, "Anforderung eingestellter Strom")
+
+      self.core.config["lpmodul1_sofortll"] = 20
+      self.core.run(1)
+      self.assertEqual(4600, self.LP.setP, "Anforderung veränderter Strom")
 
 if __name__ == '__main__':
    unittest.main()

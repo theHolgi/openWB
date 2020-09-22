@@ -162,3 +162,7 @@ def power2amp(power:int, phasen: int) -> int:
       return 0
    else:
       return amp2amp(power/phasen/230)
+
+def amp2power(amp: int, phasen: int) -> int:
+   """Konvertiere Strom zu Leistung"""
+   return amp * 230 * phasen
