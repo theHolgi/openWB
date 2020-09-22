@@ -205,7 +205,6 @@ class Mqttpublisher(object):
       """Handle incoming requests"""
       republish = False
       self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
-      found = msg.topic.startswith('openWB/set/ChargeMode/lp/')
       try:
          val = int(msg.payload)
          self.logger.info("Value: %i" % val)
@@ -248,11 +247,14 @@ class Mqttpublisher(object):
                elif self.core.config.get('lpmodul%i_mode' % n) == "peak" and val == 0:
                   self.logger.info("LP %i = pv" % n)
                   self.core.setconfig('lpmodul%i_mode' % n, "pv")
-         elif msg.topic.startswith('openWB/set/ChargeMode/lp/'):   # Individueller Lademodus
-            device = int(re.search('/lp/(\\d)', msg.topic).group(1))
-            self.logger.info(f'ChargeMode lp{device} = {msg.payload.decode()}')
-            if 1 <= device <= 8:
-               self.core.setconfig('lpmodul%i_mode' % device, msg.payload.decode())            
+         elif msg.topic.startswith('openWB/config/set/lp/'):   # Individueller Lademodus
+            self.logger.info("LP message")
+            if re.search("lp/(\\d)/ChargeMode", msg.topic):     # Chargemode
+               device = int(re.search('/lp/(\\d)', msg.topic).group(1))
+               self.logger.info(f'ChargeMode lp{device} = {msg.payload.decode()}')
+               if 1 <= device <= 8:
+                  republish = True
+                  self.core.setconfig('lpmodul%i_mode' % device, msg.payload.decode().lower())            
          elif msg.topic == "openWB/set/ChargeMode":         # Globaler Lademodus
             #        sofort  min-pv  pv standby stop
             mode = ['sofort', 'pv', 'pv', 'standby', 'stop'][val]
@@ -272,6 +274,7 @@ class Mqttpublisher(object):
       except Exception as e:
          logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
       if republish:
+         self.logger.info("Re-publish: %s = %s" % (msg.topic.replace('/src/', '/get/'), msg.payload))
          self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=self.configqos, retain=True)
 
 """

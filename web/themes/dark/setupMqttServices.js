@@ -325,7 +325,15 @@ var topicsToSubscribe = [
 	["openWB/config/get/sofort/lp/8/energyToCharge", 1],
 	["openWB/config/get/sofort/lp/1/socToChargeTo", 1],
 	["openWB/config/get/sofort/lp/2/socToChargeTo", 1],
-
+        ["openWB/config/get/lp/1/ChargeMode", 1],
+        ["openWB/config/get/lp/2/ChargeMode", 1],
+        ["openWB/config/get/lp/3/ChargeMode", 1],
+        ["openWB/config/get/ChargeMode/lp/4", 1],
+        ["openWB/config/get/ChargeMode/lp/5", 1],
+        ["openWB/config/get/ChargeMode/lp/6", 1],
+        ["openWB/config/get/ChargeMode/lp/7", 1],
+        ["openWB/config/get/ChargeMode/lp/8", 1],
+        
     ["openWB/SmartHome/Devices/1/RunningTimeToday", 1],
 	["openWB/SmartHome/Devices/2/RunningTimeToday", 1],
     ["openWB/SmartHome/Devices/3/RunningTimeToday", 1],

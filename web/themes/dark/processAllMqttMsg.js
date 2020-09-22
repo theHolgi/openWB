@@ -47,6 +47,7 @@ function handlevar(mqttmsg, mqttpayload) {
 	else if ( mqttmsg.match( /^openwb\/config\/get\/SmartHome\/Devices\//i) ) { processSmartHomeDevicesConfigMessages(mqttmsg, mqttpayload); }
 	else if ( mqttmsg.match( /^openwb\/config\/get\/sofort\/lp\//i) ) { processSofortConfigMessages(mqttmsg, mqttpayload); }
 	else if ( mqttmsg.match( /^openwb\/config\/get\/pv\//i) ) { processPvConfigMessages(mqttmsg, mqttpayload); }
+	else if ( mqttmsg.match( /^openwb\/config\/get\/lp\//i) ) { processLpConfigMessages(mqttmsg, mqttpayload); }
 }  // end handlevar
 
 
@@ -97,6 +98,17 @@ function processSofortConfigMessages(mqttmsg, mqttpayload) {
 		setToggleBtnGroup(elementId, mqttpayload);
 	}
 
+}
+
+function processLpConfigMessages(mqttmsg, mqttpayload) {
+	// processes mqttmsg for topic openWB/config/get/ChargeMode/
+	// called by handlevar
+	processPreloader(mqttmsg);
+	var elementId = mqttmsg.replace('openWB/config/get/', '');
+	var element = $('#' + $.escapeSelector(elementId));
+	if ( element.attr('type') == 'label' ) {
+		setInputText(elementId, mqttpayload);
+	}
 }
 
 function processGraphMessages(mqttmsg, mqttpayload) {
