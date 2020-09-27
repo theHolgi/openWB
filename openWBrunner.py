@@ -4,20 +4,16 @@ import sys
 import importlib
 
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
+sys.path.append(mypath + 'src')
 
-sys.path.append(mypath + 'site_python')
-
-from src.openWB.openWBlib import *
-from src.openWB import *
-from src.openWB import OpenWBCore
-global core
+from openWB import OpenWBCore
 
 if 'http_proxy' in os.environ:
    os.environ.pop('http_proxy')
 if 'https_proxy' in os.environ:
    os.environ.pop('https_proxy')
 
-core = OpenWBCore(mypath + "/pyconfig.conf")
+core = OpenWBCore.OpenWBCore(mypath + "/pyconfig.conf")
 
 for source in ['wr', 'bezug', 'lp']:
    instance = 1

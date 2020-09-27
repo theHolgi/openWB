@@ -1,14 +1,15 @@
 from typing import Union
 from collections import namedtuple
 
-core = None  # The OpenWBcore singleton
+class CoreSingleton:   # This can not be stored in openWbCore because of circular reference.
+   pass
 
 def getCore():
-   return core
+   return CoreSingleton.core
 
 def setCore(o):
-   global core
-   core = o
+   print("Setting Core to " + o.__repr__())
+   CoreSingleton.core = o
 
 class Event:
    """Abstract class for an event"""

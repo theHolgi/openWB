@@ -33,26 +33,25 @@ class OpenWBCore:
       self.regelkreise = dict()
       setCore(self)
 
-   @staticmethod
-   def add_module(module: Modul, configprefix: str) -> None:
-      core = getCore()
-      core.modules.append(module)
+   def add_module(self, module: Modul, configprefix: str) -> None:
+      self.modules.append(module)
+      module.configprefix = configprefix
+      module.setup(self.config)
       if hasattr(module, 'type'):
          if module.type == "wr":
-            core.pvmodule += 1
+            self.pvmodule += 1
          elif module.type == "lp":
-            lpmode = core.config.get(configprefix + '_mode')
-            if lpmode not in core.regelkreise:
-               core.regelkreise[lpmode] = Regelgruppe(lpmode)
-            core.regelkreise[lpmode].add(module)
-            core.sendData(DataPackage(module, {'lpconf': True, 'lpenabled': True }))   # LP Konfiguriert und enabled
-      module.configprefix = configprefix
-      module.setup(core.config)
+            lpmode = self.config.get(configprefix + '_mode')
+            if lpmode not in self.regelkreise:
+               self.regelkreise[lpmode] = Regelgruppe(lpmode)
+            self.regelkreise[lpmode].add(module)
+            self.sendData(DataPackage(module, {'lpconf': True, 'lpenabled': True }))   # LP Konfiguriert und enabled
 
    def run(self, loops: int = 0) -> None:
       """Run the given number of loops (0=infinite)"""
       if loops == 0:
          condition = lambda: True
+         self.mqtt.subscribe()
       else:
          done = (i < loops for i in range(loops+1))
          condition = lambda: next(done)

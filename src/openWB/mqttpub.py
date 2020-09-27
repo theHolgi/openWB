@@ -85,17 +85,10 @@ class Mqttpublisher(object):
                       "shd5_w", "shd6_w", "shd7_w", "shd8_w" #27
                       )
    retain = True
-   core = None
    num_lps = 0   # Anzahl Ladepunkte
    configqos = 2
 
    def __init__(self, core, hostname: str = "localhost"):
-      def on_connect(client, userdata, flags, rc):
-         """Subscribe to set topics"""
-         self.logger.info('Subscribing.')
-         client.subscribe("openWB/set/#", 2)
-         client.subscribe("openWB/config/set/#", 2)
-
       def on_message(client, userdata, msg):
          """Handle incoming messages"""
          self.messagehandler(msg)
@@ -107,10 +100,15 @@ class Mqttpublisher(object):
       self._init_data()
       self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
       self.client.on_message = on_message
-      self.client.on_connect = on_connect
       self.client.connect(hostname)
       self.client.loop_start()
       self.publish_config()
+
+   def subscribe(self):
+      """Subscribe to set topics"""
+      self.logger.info('Subscribing.')
+      self.client.subscribe("openWB/set/#", 2)
+      self.client.subscribe("openWB/config/set/#", 2)
 
    @overload
    @staticmethod

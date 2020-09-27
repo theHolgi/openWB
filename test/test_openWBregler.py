@@ -1,6 +1,6 @@
 import unittest
 import os
-from openWB.openWBlib import *
+from openWB.openWBlib import openWBconfig
 from openWB import *
 from openWB.OpenWBCore import OpenWBCore
 from openWB.regler import *

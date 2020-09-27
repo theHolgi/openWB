@@ -1,4 +1,4 @@
-from src.openWB import *
+from openWB import *
 from .speedwiredecoder import decode_speedwire
 import socket
 import struct

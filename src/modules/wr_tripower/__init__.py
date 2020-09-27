@@ -1,4 +1,4 @@
-from src.openWB import *
+from openWB import *
 from .modbuswr import ModbusWR
 from .smadash import SMADASH
 
