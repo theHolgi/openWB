@@ -106,8 +106,40 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 	processPreloader(mqttmsg);
 	var elementId = mqttmsg.replace('openWB/config/get/', '');
 	var element = $('#' + $.escapeSelector(elementId));
+	var index = getIndex(mqttmsg);
 	if ( element.attr('type') == 'label' ) {
 		setInputText(elementId, mqttpayload);
+		if (mqttpayload == "Sofort") {
+		   element = $('#sofortladenEinstellungen');
+   		   element.show();
+   		   element.children('[data-lp="' + index + '"]').show()
+   		} else {
+		   element = $('#sofortladenEinstellungen');
+   		   // element.hide();
+   		   element.children('[data-lp="' + index + '"]').hide()
+   		}
+	}
+	else if ( mqttmsg.match( /^openWB\/config\/get\/lp\/[1-9]\/ChargeMode$/i ) ) {
+		var index = getIndex(mqttmsg);  // extract number between two / /
+		var parent = $('[data-lp="' + index + '"]');  // get parent row element for charge point
+		var element = parent.find('.chargeModeLP');  // now get parents respective child element
+		switch (mqttpayload) {
+		  case '0': element.text('Sofort'); break;
+		  case '1': element.text('Peak'); break;
+		  case '2': element.text('PV'); break;
+		  case '3': element.text('Stop'); break;
+		  case '4': element.text('Standby'); break;
+		}
+	}
+	else if ( mqttmsg.match( /^openWB\/config\/get\/lp\/[1-9]\/alwaysOn/i ) ) {
+		var index = getIndex(mqttmsg);  // extract number between two / /
+		var parent = $('[data-lp="' + index + '"]');  // get parent row element for charge point
+		var element = parent.find('.chargeLPalwayson');  // now get parents respective child element
+		if (mqttpayload == '0') {
+   		element.hide()
+		} else {
+ 		  element.show()
+		}
 	}
 }
 
@@ -384,58 +416,6 @@ function processGlobalMessages(mqttmsg, mqttpayload) {
 	}
 	else if ( mqttmsg == 'openWB/global/awattar/ActualPriceForCharging' ) {
 		$('#ActualPriceForCharging').text(parseFloat(mqttpayload).toLocaleString(undefined, {maximumFractionDigits: 2}));
-	}
-	else if ( mqttmsg == 'openWB/global/ChargeMode' ) {
-		// set modal button colors depending on charge mode
-		// set visibility of divs
-		// set visibility of priority icon depending on charge mode
-		// (priority icon is encapsulated in another element hidden/shown by housebattery configured or not)
-		switch (mqttpayload) {
-			case '0':
-				// mode sofort
-				$('#chargeModeSelectBtnText').text('Sofortladen');  // text btn mainpage
-				$('.chargeModeBtn').removeClass('btn-success');  // changes to select btns in modal
-				$('#chargeModeSofortBtn').addClass('btn-success');
-				$('#targetChargingProgress').show();  // visibility of divs for special settings
-				$('#sofortladenEinstellungen').show();
-				$('#priorityEvBatteryIcon').hide();  // visibility of priority icon
-				break;
-			case '1':
-				// mode min+pv
-				$('#chargeModeSelectBtnText').text('Min+PV-Laden');
-				$('.chargeModeBtn').removeClass('btn-success');
-				$('#chargeModeMinPVBtn').addClass('btn-success');
-				$('#targetChargingProgress').hide();
-				$('#sofortladenEinstellungen').hide();
-				$('#priorityEvBatteryIcon').hide();
-				break;
-			case '2':
-				// mode pv
-				$('#chargeModeSelectBtnText').text('PV-Laden');
-				$('.chargeModeBtn').removeClass('btn-success');
-				$('#chargeModePVBtn').addClass('btn-success');
-				$('#targetChargingProgress').hide();
-				$('#sofortladenEinstellungen').hide();
-				$('#priorityEvBatteryIcon').show();
-				break;
-			case '3':
-				// mode stop
-				$('#chargeModeSelectBtnText').text('Stop');
-				$('.chargeModeBtn').removeClass('btn-success');
-				$('#chargeModeStopBtn').addClass('btn-success');
-				$('#targetChargingProgress').hide();
-				$('#sofortladenEinstellungen').hide();
-				$('#priorityEvBatteryIcon').hide();
-				break;
-			case '4':
-				// mode standby
-				$('#chargeModeSelectBtnText').text('Standby');
-				$('.chargeModeBtn').removeClass('btn-success');
-				$('#chargeModeStdbyBtn').addClass('btn-success');
-				$('#targetChargingProgress').hide();
-				$('#sofortladenEinstellungen').hide();
-				$('#priorityEvBatteryIcon').hide();
-		}
 	}
 	else if ( mqttmsg == 'openWB/global/DailyYieldAllChargePointsKwh') {
 		var llaDailyYield = parseFloat(mqttpayload);
@@ -724,7 +704,6 @@ function processLpMessages(mqttmsg, mqttpayload) {
 			element.removeClass('text-green').addClass('text-orange');
 		}
 	}
-
 	else if ( mqttmsg.match( /^openwb\/lp\/[1-9][0-9]*\/strchargepointname$/i ) ) {
 		var index = getIndex(mqttmsg);  // extract number between two / /
 		$('.nameLp').each(function() {  // fill in name for all element of class '.nameLp'

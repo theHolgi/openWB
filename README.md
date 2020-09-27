@@ -72,27 +72,14 @@ Raspbian installieren
 
 	https://www.raspberrypi.org/downloads/raspbian/
 
-In der Shell folgendes eingeben:
+#TODO: Vernünftige Installationsmethode
 
-	curl -s https://raw.githubusercontent.com/snaptec/openWB/master/openwb-install.sh | sudo sh
+    cd /var/www/html
+    git clone http://github.com/theHolg/openWB -b py
 
-
-
-Crontab anpassen:
-	crontab -e
-hier einfügen:
-
-	* * * * * /var/www/html/openWB/regel.sh >> /var/log/openWB.log 2>&1 
-	* * * * * sleep 10 && /var/www/html/openWB/regel.sh >> /var/log/openWB.log 2>&1 
-	* * * * * sleep 20 && /var/www/html/openWB/regel.sh >> /var/log/openWB.log 2>&1 
-	* * * * * sleep 30 && /var/www/html/openWB/regel.sh >> /var/log/openWB.log 2>&1 
-	* * * * * sleep 40 && /var/www/html/openWB/regel.sh >> /var/log/openWB.log 2>&1 
-	* * * * * sleep 50 && /var/www/html/openWB/regel.sh >> /var/log/openWB.log 2>&1 
-
-
-
-Zum Updaten im Webinterface unter Misc den Update Button drücken.
- 
+    tmux
+    cd openWB
+    ./openWBrunner.py
 
 
 # Extras

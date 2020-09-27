@@ -7,9 +7,9 @@ mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 sys.path.append(mypath + 'site_python')
 
-from openWB.openWBlib import *
-from openWB import *
-from openWB.OpenWBCore import OpenWBCore
+from src.openWB.openWBlib import *
+from src.openWB import *
+from src.openWB import OpenWBCore
 global core
 
 if 'http_proxy' in os.environ:

@@ -328,12 +328,20 @@ var topicsToSubscribe = [
         ["openWB/config/get/lp/1/ChargeMode", 1],
         ["openWB/config/get/lp/2/ChargeMode", 1],
         ["openWB/config/get/lp/3/ChargeMode", 1],
-        ["openWB/config/get/ChargeMode/lp/4", 1],
-        ["openWB/config/get/ChargeMode/lp/5", 1],
-        ["openWB/config/get/ChargeMode/lp/6", 1],
-        ["openWB/config/get/ChargeMode/lp/7", 1],
-        ["openWB/config/get/ChargeMode/lp/8", 1],
-        
+        ["openWB/config/get/lp/4/ChargeMode", 1],
+        ["openWB/config/get/lp/4/ChargeMode", 1],
+        ["openWB/config/get/lp/4/ChargeMode", 1],
+        ["openWB/config/get/lp/4/ChargeMode", 1],
+        ["openWB/config/get/lp/4/ChargeMode", 1],
+        ["openWB/config/get/lp/1/alwaysOn", 1],
+        ["openWB/config/get/lp/2/alwaysOn", 1],
+        ["openWB/config/get/lp/3/alwaysOn", 1],
+        ["openWB/config/get/lp/4/alwaysOn", 1],
+        ["openWB/config/get/lp/4/alwaysOn", 1],
+        ["openWB/config/get/lp/4/alwaysOn", 1],
+        ["openWB/config/get/lp/4/alwaysOn", 1],
+        ["openWB/config/get/lp/4/alwaysOn", 1],
+
     ["openWB/SmartHome/Devices/1/RunningTimeToday", 1],
 	["openWB/SmartHome/Devices/2/RunningTimeToday", 1],
     ["openWB/SmartHome/Devices/3/RunningTimeToday", 1],
@@ -342,9 +350,7 @@ var topicsToSubscribe = [
     ["openWB/SmartHome/Devices/6/RunningTimeToday", 1],
     ["openWB/SmartHome/Devices/7/RunningTimeToday", 1],
 	["openWB/SmartHome/Devices/8/RunningTimeToday", 1],
-    ["openWB/SmartHome/Devices/9/RunningTimeToday", 1],
-	["openWB/pv/bool70PVDynStatus", 1],
-	["openWB/config/get/pv/nurpv70dynact", 1]
+    ["openWB/SmartHome/Devices/9/RunningTimeToday", 1]
 ];
 
 // holds number of topics flagged 1 initially

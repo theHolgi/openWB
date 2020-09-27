@@ -22,8 +22,6 @@
 #
 #####
 
-import os
-import unittest
 import subprocess
 import logging
 from typing import Iterator, Any, Optional
@@ -58,6 +56,8 @@ class openWBconfig:
 
    def __setitem__(self, key, value):
       import re
+      if isinstance(value, bool):   # convert bool -> 0/1
+         value = 1 if value else 0
       self.settings[key] = value
       log("Config: %s = %s" % (key, value))
       try:
@@ -66,11 +66,11 @@ class openWBconfig:
       except IOError:
          content = ""
 
-      line = "%s=%s\n" % (key, value)
-      if re.search('^' + key + "=", content, re.MULTILINE):
-         content = re.sub('^' + key + "=.*", line, content)
+      line = "%s=%s" % (key, value)
+      if re.search(f'^{key}=', content, re.MULTILINE):
+         content = re.sub(f'^{key}=.*', line, content, flags=re.MULTILINE)
       else:
-         content += line
+         content += line + '\n'
       with open(self.configfile, 'w') as f:
          f.write(content)
    #__setattr__ = __setitem__
@@ -194,36 +194,3 @@ def setCurrent(req):
       cmd = './runs/set-current.sh %s %s'  % (current, mapping[key])
       debug("Exec: " + cmd)
       subprocess.call(cmd, shell=True)
-
-class TestWBlib(unittest.TestCase):
-   def test_config(self):
-      testfile = '/tmp/openwb.conf'
-      try:
-         os.remove(testfile)
-      except OSError:
-         pass
-      config = openWBconfig(testfile)
-      self.assertIsNone(config['test'])
-      config['evseids1'] = 1
-      config['evselanips1'] = "10.20.0.180"
-
-      self.assertEqual(config['evseids1'], 1)
-      self.assertEqual(config['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
-
-      # Read it another time
-      config2 = openWBconfig(testfile)
-      self.assertEqual(config2['evseids1'], 1)
-      self.assertEqual(config2['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
-
-   def test_values(self):
-      values = ramdiskValues('/tmp')
-      values['test'] = 'test'
-      values['test2'] = 5
-      self.assertTrue(os.path.isfile('/tmp/test'))
-      self.assertTrue(os.path.isfile('/tmp/test2'))
-      values2 = ramdiskValues('/tmp')
-      self.assertEqual(values2['test'],  'test', "Retrieve a string value")
-      self.assertEqual(values2['test2'], 5)
-
-if __name__ == '__main__':
-    unittest.main()

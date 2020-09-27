@@ -63,23 +63,26 @@ class OpenWBCore:
          self.logger.debug("Values: " + str(self.data))
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
-         debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
-         debug += "Laden: %iW" % self.data.get("llaktuell")
-         for kreis in self.regelkreise.values():
-            for lp in kreis.regler.values():
-               id = lp.wallbox.id
-               on = "*" if self.data.get('ladestatus', id) else ""
-               debug += f"({id}{on}: {kreis.mode} {self.data.get('lla1', id)}A {self.data.get('llaktuell',id)}W"
-               if lp.oncount > 0:
-                  debug += f" +{lp.oncount}"
-               if lp.offcount > 0:
-                  debug += f" -{lp.offcount}"
-               debug += ")"
-         debug += " Haus: %iW" % self.data.get("hausverbrauch")
-         self.logger.info(debug)
+         self.logdebug()
          if self.config.get('testmode') is None:
             self.mqtt.publish()
             time.sleep(20)
+
+   def logdebug(self):
+      debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
+      debug += "Laden: %iW" % self.data.get("llaktuell")
+      for kreis in self.regelkreise.values():
+         for lp in kreis.regler.values():
+            id = lp.wallbox.id
+            on = "*" if self.data.get('ladestatus', id) else ""
+            debug += f"({id}{on}: {kreis.mode} {self.data.get('lla1', id)}A {self.data.get('llaktuell', id)}W"
+            if lp.oncount > 0:
+               debug += f" +{lp.oncount}"
+            if lp.offcount > 0:
+               debug += f" -{lp.offcount}"
+            debug += ")"
+      debug += " Haus: %iW" % self.data.get("hausverbrauch")
+      self.logger.info(debug)
 
    def sendData(self, package: DataPackage) -> None:
       self.data.update(package)

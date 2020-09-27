@@ -1,4 +1,5 @@
 import unittest
+import os
 from openWB.openWBlib import *
 from openWB import *
 from openWB.OpenWBCore import OpenWBCore
@@ -8,7 +9,11 @@ global core
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 class StubCore():
-   config = openWBconfig('test.conf')
+   config = openWBconfig(mypath + 'test.conf')
+
+   @staticmethod
+   def add_module(module: Modul, configprefix: str):
+      module.configprefix = configprefix
 
 class StubPV(PVModul):
    P = 0
@@ -58,6 +63,7 @@ class Test_Regler(unittest.TestCase):
 
    def setUp(self):
       self.regler = Regler(self.LP)
+      StubCore.add_module(self.LP, 'lpmodul1')
       self.LP.actP = 0
       self.LP.setP = 0
       self.LP.override_blocked = False
@@ -140,6 +146,7 @@ class TEST_LP1(unittest.TestCase):
    def setUp(self):
       self.core = OpenWBCore(mypath + "/test.conf")
       self.core.config["lpmodul1_mode"] = "pv"
+      self.core.config["lpmodul1_alwayson"] = False
       self.PV = StubPV(1)
       self.LP = StubLP(1)
       self.EVU = StubEVU(1)
@@ -171,7 +178,11 @@ class TEST_LP1(unittest.TestCase):
       self.assertEqual(300, self.core.data.hausverbrauch, "Ruheverbrauch")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
-      self.assertFalse(self.LP.is_charging, "Keine Ladung gestartet")
+
+      with self.subTest("Min-config"):
+         self.core.config['lpmodul1_alwayson'] = True
+         self.core.run(2)
+         self.assertEqual(self.LP.minP, self.LP.setP, "Leistungsanforderung auf Min")
 
    def test_supply_tooshort(self):
       """Überschuss, Ladestart abgebrochen"""
@@ -185,7 +196,6 @@ class TEST_LP1(unittest.TestCase):
       self.core.run(1)
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
-      self.assertFalse(self.LP.is_charging, "Keine Ladung gestartet")
 
    def test_supply_start(self):
       """Überschuss, Ladestart erfolgreich"""
@@ -273,6 +283,7 @@ class TEST_LP1_PEAK(unittest.TestCase):
    def setUp(self):
       self.core = OpenWBCore(mypath + "/test.conf")
       self.core.config["lpmodul1_mode"] = "peak"
+      self.core.config["lpmodul1_alwayson"] = False
       self.PV = StubPV(1)
       self.LP = StubLP(1)
       self.EVU = StubEVU(1)
@@ -296,7 +307,6 @@ class TEST_LP1_PEAK(unittest.TestCase):
       self.assertEqual(2600, self.core.data.hausverbrauch, "Ruheverbrauch")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
-      self.assertFalse(self.LP.is_charging, "Keine Ladung gestartet")
 
    def test_supply_start(self):
       """Überschuss, Ladestart erfolgreich"""
@@ -351,6 +361,7 @@ class TEST_LP2(unittest.TestCase):
       self.core = OpenWBCore(mypath + "/test.conf")
       self.core.config["lpmodul1_mode"] = "pv"
       self.core.config["lpmodul2_mode"] = "pv"
+      self.core.config["lpmodul1_alwayson"] = False
       self.PV = StubPV(1)
       self.LP1 = StubLP(1)
       self.LP2 = StubLP(2)

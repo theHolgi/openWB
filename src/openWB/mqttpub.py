@@ -74,9 +74,6 @@ class Mqttpublisher(object):
 
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
       "global/DailyYieldAllChargePointsKwh": "xxx",  # Lademenge daily
-      
-      # Config
-      "pv/bool70PVDynStatus": "nurPV70Status"
    }
    all_live_fields = ("uberschuss", "ladeleistung", "-pvwatt", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
@@ -236,43 +233,24 @@ class Mqttpublisher(object):
             if 0 <= val <= 10000:
                republish = True
                self.core.setconfig('abschaltverzoegerung', val)
-         elif msg.topic == "openWB/set/pv/NurPV70Status":   # 70% mode
-            self.core.data["nurPV70Status"] = val == 1
-            self.logger.info("Konfiguriere %i Ladepunkte" % self.num_lps)
-            for n in range(1, self.num_lps+1):
-               self.logger.info("LP %i" % n)
-               if self.core.config.get('lpmodul%i_mode' % n) == "pv" and val == 1:
-                  self.logger.info("LP %i = peak" % n)
-                  self.core.setconfig('lpmodul%i_mode' % n, "peak")
-               elif self.core.config.get('lpmodul%i_mode' % n) == "peak" and val == 0:
-                  self.logger.info("LP %i = pv" % n)
-                  self.core.setconfig('lpmodul%i_mode' % n, "pv")
-         elif msg.topic.startswith('openWB/config/set/lp/'):   # Individueller Lademodus
+         elif msg.topic.startswith('openWB/config/set/lp/'):   # Ladepunkt Konfiguration
             self.logger.info("LP message")
-            if re.search("lp/(\\d)/ChargeMode", msg.topic):     # Chargemode
-               device = int(re.search('/lp/(\\d)', msg.topic).group(1))
-               self.logger.info(f'ChargeMode lp{device} = {msg.payload.decode()}')
+            device = int(re.search('/lp/(\\d)', msg.topic).group(1))
+            if re.search("/ChargeMode", msg.topic):     # Chargemode
+               mode = ['sofort', 'peak', 'pv', 'stop', 'standby'][val]
+               self.logger.info(f'ChargeMode lp{device} = {mode}')
                if 1 <= device <= 8:
                   republish = True
-                  self.core.setconfig('lpmodul%i_mode' % device, msg.payload.decode().lower())            
-         elif msg.topic == "openWB/set/ChargeMode":         # Globaler Lademodus
-            #        sofort  min-pv  pv standby stop
-            mode = ['sofort', 'pv', 'pv', 'standby', 'stop'][val]
-            if val == 1 or val == 2:
-               if self.core.data["nurPV70Status"]:
-                 mode = "peak"
-            for n in range(1, self.num_lps+1):
-               self.core.setconfig('lpmodul%i_mode' % n, mode)
-            if val == 1:   # min-PV
-               for n in range(1, self.num_lps + 1):
-                  self.core.setconfig('lpmodul%i_alwayson' % n, True)
-            elif val == 2:  # PV
-               for n in range(1, self.num_lps + 1):
-                  self.core.setconfig('lpmodul%i_alwayson' % n, False)
+                  self.core.setconfig('lpmodul%i_mode' % device, mode)
+            elif re.search("/alwaysOn", msg.topic):
+               self.logger.info(f'AlwaysOn lp{device} = {msg.payload}')
+               if 1 <= device <= 8:
+                  republish = True
+                  self.core.setconfig('lpmodul%i_alwayson' % device, msg.payload == "1")
          else:
-            logger.info("Nix gefunden.")
+            self.logger.info("Nix gefunden.")
       except Exception as e:
-         logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
+         self.logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
       if republish:
          self.logger.info("Re-publish: %s = %s" % (msg.topic.replace('/src/', '/get/'), msg.payload))
          self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=self.configqos, retain=True)

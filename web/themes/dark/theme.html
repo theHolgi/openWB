@@ -134,12 +134,7 @@
 				&nbsp;
 			</div>
 			<div class="col-5 text-center">
-				<button type="button" class="btn btn-sm btn-secondary cursor-pointer regularTextSize" id="chargeModeSelectBtn">
-					<span id="chargeModeSelectBtnText">Lademodus</span>
-					<span id="priorityEvBattery">
-						<span class="fas fa-car" id="priorityEvBatteryIcon">&nbsp;</span>
-					</span>
-				</button>
+
 			</div>
 			<div id="time" class="col text-right">
 				&nbsp;
@@ -226,25 +221,21 @@
 
 		<!-- chargepoint info header -->
 		<div class="row no-gutter py-1 py-md-0 smallTextSize text-center bg-darkgrey text-grey font-weight-bold">
+			<div class="col-1 px-0"></div>
 			<div class="col-3 px-0">
 				Ladepunkt <span id="awattarEnabledIcon" class="fa fa-chart-line hide"></span>
 			</div>
-			<div class="col-1 px-0">
-				LM
-			</div>
-			<div class="col-3 px-0">
-				Ladeparameter
-			</div>
-			<div class="col-3 px-0">
-				geladen
-			</div>
-			<div class="col-2 px-0">
-				SoC
-			</div>
+			<div class="col-2 px-0">LM</div>
+			<div class="col-2 px-0">Ladeparameter</div>
+			<div class="col-3 px-0">geladen</div>
+			<div class="col-1 px-0">SoC</div>
 		</div>
 
 		<!-- chargepoint info data lp1-->
 		<div class="row no-gutter py-1 py-md-0 smallTextSize text-center bg-lightgrey text-grey" data-lp="1">
+			<div class="col-1 px-0">
+				<button class="btn fa fa-bars chargeModeSelectBtn"></button>
+			</div>
 			<div class="col-3 px-0">
 				<span class="fas fa-xs hide autolockConfiguredLp"></span>
 				<span class="cursor-pointer font-weight-bold lpDisabledStyle enableLp nameLp">LP Name</span>
@@ -252,32 +243,29 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/1/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/1/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
+			<div class="col-2 px-0">
+				<span class="chargeModeLP">lade Daten</span>
+				<span class="fa fa-xs fa-play hide chargeLPalwayson"></span>
 			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
 
 		<!-- chargepoint info data lp2-->
 		<div class="row no-gutter py-1 py-md-0 smallTextSize text-center bg-lightgrey text-grey" data-lp="2">
+			<div class="col-1 px-0">
+				<button class="btn fa fa-bars chargeModeSelectBtn"></button>
+			</div>
 			<div class="col-3 px-0">
 				<span class="fas fa-xs hide autolockConfiguredLp"></span>
 				<span class="cursor-pointer font-weight-bold lpDisabledStyle enableLp nameLp">LP Name</span>
@@ -285,26 +273,20 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/2/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/2/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
+			<div class="col-2 px-0">
+				<span class="chargeModeLP">lade Daten</span>
+				<span class="fa fa-xs fa-play hide chargeLPalwayson"></span>
 			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -318,26 +300,16 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/3/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/3/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
-			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -351,26 +323,16 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/4/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/4/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
-			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -384,26 +346,16 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/5/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/5/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
-			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -417,26 +369,16 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/6/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/6/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
-			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -450,26 +392,16 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/7/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/7/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
-			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -483,26 +415,16 @@
 				<span class="fa fa-xs fa-flag-checkered hide targetChargingLp"></span>
 				<span class="fa fa-xs fa-moon hide nightChargingLp"></span>
 			</div>
-			<div class="col-1 px-0 btn-group-dropdown">
-			  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			     <span id="lp/8/ChargeMode" type="label">PV</span>
-			  </button>
-			  <div class="dropdown-menu" topicprefix="set/lp/8/ChargeMode">
-				<button class="dropdown-item" data-toggle="dropdown" option="PV">PV</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Peak">Peak</button>
-				<button class="dropdown-item" data-toggle="dropdown" option="Sofort">Sofort</button>
-			  </div>
-			</div>
-			<div class="col-3 px-0">
+			<div class="col-2 px-0">
 				<span class="actualPowerLp">lade Daten</span><span class="phasesInUseLp"></span><span class="targetCurrentLp"></span>
 			</div>
 			<div class="col-3 px-0">
 				<span class="energyChargedLp">lade Daten</span><span class="kmChargedLp" data-consumption="0"></span>
 			</div>
-			<div class="col-2 px-0 socNotConfiguredLp text-center">
+			<div class="col-1 px-0 socNotConfiguredLp text-center">
 				--
 			</div>
-			<div class="col-2 px-0 hide socConfiguredLp text-center">
+			<div class="col-1 px-0 hide socConfiguredLp text-center">
 				<span class="socLp"></span>
 			</div>
 		</div>
@@ -671,7 +593,7 @@
 			</div>
 
 
-	</div>  <!-- and smarthome -->
+		</div>  <!-- and smarthome -->
 
 		<!-- depending on charge mode show options -->
 		<form id="sofortladenEinstellungen" class="hide">
@@ -786,7 +708,7 @@
 			<div class="chargeLimitation" data-lp="1">
 				<hr color="white">
 				<div class="row justify-content-center">
-					<h3 class="font-weight-bold text-center text-lightgrey">Lademengenbegrenzung <span class="nameLp"></span></label></h3>
+					<h3 class="font-weight-bold text-center text-lightgrey">Lademengenbegrenzung <span class="nameLp"></span></h3>
 				</div>
 				<div class="form-row vaRow form-group mt-1 justify-content-center" data-lp="1">
 					<div class="col btn-group btn-group-toggle" id="lp/1/chargeLimitation" data-toggle="buttons" data-topicprefix="openWB/config/get/sofort/">
@@ -1092,11 +1014,11 @@
 
 				<!-- modal header -->
 				<div class="modal-header bg-success">
-					<h4 class="modal-title">Lademodus-Auswahl</h4>
+					<h4 class="modal-title">Lademodus-Auswahl <span id="chargeModeModalnameLp">LP name</span></h4>
 				</div>
 
 				<!-- modal body -->
-				<div class="modal-body">
+				<div class="modal-body" data-lp="1">
 					<div class="row justify-content-center">
 						<div class="col-sm-5 py-1">
 							<button id="chargeModeSofortBtn" type="button" class="chargeModeBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal" chargeMode="0">Sofort</button>
@@ -1109,7 +1031,7 @@
 					</div>
 					<div class="row justify-content-center">
 						<div class="col-sm-5 py-1">
-							<button id="chargeModeMinPVBtn" type="button" class="chargeModeBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal" chargeMode="1">Min + PV</button>
+							<button id="chargeModeMinPVBtn" type="button" class="chargeModeBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal" chargeMode="1">Peak</button>
 						</div>
 					</div>
 					<div class="row justify-content-center">
@@ -1144,18 +1066,18 @@
 							</div>
 						</div>
 					</span>
-					<span id='70ModeBtn'>
-						<hr>
+					<span id='MinModeBtn'>
+						<hr/>
 
 						<div class="row">
 							<div class="col text-center text-grey">
-								70% beachten im Lademodus PV-Laden:
+								Nicht ganz ausschalten in PV-Modi:
 							</div>
 						</div>
 						<div class="row justify-content-center">
 							<div class="col-sm-5 py-1">
-								<button id="70PvBtn" type="button" class=" 70PvBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal">
-									70 % beachten
+								<button id="MinBtn" type="button" class="MinBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal">
+									Always on
 								</button>
 							</div>
 						</div>
@@ -1309,13 +1231,37 @@
 				}
 			});
 
-			$('#chargeModeSelectBtn').click(function(event){
-				$("#chargeModeModal").modal("show");
+			$('.chargeModeSelectBtn').click(function(event){
+			    var parent = $(this).closest('[data-lp]')
+			    var elementId = parent.data('lp');
+			    // Configure the dialog
+			    var dialog = $("#chargeModeModal");
+			    var chargeMode = parent.find(".chargeModeLP").text();
+			    $('.chargeModeBtn').removeClass('btn-success');
+			    switch (chargeMode) {
+			      case 'Sofort':  $('#chargeModeSofortBtn').addClass('btn-success'); break;
+			      case 'Peak':    $('#chargeModePeakBtn').addClass('btn-success');   break;
+			      case 'PV':      $('#chargeModePVBtn').addClass('btn-success');     break;
+			      case 'Stop':    $('#chargeModeStopBtn').addClass('btn-success');   break;
+			      case 'Standby': $('#chargeModeStdbyBtn').addClass('btn-success');  break;
+				}
+				dialog.find('[data-lp]').attr('data-lp', elementId);
+				const name = parent.find('.nameLp').text()
+				const element = dialog.find('#chargeModeModalnameLp')
+				element.text(name)
+				const flag = parent.find('.chargeLPalwayson')
+				if (flag.hasClass("hide") ) {
+				   dialog.find('.MinBtn').removeClass('btn-success');
+				} else {
+				   dialog.find('.MinBtn').addClass('btn-success');
+				}
+				dialog.modal("show");
 			});
 
 			$('.chargeModeBtn').click(function(event){
+				var elementId = $(this).closest('[data-lp]').data('lp');
 				var chargeMode = $(this).attr("chargeMode")
-				publish(chargeMode, "openWB/set/ChargeMode");
+				publish(chargeMode, "openWB/config/set/lp/" + elementId + "/ChargeMode");
 			});
 
 			$('.priorityModeBtn').click(function(event){
@@ -1326,14 +1272,15 @@
 				}
 			});
 
-			$('.70PvBtn').click(function(event){
+			$('.MinBtn').click(function(event){
 				// 0 deaktiviert, 1 aktiviert
-				var element = document.getElementById('70PvBtn');
-				if ( element.classList.contains("btn-success") ) {
-					publish("0", "openWB/set/pv/NurPV70Status");
-				} else {
-					publish("1", "openWB/set/pv/NurPV70Status");
+				var element = document.getElementById('MinBtn');
+				var elementId = $(this).closest('[data-lp]').data('lp');
+				var value = "1"
+				if ( $(this).hasClass("btn-success") ) {
+					value = "0"
 				}
+				publish(value, "openWB/config/set/lp/" + elementId + "/alwaysOn");
 			});
 
 			$('.btn[value="Reset"]').click(function(event){

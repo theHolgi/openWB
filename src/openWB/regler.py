@@ -79,7 +79,7 @@ class Regler:
          if self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
             request += RequestPoint('min-P', props.inc)
             request += RequestPoint('max-P', self.wallbox.setP - props.minP)
-         else:  # Nein, nur ganz ausschalten
+         elif not self.config[self.wallbox.configprefix + '_alwayson']:  # Nein, nur ganz ausschalten
             request.flags.add('min')
             # Wenn noch über Min, lasse Reduzierung noch zu
             if self.wallbox.setP > props.minP:
@@ -107,17 +107,21 @@ class Regler:
 
    def req_idle(self, increment: int) -> None:
       """set function of PV/idle and PV/init mode"""
-      if increment == 0:  # Keine Anforderung
+      # WB soll an sein
+      if self.config[self.wallbox.configprefix + '_alwayson']:
+         self.wallbox.set(self.wallbox.powerproperties().minP)
+         self.request = self.req_charging
+      elif self.oncount >= self.config.einschaltverzoegerung:
+         self.state = 'init'
+         self.oncount = 0
+         self.request = self.req_charging
+         power = self.wallbox.setP + increment
+         self.wallbox.set(power)
+      elif increment == 0:  # Keine Anforderung
          self.oncount = 0
          self.state = 'idle'
       else:
          self.oncount += 1
-         if self.oncount >= self.config.einschaltverzoegerung:
-            self.state = 'init'
-            self.oncount = 0
-            self.request = self.req_charging
-            power = self.wallbox.setP + increment
-            self.wallbox.set(power)
 
    def req_charging(self, increment: int) -> None:
       """Set the given power"""
@@ -229,7 +233,7 @@ class Regelgruppe():
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
       if self.mode == 'sofort':
          for id, regler in self.regler.items():
-            power = amp2power(getCore().config.get("lpmodul%i_sofortll" % id), regler.wallbox.phasen)
+            power = amp2power(getCore().config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
       elif data.uberschuss > self.limit:  # Leistungserhöhung

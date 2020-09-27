@@ -1,4 +1,4 @@
-from openWB import *
+from src.openWB import *
 from urllib import request, error
 import json
 from threading import Thread
