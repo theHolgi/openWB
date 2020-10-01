@@ -24,7 +24,8 @@ def read_ramdisk(fileName: str) -> str:
 
 class Mqttpublisher(object):
    configmapping = {
-      "lp/1/strChargePointName": "lp%nname"
+      "lp/%n/strChargePointName": "lp%nname",
+      "lp/%n/energyConsumptionPer100km": "durchslp%n"
    }
    datamapping = {
       # EVU
@@ -244,7 +245,7 @@ class Mqttpublisher(object):
                self.logger.info(f'AlwaysOn lp{device} = {msg.payload}')
                if 1 <= device <= 8:
                   republish = True
-                  self.core.setconfig('lpmodul%i_alwayson' % device, msg.payload == "1")
+                  self.core.setconfig('lpmodul%i_alwayson' % device, bool(int(msg.payload)))
          else:
             self.logger.info("Nix gefunden.")
       except Exception as e:

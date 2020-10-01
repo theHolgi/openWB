@@ -1250,10 +1250,10 @@
 				const element = dialog.find('#chargeModeModalnameLp')
 				element.text(name)
 				const flag = parent.find('.chargeLPalwayson')
-				if (flag.hasClass("hide") ) {
-				   dialog.find('.MinBtn').removeClass('btn-success');
-				} else {
+				if (flag.is(":visible")) {
 				   dialog.find('.MinBtn').addClass('btn-success');
+				} else {
+				   dialog.find('.MinBtn').removeClass('btn-success');
 				}
 				dialog.modal("show");
 			});
@@ -1275,7 +1275,8 @@
 			$('.MinBtn').click(function(event){
 				// 0 deaktiviert, 1 aktiviert
 				var element = document.getElementById('MinBtn');
-				var elementId = $(this).closest('[data-lp]').data('lp');
+				var parent = $(this).closest('[data-lp]')
+				var elementId = parent.data('lp');
 				var value = "1"
 				if ( $(this).hasClass("btn-success") ) {
 					value = "0"

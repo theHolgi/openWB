@@ -1,7 +1,8 @@
 from urllib import request, error
 import json
-from threading import Thread
+import logging
 
+from threading import Thread
 from openWB import *
 
 
@@ -28,7 +29,8 @@ class GO_E(Ladepunkt):
       self.laststate = {}
       self.plugged = False
       self.charging = False
-
+      self.logger = logging.getLogger('GO_E')
+      
    # DataProvier trigger
    def trigger(self):
       try:
@@ -50,18 +52,34 @@ class GO_E(Ladepunkt):
             # car status 2 Auto lädt
             # car status 3 Warte auf Fahrzeug
             # car status 4 Ladung beendet, Fahrzeug verbunden
-            self.plugged = goe['car'] != '1'
-            self.charging = goe['car'] == '2'
+            chargedkwh = int(goe['eto'])/10  # 0.1kwh
+            plugged = goe['car'] != '1'
+            charging = goe['car'] == '2'
+            
+            # Reset von Werten beim Einstecken
+            if plugged and not self.plugged:
+               self.kwhatplugin = chargedkwh
+               self.logger.info('Plugged in at %i kwh' % chargedkwh)
+            if charging and not self.charging:
+               self.kwhatchargestart = chargedkwh
+               self.logger.info('Start charging in at %i kwh' % chargedkwh)
+            pluggedgeladen = chargedkwh - self.kwhatplugin if plugged else 0
+            aktgeladen = chargedkwh - self.kwhatchargestart if hasattr(self, 'kwhatchargestart') else 0
+            self.plugged = plugged
+            self.charging = charging
             self.core.sendData(DataPackage(self, {
                'llv1': u1, 'llv2': u2, 'llv3': u3,
                'lla1': a1, 'lla2': a2, 'lla3': a3,
-               'llkwh': int(goe['eto'])/10,  # 0.1kWh
-               'plugstat': self.plugged,
-               'chargestat': self.charging,
+               'llkwh': chargedkwh,
+               'pluggedladungbishergeladen': pluggedgeladen,
+               'aktgeladen': aktgeladen,
+               'plugstat': plugged,
+               'chargestat': charging,
                'llaktuell': self.actP,
                'lpphasen': self.phasen}))
             # restzeitlp
-      except:
+      except NameError:
+         raise
          pass
 
    def event(self, event):
