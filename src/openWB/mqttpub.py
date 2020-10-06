@@ -146,7 +146,10 @@ class Mqttpublisher(object):
    def _init_data(self):
       for key in self.datamapping.keys():
          self.lastdata.update((mqttkey, None) for mqttkey in self._loop(key))
-      self.all_live = read_ramdisk('all-live.graph').split('\n')
+      try:
+         self.all_live = read_ramdisk('all-live.graph').split('\n')
+      except FileNotFoundError:
+         self.all_live = []
 
    def publish(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))

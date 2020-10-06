@@ -78,8 +78,7 @@ class GO_E(Ladepunkt):
                'llaktuell': self.actP,
                'lpphasen': self.phasen}))
             # restzeitlp
-      except NameError:
-         raise
+      except:  # e.g. socket.timeout
          pass
 
    def event(self, event):
