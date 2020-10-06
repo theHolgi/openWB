@@ -228,6 +228,14 @@ class Regelgruppe():
       if id in self.regler:
          return self.regler.pop(id).wallbox
 
+   @property
+   def isempty(self) -> bool:
+      """
+      Gebe an, ob diese Gruppe leer ist
+      :return:
+      """
+      return len(self.regler) == 0
+
    def controlcycle(self, data) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
@@ -236,6 +244,10 @@ class Regelgruppe():
             power = amp2power(getCore().config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
+      elif self.mode in ['stop', 'standby']:
+         for regler in self.regler.values():
+            if regler.wallbox.setP != 0:
+               regler.wallbox.set(0)
       elif data.uberschuss > self.limit:  # Leistungserhöhung
          deltaP = data.uberschuss - self.limit
          # Erhöhe eingeschaltete LPs

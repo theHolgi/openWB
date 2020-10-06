@@ -114,12 +114,14 @@ class OpenWBCore:
                # Aus altem Regelkreis entfernen
                lp = self.regelkreise[mode].pop(id)
                if lp is not None:
-                  self.logger.info("LP %i aus %s entfernt" % (id, mode))
                   # In neuem Regelkreis hinzufügen
                   if new_mode not in self.regelkreise:
                      self.regelkreise[new_mode] = Regelgruppe(new_mode)
                   self.regelkreise[new_mode].add(lp)
-                  self.logger.info("LP %i zu %s hinzugefügt" % (id, new_mode))
+                  # Entferne leere Regelgruppe
+                  if self.regelkreise[mode].isempty:
+                     del self.regelkreise[mode]
+                  self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                   break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
       except Exception as e:

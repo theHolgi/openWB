@@ -47,6 +47,7 @@ class GO_E(Ladepunkt):
             a2 = int(goe['nrg'][5])/10
             a3 = int(goe['nrg'][6])/10
             self.actP = int(goe['nrg'][11]) * 10  # 0.01kW
+            self.setP = amp2power(int(goe['amp']), self.phasen)
 
             # car status 1 Ladestation bereit, kein Auto
             # car status 2 Auto lädt

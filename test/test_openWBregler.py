@@ -11,6 +11,9 @@ mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 class StubCore():
    config = openWBconfig(mypath + 'test.conf')
 
+   def __init__(self):
+      setCore(self)
+
    @staticmethod
    def add_module(module: Modul, configprefix: str):
       module.configprefix = configprefix
@@ -56,10 +59,9 @@ class StubEVU(DataProvider):
 
 class Test_Regler(unittest.TestCase):
    """Teste Regler Klasse"""
+   core = StubCore()
    EVU = StubEVU(1)
    LP = StubLP(1)
-   LP.core = StubCore()
-   LP.id = 1
 
    def setUp(self):
       self.regler = Regler(self.LP)
@@ -456,6 +458,11 @@ class TEST_LP1_SOFORT(unittest.TestCase):
       self.core.config["lpmodul1_sofortll"] = 20
       self.core.run(1)
       self.assertEqual(4600, self.LP.setP, "Anforderung veränderter Strom")
+
+      with self.subTest("Wechsel zu STOP-Modus"):
+         self.core.setconfig("lpmodul1_mode", "stop")
+         self.core.run(1)
+         self.assertEqual(0, self.LP.setP, "Anforderung auf 0")
 
 if __name__ == '__main__':
    unittest.main()
