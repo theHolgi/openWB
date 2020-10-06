@@ -6,7 +6,7 @@ import importlib
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 sys.path.append(mypath + 'src')
 
-from openWB import OpenWBCore
+from openWB import OpenWBCore, api
 
 if 'http_proxy' in os.environ:
    os.environ.pop('http_proxy')
@@ -14,6 +14,10 @@ if 'https_proxy' in os.environ:
    os.environ.pop('https_proxy')
 
 core = OpenWBCore.OpenWBCore(mypath + "/pyconfig.conf")
+
+# Start the API
+api = api.OpenWBAPI(core)
+api.start()
 
 for source in ['wr', 'bezug', 'lp']:
    instance = 1
