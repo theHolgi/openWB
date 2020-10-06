@@ -1,5 +1,20 @@
-from typing import Union
+from typing import Any, Union
 from collections import namedtuple
+from dataclasses import dataclass
+from enum import Enum
+
+
+class EventType(Enum):
+   configupdate = 1
+   resetEnergy = 2
+
+
+@dataclass
+class Event:
+   type: EventType
+   info: Any = None
+   payload: Any = None
+
 
 class CoreSingleton:   # This can not be stored in openWbCore because of circular reference.
    pass
@@ -10,10 +25,6 @@ def getCore():
 def setCore(o):
    print("Setting Core to " + o.__repr__())
    CoreSingleton.core = o
-
-class Event:
-   """Abstract class for an event"""
-   pass
 
 PowerProperties = namedtuple('PowerProperties', 'minP maxP inc')
 

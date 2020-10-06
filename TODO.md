@@ -34,3 +34,16 @@ Lademodus per LP einstellen
 - Fast alles mit Konfigurations über GUI
 
 - Alles von dem ich gar nicht weiß, daß es das auch gibt
+
+## Notes Ladelimitierung:
+
+openWB/config/set/sofort/lp/1/chargeLimitation => msmoduslp%i
+0 = Keine
+1 = Energy  => openWB/config/set/sofort/lp/1/energyToCharge => lademkwh%i
+       republish: openWB/lp/1/boolDirectModeChargekWh
+2 = SoC     => openWB/config/set/sofort/lp/1/socToChargeTo => sofortsoclp%i
+       republish: openWB/lp/1/boolDirectChargeModeSoc
+       
+Resetbutton: openWB/config/set/sofort/lp/1/resetEnergyToCharge = b"Reset"
+Restzeit publish <str> to openwb/lp/1/timeremaining
+Restzeit = (lademkwh - aktgeladen)[kWh] / ladeleistung[W] * 1000[W/kW] * 60 [min/h] = [min]

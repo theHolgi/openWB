@@ -109,12 +109,12 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 	var index = getIndex(mqttmsg);
 	if ( element.attr('type') == 'label' ) {
 		setInputText(elementId, mqttpayload);
-		if (mqttpayload == "Sofort") {
+		if (mqttpayload == "sofort") {
 		   element = $('#sofortladenEinstellungen');
    		   element.show();
    		   element.children('[data-lp="' + index + '"]').show()
    		} else {
-		   element = $('#sofortladenEinstellungen');
+		      element = $('#sofortladenEinstellungen');
    		   // element.hide();
    		   element.children('[data-lp="' + index + '"]').hide()
    		}

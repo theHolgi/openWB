@@ -1,4 +1,7 @@
 from . import Modul, DataPackage
+from dataclasses import dataclass
+from enum import Enum
+
 
 class OpenWBCore:
    def __init__(self, configFile: str)): ...

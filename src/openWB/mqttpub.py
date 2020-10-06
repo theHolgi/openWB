@@ -10,6 +10,8 @@ from datetime import datetime
 from time import time
 import logging
 
+from .OpenWBCore import Event, EventType
+
 basePath = os.path.dirname(os.path.realpath(__file__)) + '/'
 projectPath = os.path.realpath(os.path.dirname(__file__) + '/../../ramdisk/')
 
@@ -211,7 +213,7 @@ class Mqttpublisher(object):
          val = None
       try:
          if msg.topic == "openWB/config/set/pv/regulationPoint":   # Offset (PV)
-            if -300000 <= val <= 300000:
+            if val is not None and -300000 <= val <= 300000:
                republish = True
                self.core.setconfig('offsetpv', val)
          elif msg.topic == "openWB/config/set/pv/nurpv70dynw":
@@ -224,15 +226,29 @@ class Mqttpublisher(object):
          elif msg.topic.startswith("openWB/config/set/sofort/"):  # Sofortladen...
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             if 1 <= device <= 8:
-               republish = True
                if msg.topic.endswith('current'):
-                  self.core.setconfig('lpmodul%i_sofortll' % device, val)
-               elif msg.topic.endswith('energyToCharge'):
-                  self.core.setconfig('lademkwh%i' % device, val)
+                  if val is not None and 6 <= val <= 32:
+                     republish = True
+                     self.core.setconfig('lpmodul%i_sofortll' % device, val)
+               elif msg.topic.endswith('chargeLimitation'):  # Limitierung Modus
+                  if val is not None and 0 <= val <= 2:
+                     self.core.setconfig('msmoduslp%i' % device, val)
+                     self.client.publish("openWB/lp/%i/boolDirectModeChargekWh" % device, 1 if val == 1 else 0)
+                     self.client.publish("openWB/lp/%i/boolDirectChargeModeSoc" % device, 1 if val == 2 else 0)
+               elif msg.topic.endswith('energyToCharge'):   # Modus 1: Lademenge [kWh]
+                  if val is not None and 0 <= val <= 100:
+                     republish = True
+                     self.core.setconfig('lademkwh%i' % device, val)
+               elif msg.topic.endswith('socToChargeTo'):    # Modus 2: SOC [%]
+                  if val is not None and 0 <= val <= 100:
+                     republish = True
+                     self.core.setconfig('sofortsoclp%i' % device, val)
                elif msg.topic.endswith('resetEnergyToCharge'):
-                  self.core.sendData(DataPackage(self, {'aktgeladen%i' % device: 0}))
+                  if msg.payload == b'Reset':
+                     self.core.event(Event(EventType.resetEnergy, device))
+
          elif msg.topic == "openWB/config/set/pv/stopDelay":
-            if 0 <= val <= 10000:
+            if val is not None and 0 <= val <= 10000:
                republish = True
                self.core.setconfig('abschaltverzoegerung', val)
          elif msg.topic.startswith('openWB/config/set/lp/'):   # Ladepunkt Konfiguration
@@ -259,4 +275,5 @@ class Mqttpublisher(object):
 
 """
 openWB/set/ChargeMode/lp/1
+openWB/config/set/sofort/lp/1/chargeLimitation 1 = Energy, 2 = SoC
 """

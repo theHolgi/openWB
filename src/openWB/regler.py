@@ -1,6 +1,6 @@
 import enum
 from typing import Set, Optional
-from . import getCore, amp2power
+from . import getCore, amp2power, DataPackage
 from itertools import groupby
 from dataclasses import dataclass
 
@@ -240,10 +240,21 @@ class Regelgruppe():
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
       if self.mode == 'sofort':
+         core = getCore()
          for id, regler in self.regler.items():
-            power = amp2power(getCore().config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
+            power = amp2power(core.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
+         limitierung = core.config.get('msmoduslp%i' % id)
+         print(f"Limitierung LP{id}: {limitierung}")
+         if limitierung == 1:  # Limitierung: kWh
+            print(f"Ziel: {core.config.get('lademkwh%i' % id)} Akt: {core.data.get('aktgeladen', id)} Leistung: {core.data.get('llaktuell', id)}")
+            restzeit = (core.config.get('lademkwh%i' % id) - core.data.get('aktgeladen', id))*1000 / (60 * core.data.get('llaktuell', id))
+            print(f"Restzeit: {restzeit}")
+            core.sendData(DataPackage(regler.wallbox, {'restzeitlp': f"{restzeit} min"}))
+         elif limitierung == 2:  # Limitierung: SOC
+            pass
+
       elif self.mode in ['stop', 'standby']:
          for regler in self.regler.values():
             if regler.wallbox.setP != 0:

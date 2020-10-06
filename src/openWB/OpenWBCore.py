@@ -1,23 +1,13 @@
-from . import Modul, DataPackage, setCore, getCore
+from . import Modul, DataPackage, setCore, getCore, Event, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .regler import *
-from dataclasses import dataclass
-from enum import Enum
+
 import logging
 import time
 import re
 
 logging.basicConfig(level=logging.INFO)
-
-class EventType(Enum):
-   configupdate = 1
-
-@dataclass
-class Event:
-   type: EventType
-   info: str
-   payload: str
 
 
 class OpenWBCore:
@@ -65,7 +55,7 @@ class OpenWBCore:
          self.logdebug()
          if self.config.get('testmode') is None:
             self.mqtt.publish()
-            time.sleep(20)
+            time.sleep(10)
 
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))

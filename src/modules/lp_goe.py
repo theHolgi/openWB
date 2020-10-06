@@ -4,6 +4,7 @@ import logging
 
 from threading import Thread
 from openWB import *
+from openWB.OpenWBCore import Event, EventType
 
 
 class GO_E_SET(Thread):
@@ -17,7 +18,7 @@ class GO_E_SET(Thread):
       try:
          with request.urlopen(self.url, timeout=self.timeout) as req:
             pass
-      except error.URLError:
+      except:
          pass
 
 
@@ -58,6 +59,7 @@ class GO_E(Ladepunkt):
             charging = goe['car'] == '2'
             
             # Reset von Werten beim Einstecken
+            self.chargedkwh = chargedkwh
             if plugged and not self.plugged:
                self.kwhatplugin = chargedkwh
                self.logger.info('Plugged in at %i kwh' % chargedkwh)
@@ -82,8 +84,9 @@ class GO_E(Ladepunkt):
       except:  # e.g. socket.timeout
          pass
 
-   def event(self, event):
-      pass
+   def event(self, event: Event):
+      if event.type == EventType.resetEnergy and event.info == self.id:
+         self.kwhatchargestart = self.chargedkwh
 
    def powerproperties(self) -> PowerProperties:
       if not self.plugged:
