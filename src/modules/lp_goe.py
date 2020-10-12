@@ -48,8 +48,7 @@ class GO_E(Ladepunkt):
             a2 = int(goe['nrg'][5])/10
             a3 = int(goe['nrg'][6])/10
             self.actP = int(goe['nrg'][11]) * 10  # 0.01kW
-            self.setP = amp2power(int(goe['amp']), self.phasen)
-
+            
             # car status 1 Ladestation bereit, kein Auto
             # car status 2 Auto lädt
             # car status 3 Warte auf Fahrzeug
@@ -66,6 +65,8 @@ class GO_E(Ladepunkt):
             if charging and not self.charging:
                self.kwhatchargestart = chargedkwh
                self.logger.info('Start charging in at %i kwh' % chargedkwh)
+               self.setP = amp2power(int(goe['amp']), self.phasen)   # Initialisiere setP falls externer Start
+
             pluggedgeladen = chargedkwh - self.kwhatplugin if plugged else 0
             aktgeladen = chargedkwh - self.kwhatchargestart if hasattr(self, 'kwhatchargestart') else 0
             self.plugged = plugged

@@ -1,4 +1,4 @@
-/**
+-/**
  * Functions to update graph and gui values via MQTT-messages
  *
  * @author Kevin Wieland
@@ -104,22 +104,7 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 	// processes mqttmsg for topic openWB/config/get/ChargeMode/
 	// called by handlevar
 	processPreloader(mqttmsg);
-	var elementId = mqttmsg.replace('openWB/config/get/', '');
-	var element = $('#' + $.escapeSelector(elementId));
-	var index = getIndex(mqttmsg);
-	if ( element.attr('type') == 'label' ) {
-		setInputText(elementId, mqttpayload);
-		if (mqttpayload == "sofort") {
-		   element = $('#sofortladenEinstellungen');
-   		   element.show();
-   		   element.children('[data-lp="' + index + '"]').show()
-   		} else {
-		      element = $('#sofortladenEinstellungen');
-   		   // element.hide();
-   		   element.children('[data-lp="' + index + '"]').hide()
-   		}
-	}
-	else if ( mqttmsg.match( /^openWB\/config\/get\/lp\/[1-9]\/ChargeMode$/i ) ) {
+	if ( mqttmsg.match( /^openWB\/config\/get\/lp\/[1-9]\/ChargeMode$/i ) ) {
 		var index = getIndex(mqttmsg);  // extract number between two / /
 		var parent = $('[data-lp="' + index + '"]');  // get parent row element for charge point
 		var element = parent.find('.chargeModeLP');  // now get parents respective child element
@@ -130,15 +115,24 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 		  case '3': element.text('Stop'); break;
 		  case '4': element.text('Standby'); break;
 		}
+		if (mqttpayload == "0") {
+			element = $('#sofortladenEinstellungen');
+			element.show();
+			element.children('[data-lp="' + index + '"]').show()
+		} else {
+			element = $('#sofortladenEinstellungen');
+			// element.hide();
+			element.children('[data-lp="' + index + '"]').hide()
+		}
 	}
 	else if ( mqttmsg.match( /^openWB\/config\/get\/lp\/[1-9]\/alwaysOn/i ) ) {
 		var index = getIndex(mqttmsg);  // extract number between two / /
 		var parent = $('[data-lp="' + index + '"]');  // get parent row element for charge point
 		var element = parent.find('.chargeLPalwayson');  // now get parents respective child element
 		if (mqttpayload == '0') {
-   		element.hide()
+			element.hide()
 		} else {
- 		  element.show()
+ 		  	element.show()
 		}
 	}
 }

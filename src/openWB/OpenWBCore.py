@@ -2,12 +2,13 @@ from . import Modul, DataPackage, setCore, getCore, Event, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .regler import *
+from datetime import datetime
 
 import logging
 import time
 import re
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class OpenWBCore:
@@ -71,7 +72,7 @@ class OpenWBCore:
                debug += f" -{lp.offcount}"
             debug += ")"
       debug += " Haus: %iW" % self.data.get("hausverbrauch")
-      self.logger.info(debug)
+      self.logger.info(datetime.now().strftime("%H:%M:%S") + ':' + debug)
 
    def sendData(self, package: DataPackage) -> None:
       self.data.update(package)

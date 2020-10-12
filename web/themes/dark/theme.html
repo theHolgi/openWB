@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 
@@ -1245,7 +1246,7 @@
 			      case 'Stop':    $('#chargeModeStopBtn').addClass('btn-success');   break;
 			      case 'Standby': $('#chargeModeStdbyBtn').addClass('btn-success');  break;
 				}
-				dialog.find('[data-lp]').attr('data-lp', elementId);
+				dialog.find('[data-lp]').data('lp', elementId);
 				const name = parent.find('.nameLp').text()
 				const element = dialog.find('#chargeModeModalnameLp')
 				element.text(name)
@@ -1275,8 +1276,7 @@
 			$('.MinBtn').click(function(event){
 				// 0 deaktiviert, 1 aktiviert
 				var element = document.getElementById('MinBtn');
-				var parent = $(this).closest('[data-lp]')
-				var elementId = parent.data('lp');
+				var elementId = $(this).closest('[data-lp]').data('lp');
 				var value = "1"
 				if ( $(this).hasClass("btn-success") ) {
 					value = "0"

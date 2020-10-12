@@ -3,6 +3,7 @@ from typing import Set, Optional
 from . import getCore, amp2power, DataPackage
 from itertools import groupby
 from dataclasses import dataclass
+import logging
 
 class Priority(enum.IntEnum):
    low = 1
@@ -41,6 +42,9 @@ class Request(dict):
       self[point.key] = point
       return self
 
+   def __repr__(self):
+      return f"<Request>{{{self.id}: " + " ".join(f"{key}={value}" for key, value in self.items()) + f" {self.flags}}}"
+
 
 # Arbeitsweise:
 # Definition:
@@ -65,6 +69,7 @@ class Regler:
       self.state = 'idle'
       self.config = self.wallbox.core.config
       self.request = self.req_idle
+      self.logger = logging.getLogger(self.__class__.__name__ + f'-{self.wallbox.id}')
 
    @property
    def blocked(self) -> bool:
@@ -73,9 +78,10 @@ class Regler:
    def get_props(self) -> Request:
       props = self.wallbox.powerproperties()
       request = Request(self.wallbox.id, prio=self.wallbox.prio)
+      debugstr = f'Wallbox setP: {self.wallbox.setP} minP: {props.minP}'
       if self.wallbox.is_charging:
          request.flags.add('on')
-
+         debugstr += " (on)"
          if self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
             request += RequestPoint('min-P', props.inc)
             request += RequestPoint('max-P', self.wallbox.setP - props.minP)
@@ -89,13 +95,16 @@ class Regler:
             request += RequestPoint('max-P', self.wallbox.setP)
          if self.blocked:                 # Blockierter Ladepunkt bietet keine Leistungserhöhung an
             request.flags.add('blocked')  # Nicht wirklich benötigt
+            debugstr += " (blocked)"
          elif self.wallbox.actP + props.inc <= props.maxP:  # Erhöhung noch möglich
             request += RequestPoint('min+P', props.inc)
             request += RequestPoint('max+P', props.maxP - self.wallbox.setP)
          else:
             request.flags.add('max')  # Nicht wirklich benötigt
+            debugstr += " (max)"
       else:
          request.flags.add('off')
+         debugstr += " (off)"
          if self.wallbox.setP < props.minP:   # Noch nicht eingeschaltet
             request += RequestPoint('min+P', props.minP - self.wallbox.setP)
             request += RequestPoint('max+P', props.maxP - self.wallbox.setP)
@@ -103,6 +112,7 @@ class Regler:
             request += RequestPoint('min-P', self.wallbox.setP)
             request += RequestPoint('max-P', self.wallbox.setP)
 
+      self.logger.debug(debugstr)
       return request
 
    def req_idle(self, increment: int) -> None:
@@ -120,6 +130,9 @@ class Regler:
       elif increment == 0:  # Keine Anforderung
          self.oncount = 0
          self.state = 'idle'
+      elif increment < 0:   # Negative Anforderung ist Reduzierung von Restleistung
+         self.oncount = 0
+         self.wallbox.set(self.wallbox.setP + increment)
       else:
          self.oncount += 1
 
@@ -151,6 +164,7 @@ class Regelgruppe():
       self.mode = mode
       self.regler = dict()
       self.hysterese = getCore().config.hysterese
+      self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
 
       if self.mode == 'pv':
          """
@@ -239,6 +253,7 @@ class Regelgruppe():
    def controlcycle(self, data) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
+      self.logger.debug(f"LP Props: {properties!r}")
       if self.mode == 'sofort':
          core = getCore()
          for id, regler in self.regler.items():
@@ -246,8 +261,8 @@ class Regelgruppe():
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
          limitierung = core.config.get('msmoduslp%i' % id)
-         print(f"Limitierung LP{id}: {limitierung}")
-         if limitierung == 1:  # Limitierung: kWh
+         self.logger.debug(f"Limitierung LP{id}: {limitierung}")
+         if limitierung == 1 and core.data.get('llaktuell', id) != 0:  # Limitierung: kWh
             print(f"Ziel: {core.config.get('lademkwh%i' % id)} Akt: {core.data.get('aktgeladen', id)} Leistung: {core.data.get('llaktuell', id)}")
             restzeit = (core.config.get('lademkwh%i' % id) - core.data.get('aktgeladen', id))*1000 / (60 * core.data.get('llaktuell', id))
             print(f"Restzeit: {restzeit}")
@@ -258,6 +273,7 @@ class Regelgruppe():
       elif self.mode in ['stop', 'standby']:
          for regler in self.regler.values():
             if regler.wallbox.setP != 0:
+               self.logger.info(f"(LP {regler.wallbox.id}: {regler.wallbox.setP}W -> Reset")
                regler.wallbox.set(0)
       elif data.uberschuss > self.limit:  # Leistungserhöhung
          deltaP = data.uberschuss - self.limit
@@ -265,6 +281,7 @@ class Regelgruppe():
          for r in sorted(filter(lambda r: 'min+P' in r and 'on' in r.flags, properties), key=lambda r: r['min+P'].priority):
             p = self.get_increment(r, deltaP)
             if p is not None:
+               self.logger.debug(f"LP {r.id} bekommt +{p}W von {deltaP}W")
                arbitriert[r.id] = p
                deltaP -= p
                if deltaP <= 0:
@@ -282,6 +299,7 @@ class Regelgruppe():
             budget += sum(r['max-P'].value for r in filter(lambda r: 'max-P' in r and 'min' not in r.flags and r['max-P'].priority <= highest_prio, properties))
             for r in candidates:
                if self.get_increment(r, budget) is not None:
+                  self.logger.info(f"Budget: {budget}; LP {r.id} min+P {r['min+P'].value} passt noch")  
                   arbitriert[r.id] = r['min+P'].value
                   budget -= r['min+P'].value
       elif data.uberschuss < self.limit:  # Leistungsreduktion
@@ -289,6 +307,7 @@ class Regelgruppe():
          for r in sorted(filter(lambda r: 'min-P' in r and 'min' not in r.flags, properties), key=lambda r: r['min-P'].priority):
             p = self.get_decrement(r, deltaP)
             if p is not None:
+               self.logger.debug(f"LP {r.id} Reduzierung -{p}W von -{deltaP}W")
                arbitriert[r.id] = -p
                deltaP -= p
                if deltaP <= 0:
@@ -299,6 +318,7 @@ class Regelgruppe():
             deltaP -= self.hysterese
          for r in sorted(filter(lambda r: 'min' in r.flags, properties), key=lambda r: r['min-P'].priority):
             if self.get_decrement(r, deltaP) is not None:
+               self.logger.info(f"Abschalten LP {r.id} soll {r['min-P'].value}W freigeben.")
                arbitriert[r.id] = -r['min-P'].value
                deltaP -= r['min-P'].value
 
