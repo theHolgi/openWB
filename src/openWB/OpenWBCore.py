@@ -8,7 +8,7 @@ import logging
 import time
 import re
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class OpenWBCore:
