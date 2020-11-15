@@ -30,7 +30,7 @@ class Request(dict):
    - max-P Maximum Leistungsdekrement
    jeder dieser Schlüssel hat einen Wert und eine Priorität.
    """
-   def __init__(self, id: int, prio: int = 1, flags: Set[str] = None):
+   def __init__(self, id: int, prio: int = 1, flags: Optional[Set[str]] = None):
       self.id = id
       self.defaultprio = prio
       self.flags = set() if flags is None else flags  # can't do this in function default, as this will return the same single object for every usage.

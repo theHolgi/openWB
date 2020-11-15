@@ -130,7 +130,7 @@ class openWBValues(dict):
                break
             sumVal += int(value)
          self[key] = sumVal
-      self.uberschuss = -self.wattbezug
+      self.uberschuss = self.get('speicherleistung') - self.wattbezug
       self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
 
 class ramdiskValues:
