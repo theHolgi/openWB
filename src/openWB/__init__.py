@@ -156,6 +156,13 @@ class PVModul(DataProvider):
 # Optional:
 # - pvkwh: Gesamte Einspeiseleistung (kWh)
 
+class Displaymodul(Modul):
+   """Superklasse eines Displaymoduls"""
+   multiinstance = True
+   type = "display"
+
+# Ein Displaymodul ruft nicht "sendData" auf.
+# Displaymodule werden nach dem Einlesen der Eingänge und der Berechnung abgeleiteter Daten aufgerufen.
 
 def amp2amp(amp: Union[float, int]) -> int:
    """Limitiere Ampere auf min/max und runde ab auf Ganze"""

@@ -82,7 +82,7 @@ class Regler:
       if self.wallbox.is_charging:
          request.flags.add('on')
          debugstr += " (on)"
-         if self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
+         if props.inc > 0 and self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
             request += RequestPoint('min-P', props.inc)
             request += RequestPoint('max-P', self.wallbox.setP - props.minP)
          elif not self.config[self.wallbox.configprefix + '_alwayson']:  # Nein, nur ganz ausschalten

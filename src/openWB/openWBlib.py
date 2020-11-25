@@ -42,10 +42,13 @@ class openWBconfig:
                if line[0] == '#' or line[0] == '\n':
                   continue
                key, value = line.split('=')
-               try:
-                  value = int(value)   # Try to convert to integer
-               except ValueError:
-                  value = value.strip()
+               if value[:2] == "0x":
+                  value = int(value, 16)
+               else:
+                  try:
+                     value = int(value)   # Try to convert to integer
+                  except ValueError:
+                     value = value.strip()
                self.settings[key] = value
       except IOError:
          pass

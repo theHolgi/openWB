@@ -46,6 +46,11 @@ class Mqttpublisher(object):
       "pv/W": "pvwatt",
       "pv/WhCounter": "pvkwh",
 
+      # Speicher
+      "housebattery/W": "speicherleistung",
+      "housebattery/%Soc": "speichersoc",
+      "housebattery/boolHouseBatteryConfigured": "speichervorhanden",
+
       # LP
       "global/WAllChargePoints": "llaktuell",
       "lp/%n/W": "llaktuell%n",
@@ -78,7 +83,7 @@ class Mqttpublisher(object):
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
       "global/DailyYieldAllChargePointsKwh": "xxx",  # Lademenge daily
    }
-   all_live_fields = ("uberschuss", "ladeleistung", "-pvwatt", #3
+   all_live_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
                       "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
                       "verbraucher1_watt", "verbraucher2_watt", #13
@@ -191,6 +196,8 @@ class Mqttpublisher(object):
       ramdisk('pv-live.graph', self.core.data.get("pvwatt"), 'a')
       ramdisk('evu-live.graph', self.core.data.get("uberschuss"), 'a')
       ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
+      ramdisk('speicher-live.graph', self.core.data.get('speicherleistung'), 'a')
+      ramdisk('speichersoc-live.graph', self.core.data.get('speichersoc'), 'a')
 
    def publish_config(self):
       """Sende Config als MQTT"""

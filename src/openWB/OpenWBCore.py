@@ -8,15 +8,19 @@ import logging
 import time
 import re
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+
+logging.getLogger("Adafruit_I2C.Device.Bus.1.Address.0X40").setLevel(logging.INFO)
 
 
 class OpenWBCore:
    """openWB core and scheduler"""
    def __init__(self, configFile: str):
       self.modules = []
+      self.outputmodules = []
       self.data = openWBValues()
       self.config = openWBconfig(configFile)
+      self.ramdisk = ramdiskValues()
       if self.config.get('testmode') is None:
          self.mqtt = Mqttpublisher(self)
       self.logger = logging.getLogger(self.__class__.__name__)
@@ -25,12 +29,18 @@ class OpenWBCore:
       setCore(self)
 
    def add_module(self, module: Modul, configprefix: str) -> None:
-      self.modules.append(module)
       module.configprefix = configprefix
       module.setup(self.config)
       if hasattr(module, 'type'):
+         if module.type == "display":
+            self.outputmodules.append(module)
+         else:
+            self.modules.append(module)
+
          if module.type == "wr":
             self.pvmodule += 1
+         elif module.type == "speicher":
+            self.sendData(DataPackage(module, {'speichervorhanden': True}))  # Speicher vorhanden
          elif module.type == "lp":
             lpmode = self.config.get(configprefix + '_mode')
             if lpmode not in self.regelkreise:
@@ -51,6 +61,8 @@ class OpenWBCore:
             module.trigger()
          self.data.derive_values()
          self.logger.debug("Values: " + str(self.data))
+         for module in self.outputmodules:
+            module.trigger()
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
          self.logdebug()
@@ -60,6 +72,7 @@ class OpenWBCore:
 
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
+      debug += "Batt: %iW (%i%%)" % (self.data.get("speicherleistung"), self.data.get("speichersoc"))
       debug += "Laden: %iW" % self.data.get("llaktuell")
       for kreis in self.regelkreise.values():
          for lp in kreis.regler.values():
@@ -115,5 +128,8 @@ class OpenWBCore:
                   self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                   break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
+         elif re.match('speichermodul1', event.info):
+            self.ramdisk['speichervorhanden'] = 1 if event.payload != "none" else 0
+             
       except Exception as e:
          print("BAM!!! %s" % e)

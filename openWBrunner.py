@@ -19,7 +19,7 @@ core = OpenWBCore.OpenWBCore(mypath + "/pyconfig.conf")
 api = api.OpenWBAPI(core)
 api.start()
 
-for source in ['wr', 'bezug', 'lp', 'speicher']:
+for source in ['wr', 'bezug', 'lp', 'speicher', 'display']:
    instance = 1
    while True:
       prefix = source + 'modul' + str(instance)
