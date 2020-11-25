@@ -451,10 +451,10 @@ function processHousebatteryMessages(mqttmsg, mqttpayload) {
 			speicherwatt = 0;
 		}
 		if ( speicherwatt > 0 ) {
-			prefix = '-Ladung: ';
+			prefix = '⬆️';
 		} else if ( speicherwatt < 0 ) {
 			speicherwatt *= -1;
-			prefix = '-Entladung: ';
+			prefix = '⬇️';
 		}
 		if ( speicherwatt > 999 ) {
 			speicherwatt = (speicherwatt / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});

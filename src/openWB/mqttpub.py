@@ -48,6 +48,8 @@ class Mqttpublisher(object):
 
       # Speicher
       "housebattery/W": "speicherleistung",
+      "housebattery/DailyYieldImportKwh": "speicherikwh",
+      "housebattery/DailyYieldExportKwh": "speicherekwh",
       "housebattery/%Soc": "speichersoc",
       "housebattery/boolHouseBatteryConfigured": "speichervorhanden",
 
@@ -85,7 +87,7 @@ class Mqttpublisher(object):
    }
    all_live_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
-                      "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
+                      "-speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
                       "verbraucher1_watt", "verbraucher2_watt", #13
                       "llaktuell3", "llaktuell4", "llaktuell5", #16
                       "llaktuell6", "llaktuell7", "llaktuell8", # 19
@@ -167,6 +169,7 @@ class Mqttpublisher(object):
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
+#            self.logger.info(f"Send data: {mqttkey}={val}") 
             self.client.publish("openWB/" + mqttkey, payload=val, qos=0, retain=True)
 
       # Live values

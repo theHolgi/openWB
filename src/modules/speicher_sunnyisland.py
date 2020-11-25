@@ -24,7 +24,7 @@ class SUNNYISLAND(DataProvider):
    def trigger(self):
       try:
          soc = self._readregister(30845)
-         charge = -self._readregister(30775)
+         charge = self._readregister(30775)
          self.importkwh = self._readregister(30595)
          self.exportkwh = self._readregister(30597)
          self.core.sendData(DataPackage(self, {
