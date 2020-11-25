@@ -26,6 +26,8 @@ class OpenWBCore:
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
+      self.today = datetime.today().strftime('%D')
+
       setCore(self)
 
    def add_module(self, module: Modul, configprefix: str) -> None:
@@ -69,6 +71,10 @@ class OpenWBCore:
          if self.config.get('testmode') is None:
             self.mqtt.publish()
             time.sleep(10)
+            today = datetime.today().strftime('%D')
+            if self.today != today:
+               self.today = today
+               self.triggerEvent(Event(EventType.resetDaily))
 
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
