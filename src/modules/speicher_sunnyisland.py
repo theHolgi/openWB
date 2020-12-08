@@ -23,15 +23,17 @@ class SUNNYISLAND(DataProvider):
 
    def trigger(self):
       try:
-         soc = self._readregister(30845)
-         charge = self._readregister(30775)
-         self.importkwh = self._readregister(30595)
-         self.exportkwh = self._readregister(30597)
+         soc = self._readregister(30845)            # SOC [%]
+         charge = -self._readregister(30775)         # Leistung [W] (>0: Laden)
+         self.importkwh = self._readregister(30595) # Aufgenommen [Wh]
+         self.exportkwh = self._readregister(30597) # Abgegeben   [Wh]
          self.core.sendData(DataPackage(self, {
            'speichersoc': soc,
            'speicherleistung': charge,
-           'speicherikwh': self.importkwh - self.offsetikwh,
-           'speicherekwh': self.exportkwh - self.offsetekwh
+           'speicherikwh': self.importkwh / 1000,
+           'speicherekwh': self.exportkwh / 1000,
+           'daily_sikwh': (self.importkwh - self.offsetikwh)/1000,
+           'daily_sekwh': (self.exportkwh - self.offsetekwh)/1000
          }))
       except AttributeError:
          # modbus client seems to return (!) an ModbusIOExcption which is then tried to examine (resp.registers[])

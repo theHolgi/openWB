@@ -87,7 +87,7 @@ class Mqttpublisher(object):
    }
    all_live_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
-                      "-speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
+                      "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
                       "verbraucher1_watt", "verbraucher2_watt", #13
                       "llaktuell3", "llaktuell4", "llaktuell5", #16
                       "llaktuell6", "llaktuell7", "llaktuell8", # 19
