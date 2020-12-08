@@ -150,13 +150,11 @@ class ramdiskValues:
 
    def __getitem__(self, key):
       if key not in self.cache: self.cache[key] = self._get(key)
-      debug("%s => %s" % (key, self.cache[key]))
       return self.cache[key]
    #__getattr__ = __getitem__
 
    def __setitem__(self, key, value):
       self.cache[key] = value
-      debug("%s <= %s" % (key, value))
       self._put(key, value)
    #__setattr__ = __setitem__
 

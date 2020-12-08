@@ -20,6 +20,7 @@ class RamdiskPublisher(object):
       # 'llsoll'
       # 'llsolls1'
       # 'llas1%p'
+      # 'soc'
       'llv%p': 'llv%p1',
       'lla%p': 'lla%p1',
       'llpf%p': 'llpf%p1',
@@ -28,7 +29,6 @@ class RamdiskPublisher(object):
       'llkwh': 'aktgeladen1',
 
       # Speicher
-      'soc': 'speichersoc',
       'speicherikwh': 'speicherikwh',
       'speicherekwh': 'speicherekwh',
 

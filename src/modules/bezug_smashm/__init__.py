@@ -8,6 +8,10 @@ class SMASHM(DataProvider):
 
    def setup(self, config) -> None:
       self.serial = config.get(self.configprefix + '_serial')
+      self.bezugkwh = 0
+      self.einspeisungkwh = 0
+      self.offsetikwh = 0
+      self.offsetekwh = 0
 
    def trigger(self):
       ipbind = '0.0.0.0'
@@ -41,13 +45,17 @@ class SMASHM(DataProvider):
          if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
             # Special treatment for positive / negative power
             data = DataPackage(self)
-            watt = int(emparts['pconsume'])
+            watt = int(emparts['pconsume'])       # W
             if watt < 5:
                watt = -int(emparts['psupply'])
                positive[0] = -1
             data['wattbezug'] = watt
-            data['einspeisungkwh'] = emparts['psupplycounter'] * 1000
-            data['bezugkwh'] = emparts['pconsumecounter'] * 1000
+            self.bezugkwh = emparts['pconsumecounter']       # kWh
+            self.einspeisungkwh = emparts['psupplycounter']  # kWh
+            data['einspeisungkwh'] = self.einspeisungkwh
+            data['bezugkwh'] = self.bezugkwh
+            data['daily_einspeisungkwh'] = (self.einspeisungkwh - self.offsetekwh)
+            data['daily_bezugkwh'] = (self.bezugkwh - self.offsetikwh)
             # print("Bezug: %i Einspeisung: %i" % (emparts['pconsume'], emparts['psupply']))
             for phase in [1, 2, 3]:
                power = int(emparts['p%iconsume' % phase])
@@ -68,8 +76,10 @@ class SMASHM(DataProvider):
             self.core.sendData(data)
             break
 
-   def event(self, event):
-      pass
+   def event(self, event: Event):
+      if event.type == EventType.resetDaily:
+         self.offsetikwh = self.bezugkwh
+         self.offsetekwh = self.einspeisungkwh
 
 def getClass():
    return SMASHM
