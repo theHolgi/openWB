@@ -110,11 +110,11 @@ class Mqttpublisher(object):
       self._init_data()
       self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
       self.client.on_message = on_message
-      self.client.connect(hostname)
+      self.clisetupent.connect(hostname)
       self.client.loop_start()
       self.publish_config()
 
-   def subscribe(self):
+   def setup(self):
       """Subscribe to set topics"""
       self.logger.info('Subscribing.')
       self.client.subscribe("openWB/set/#", 2)
