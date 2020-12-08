@@ -12,17 +12,23 @@ class TRIPOWER(PVModul):
          self.instance = ModbusWR(host)
       else:  # dashboard
          self.instance = SMADASH(host)
+      self.kwh = 0
+      self.offsetkwh = 0
 
    def trigger(self):
       try:
          power, generation = self.instance.read()
+         self.kwh = generation
          self.core.sendData(DataPackage(self, {'pvwatt': power,
-                                               'pvkwh': generation}))
+                                               'pvkwh': generation,
+                                               'daily_pvkwh': generation - self.offsetkwh
+                                               }))
       except ConnectionError:
          pass
 
-   def event(self, event):
-      pass
+   def event(self, event: Event):
+      if event.type == EventType.resetDaily:
+         self.offsetkwh = self.kwh
 
 def getClass():
    return TRIPOWER

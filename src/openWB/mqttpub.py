@@ -78,7 +78,7 @@ class Mqttpublisher(object):
       # Daily Daten
       "evu/DailyYieldImportKwh": "daily_bezugkwh",
       "evu/DailyYieldExportKwh": "daily_einspeisungkwh",
-      "pv/DailyYieldKwh": "daily_pvkwhk",
+      "pv/DailyYieldKwh": "daily_pvkwh",
       "housebattery/DailyYieldImportKwh": "daily_sikwh",
       "housebattery/DailyYieldExportKwh": "daily_sekwh",
 
@@ -110,7 +110,7 @@ class Mqttpublisher(object):
       self._init_data()
       self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
       self.client.on_message = on_message
-      self.clisetupent.connect(hostname)
+      self.client.connect(hostname)
       self.client.loop_start()
       self.publish_config()
 

@@ -88,7 +88,7 @@ class openWBValues(dict):
    behaves like a dictionary
    """
    def __init__(self):
-      self.sumvalues = set(['pvwatt', 'llaktuell', 'ladestatus'])
+      self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'llaktuell', 'ladestatus'])
 
    def update(self, data: "DataPackage"):
       if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
