@@ -1,6 +1,7 @@
 from . import Modul, DataPackage, setCore, getCore, Event, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
+from .ramdiskpublisher import RamdiskPublisher
 from .regler import *
 from datetime import datetime
 
@@ -22,7 +23,9 @@ class OpenWBCore:
       self.config = openWBconfig(configFile)
       self.ramdisk = ramdiskValues()
       if self.config.get('testmode') is None:
-         self.mqtt = Mqttpublisher(self)
+         self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
+      else:
+         self.publishers = []
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
@@ -55,7 +58,8 @@ class OpenWBCore:
       """Run the given number of loops (0=infinite)"""
       if loops == 0:
          condition = lambda: True
-         self.mqtt.subscribe()
+         for publisher in self.publishers:
+            publisher.setup()
       else:
          done = (i < loops for i in range(loops+1))
          condition = lambda: next(done)
@@ -70,7 +74,8 @@ class OpenWBCore:
             gruppe.controlcycle(self.data)
          self.logdebug()
          if self.config.get('testmode') is None:
-            self.mqtt.publish()
+            for publisher in self.publishers:
+               publisher.publish()
             time.sleep(10)
             today = datetime.today().strftime('%D')
             if self.today != today:
