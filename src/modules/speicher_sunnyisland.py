@@ -27,6 +27,11 @@ class SUNNYISLAND(DataProvider):
          charge = -self._readregister(30775)         # Leistung [W] (>0: Laden)
          self.importkwh = self._readregister(30595) # Aufgenommen [Wh]
          self.exportkwh = self._readregister(30597) # Abgegeben   [Wh]
+         # state = self._readregister(30201)
+         # 35 - Fehler
+         # 303 - Aus
+         # 307 - Ok
+         # 455 - Warnung
          self.core.sendData(DataPackage(self, {
            'speichersoc': soc,
            'speicherleistung': charge,

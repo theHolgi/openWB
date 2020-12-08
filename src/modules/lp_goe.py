@@ -47,6 +47,9 @@ class GO_E(Ladepunkt):
             a1 = int(goe['nrg'][4])/10  # 0.1A
             a2 = int(goe['nrg'][5])/10
             a3 = int(goe['nrg'][6])/10
+            pf1 = int(goe['nrg'][12])   # %
+            pf2 = int(goe['nrg'][13])
+            pf3 = int(goe['nrg'][14])
             self.actP = int(goe['nrg'][11]) * 10  # 0.01kW
             
             # car status 1 Ladestation bereit, kein Auto
@@ -74,6 +77,7 @@ class GO_E(Ladepunkt):
             self.core.sendData(DataPackage(self, {
                'llv1': u1, 'llv2': u2, 'llv3': u3,
                'lla1': a1, 'lla2': a2, 'lla3': a3,
+               'llpf1': pf1, 'llpf2': pf2, 'llpf3': pf3,
                'llkwh': chargedkwh,
                'pluggedladungbishergeladen': pluggedgeladen,
                'aktgeladen': aktgeladen,

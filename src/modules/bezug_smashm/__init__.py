@@ -15,7 +15,7 @@ class SMASHM(DataProvider):
       MCAST_PORT = 9522
 
       #                filename:  channel
-      mapping = {'evuhu': 'frequency'}
+      mapping = {'evuhz': 'frequency'}
       phasemapping = {'evua%i': {'from': 'i%i', 'sign': True},
                       'evuv%i': {'from': 'u%i'},
                       'evupf%i': {'from': 'cosphi%i'}

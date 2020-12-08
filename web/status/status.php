@@ -132,7 +132,7 @@
 							value = value * -1;
 							valueStr = valueStr+value+" (🔼)"
 						} else if (value>0) {
-							valueStr = valueStr+value+" (🔽"
+							valueStr = valueStr+value+" (🔽)"
 						} else  {
 							// Bezug = 0
 							valueStr = valueStr+value
@@ -446,9 +446,9 @@
 						var valueStr = "";
 						if(value<0) {
 							value = value * -1;
-							valueStr = valueStr+value+" (E)"
+							valueStr = valueStr+value+" (🔼)"
 						} else if (value>0) {
-							valueStr = valueStr+value+" (B)"
+							valueStr = valueStr+value+" (🔽)"
 						} else  {
 							// Bezug = 0
 							valueStr = valueStr+value
