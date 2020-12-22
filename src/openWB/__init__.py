@@ -2,6 +2,7 @@ from typing import Any, Union
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
+import logging
 
 
 class EventType(Enum):
@@ -70,29 +71,116 @@ class DataPackage(dict):
 
 
 class DataProvider(Modul):
-   """Abstrakte Klasse eines Daten sendenden Moduls.
-   Ein EVU- (Bezug-)Modul leitet sich direkt von DataProvider ab.
+   """
+   Abstrakte Klasse eines Daten sendenden Moduls.
    """
 
    def trigger(self):
       """
       Trigger Datenerfassung. Als Bestätigung muss(!) ein Aufruf von self.core.sendData erfolgen.
+      Üblicherweise durch Aufruf von "send" einer abgeleiteten Klasse.
       Ein Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast
       """
       ...
 
+
+class EVUModul(DataProvider):
+   """
+   Abstrakt Klasse einer EVU-Messung.
+   Ein EVU-Modul sendet folgende Datenpunkte:
+   MUSS:
+   - wattbezug - [W] Leistung am EVU-Übergabepunkt (>0: Bezug)
+   KANN:
+   - evuv1 ... evuv3 - [V] Spannung
+   - evua1 ... evua3 - [A] Strom
+   - evupf1 ... evupf3 - [%] Leistungsfaktor
+   - bezugw1 ... bezugw3 - [W] Leistung an Phase n
+   - evuhz           - [Hz] Netzfrequenz
+   - einspeisungkwh  - [kWh] Gesamte eingespeiste Energie
+   - bezugkwh        - [kWh] Gesamte bezogene Energie
+   """
+
+   def setup(self) -> None:
+      self.bezugkwh = 0
+      self.einspeisungkwh = 0
+      self.offsetikwh = 0
+      self.offsetekwh = 0
+
+   def send(self, data) -> None:
+      if 'bezugkwh' in data:
+         self.bezugkwh = data['bezugkwh']
+         data['daily_bezugkwh'] = (self.bezugkwh - self.offsetikwh)
+      if 'einspeisungkwh' in data:
+         self.einspeisungkwh = data['einspeisungkwh']
+         data['daily_einspeisungkwh'] = (self.einspeisungkwh - self.offsetekwh)
+
+      self.core.sendData(DataPackage(self, data))
+
+   def event(self, event: Event):
+      if event.type == EventType.resetDaily:
+         if hasattr(self, 'bezugkwh'):
+            self.offsetikwh = self.bezugkwh
+         if hasattr(self, 'einspeisungkwh'):
+            self.offsetekwh = self.einspeisungkwh
+
+
+class Speichermodul(DataProvider):
+   """
+   Abstrakte Klasse eines Speichers.
+   Ein Speichermodul sendet folgende Datenpunkte:
+   MUSS:
+   - speicherleistung - [W] Ladeleistung (>0: Laden)
+   SOLLTE:
+   - speichersoc      - [%] State of charge
+   KANN:
+   - speicherikwh     - [kWh] gesamte Ladeleistung
+   - speicherekwh     - [kWh] gesamte Entladeleistung
+   """
+
+   def send(self, data: dict) -> None:
+      if "speicherikwh" in data:
+         self.importkwh = data["speicherikwh"]
+         data["daily_sikwh"] = self.importkwh - self.offsetekwh
+      if "speicherekwh" in data:
+         self.exportkwh = data["speicherekwh"]
+         data["daily_sekwh"] = self.exportkwh - self.offsetekwh
+      self.core.sendData(DataPackage(self, data))
+
+   def event(self, event: Event):
+      if event.type == EventType.resetDaily:
+         if hasattr(self, 'importkwh'):
+            self.offsetikwh = self.importkwh
+         if hasattr(self, 'exportkwh'):
+            self.offsetekwh = self.exportkwh
+
 class Ladepunkt(DataProvider):
    """
      Superklasse eines Ladepunktes.
+     Ein Ladepunkt sendet folgende Datenpunkte:
+     MUSS:
+     - llaktuell - Aktuelle Ladeleistung [W]
+     KANN:
+     - plugstat - Stecker eingesteckt [bool]
+     - chargestat - Auto lädt wirklich [bool]
+     - ladestatus - Auto soll laden [bool]
+     - llkwh - Gesamte Lademenge [kWh]
+     - llv1, llv2, llv3    - Spannung [V]
+     - lla1, lla2, lla3    - Strom    [A]
+     - llpf1, llpf2, llpf3 - Leistungsfaktor [%]
    """
    multiinstance = True
    type = "lp"
 
    # Diese Properties hat ein Ladepunkt und werden von ihm selbst verändert:
-   phasen = 1   # Init
+   phasen = 1 # Anzahl Phasen
    setP = 0  # Aktuell zugewiesene Leistung
    actP = 0  # Aktuell verwendete Leistung
    prio = 1  # Aktuelle Priorität
+
+   def setup(self) -> None:
+      self.plugged = False
+      self.charging = False
+      self.logger = logging.getLogger(self.__class__.__name__)
 
    def powerproperties(self) -> PowerProperties:
       """Liefert Möglichkeiten/Wünsche der Leistungsanpassung"""
@@ -114,7 +202,7 @@ class Ladepunkt(DataProvider):
 
    @property
    def is_charging(self) -> bool:
-      """Fehrzeug lädt"""
+      """Fehrzeug lädt tatsächlich"""
       return self.actP > 300
 
    @property
@@ -132,29 +220,66 @@ class Ladepunkt(DataProvider):
       """Maximalleistung"""
       return self.core.config.maximalstromstaerke * self.phasen * 230
 
+   def send(self, data: dict) -> None:
+      if "plugstat" not in data:
+         data["plugstat"] = not self.is_blocked
+      if "chargestat" not in data:
+         data["chargestat"] = self.is_charging
+      if "lpphasen" not in data:
+         data['lpphasen'] = self.phasen
+      if "llkwh" not in data:
+         data['llkwh'] = 0
 
-# Properties eines Ladepunktes:
-# - phasen - Anzahl erkannter benutzter Phasen
-# Ein Ladepunkt muss folgende Datenpunkte senden:
-# - llaktuell - Aktuelle Ladeleistung
-# Optionale Datenpunkte:
-# - plugstat - Stecker eingesteckt (1|0)
-# - chargestat - Auto lädt (1|0)
-# - llkwh - Gesamte Lademenge
-# - llv1, llv2, llv3 - Spannung
-# - lla1, lla2, lla3 - Strom
+      # Handle Ladung seit Plug / Ladung seit Chargstart
+      plugged = data['plugstat']
+      charging = data['chargestat']
+      chargedkwh = data['llkwh']
+      if plugged and not self.plugged:
+         self.kwhatplugin = chargedkwh
+         self.logger.info('Plugged in at %i kwh' % chargedkwh)
+      if charging and not self.charging:
+         self.kwhatchargestart = chargedkwh
+         self.logger.info('Start charging at %i kwh' % chargedkwh)
+         self.setP = self.actP  # Initialisiere setP falls externer Start
+
+      data['pluggedladungbishergeladen'] = chargedkwh - self.kwhatplugin if plugged else 0
+      data['aktgeladen'] = chargedkwh - self.kwhatchargestart if hasattr(self, 'kwhatchargestart') else 0
+      self.plugged = plugged
+      self.charging = charging
+      self.chargedkwh = chargedkwh
+      self.core.sendData(DataPackage(self, data))
+
+   def event(self, event: Event):
+      if event.type == EventType.resetEnergy and event.info == self.id:
+         self.kwhatchargestart = self.chargedkwh
 
 
 class PVModul(DataProvider):
-   """Superklasse eines Wechselrichters.
+   """
+   Abstrakte Klasse eines Wechselrichters.
+   Ein Wechselrichter sendet folgende Datenpunkte:
+   MUSS:
+   - pvwatt - [W] Momentanleistung
+   KANN:
+   - pvkwh  - [kWh] gesamte Erzeugungsleistung
    """
    multiinstance = True
    type = "wr"
 
-# Ein Wechselrichter muss folgende Datenpunkte senden:
-# - pvwatt: Momentanleistung (W)
-# Optional:
-# - pvkwh: Gesamte Einspeiseleistung (kWh)
+   def setup(self) -> None:
+      self.offsetkwh = 0
+
+   def send(self, data: dict) -> None:
+      if "pvkwh" in data:
+         self.kwh = data['pvkwh']
+         data['daily_pvkwh'] = self.kwh - self.offsetkwh
+
+      self.core.sendData(DataPackage(self, data))
+
+   def event(self, event: Event):
+      if hasattr(self, 'kwh'):
+         if event.type == EventType.resetDaily:
+            self.offsetkwh = self.kwh
 
 class Displaymodul(Modul):
    """Superklasse eines Displaymoduls"""

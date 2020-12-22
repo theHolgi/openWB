@@ -1,24 +1,20 @@
-from openWB import *
+from openWB import EVUModul
 from .speedwiredecoder import decode_speedwire
 import socket
 import struct
 
-class SMASHM(DataProvider):
+class SMASHM(EVUModul):
    """SMA Smart home Meter (or Energy Meter)"""
 
    def setup(self, config) -> None:
       self.serial = config.get(self.configprefix + '_serial')
-      self.bezugkwh = 0
-      self.einspeisungkwh = 0
-      self.offsetikwh = 0
-      self.offsetekwh = 0
+      super().setup()
 
    def trigger(self):
       ipbind = '0.0.0.0'
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522
 
-      #                filename:  channel
       mapping = {'evuhz': 'frequency'}
       phasemapping = {'evua%i': {'from': 'i%i', 'sign': True},
                       'evuv%i': {'from': 'u%i'},
@@ -44,19 +40,14 @@ class SMASHM(DataProvider):
          positive = [1] * 4
          if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
             # Special treatment for positive / negative power
-            data = DataPackage(self)
             watt = int(emparts['pconsume'])       # W
             if watt < 5:
                watt = -int(emparts['psupply'])
                positive[0] = -1
-            data['wattbezug'] = watt
-            self.bezugkwh = emparts['pconsumecounter']       # kWh
-            self.einspeisungkwh = emparts['psupplycounter']  # kWh
-            data['einspeisungkwh'] = self.einspeisungkwh
-            data['bezugkwh'] = self.bezugkwh
-            data['daily_einspeisungkwh'] = (self.einspeisungkwh - self.offsetekwh)
-            data['daily_bezugkwh'] = (self.bezugkwh - self.offsetikwh)
-            # print("Bezug: %i Einspeisung: %i" % (emparts['pconsume'], emparts['psupply']))
+            data = {'wattbezug': watt,
+                    'einspeisungkwh': emparts['psupplycounter'],  # kWh
+                    'bezugkwh':       emparts['pconsumecounter'] # kWh
+                    }
             for phase in [1, 2, 3]:
                power = int(emparts['p%iconsume' % phase])
                if power < 5:
@@ -73,13 +64,9 @@ class SMASHM(DataProvider):
             for datakey, empartskey in mapping.items():
                if empartskey in emparts:
                   data[datakey] = emparts[empartskey]
-            self.core.sendData(data)
+            self.send(data)
             break
 
-   def event(self, event: Event):
-      if event.type == EventType.resetDaily:
-         self.offsetikwh = self.bezugkwh
-         self.offsetekwh = self.einspeisungkwh
 
 def getClass():
    return SMASHM

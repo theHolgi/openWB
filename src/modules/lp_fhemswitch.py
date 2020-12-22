@@ -20,6 +20,7 @@ class LP_FHEMSWITCH(Ladepunkt):
       self.blockcnt = 0
       self.on_delay = 0
       self.setP = 0
+      super().setup()
 
    @property
    def is_blocked(self):
@@ -35,11 +36,9 @@ class LP_FHEMSWITCH(Ladepunkt):
          if self.blockcnt > 0:
             self.blockcnt -= 1
          
-      self.core.sendData(DataPackage(self, {
-         'plugstat': not self.is_blocked,
-         'chargestat': self.is_charging,
+      self.send({
          'llaktuell': self.actP,
-         'lpphasen': 1}))
+         'lpphasen': 1})
 
    def powerproperties(self) -> PowerProperties:
       return PowerProperties(minP=self.power,
