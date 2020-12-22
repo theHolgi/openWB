@@ -7,10 +7,11 @@ import Adafruit_PCA9685 as Ada
 import threading
 import time
 
-ch_grid = 0
-ch_pv = 1
-ch_green = 15
-ch_red = 14
+ch_grid = 15
+ch_pv = 13
+ch_batt = 14
+ch_green = 7
+ch_red = 6
 
 ON = 4095
 OFF = 0
@@ -21,7 +22,7 @@ class I2CDISPLAY(Displaymodul):
    def setup(self, config):
       self.pwm = Ada.PCA9685(address=config.get(self.configprefix + '_address'))
       self.pwm.set_pwm_freq(100)
-      self.last = {'pv': 0, 'grid': 0, 'green': 0, 'red': 0}
+      self.last = {'pv': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
 
    def blink(self, port):
       t = threading.currentThread()
@@ -37,8 +38,9 @@ class I2CDISPLAY(Displaymodul):
 
    @staticmethod
    def scale(channel, val) -> int:
-      table = {'pv': {0: 0, 2000: 850, 4000: 1760, 6000: 2680, 8000: 3420, 9500: 4095},
-               'grid': {-2000: 0, 0: 850, 2000: 1760, 4000: 2580, 6000: 3420, 7500: 4095}
+      table = {'pv': {0: 0, 500: 840, 1000: 1750, 2000: 2600, 4000: 3450, 7000: 4095},
+               'grid': {-2000: 0, -1000: 850, 0: 1730, 1000: 2600, 2000: 3400, 3600: 4095},
+               'batt': {-1000: 0, -500: 800, 0: 1700, 500: 2570, 1000: 3450, 1600: 4095}
                }
       t = table[channel]
       last_x = None
@@ -56,6 +58,7 @@ class I2CDISPLAY(Displaymodul):
    def trigger(self):
       pvwatt = -self.core.data.get('pvwatt')
       uberschuss = -self.core.data.get('wattbezug')
+      charging = self.core.data.get('speicherleistung')
 
       red = (uberschuss > 6400)
       if uberschuss < -50 and pvwatt > 1000:
@@ -80,6 +83,14 @@ class I2CDISPLAY(Displaymodul):
             log += " Grid: %dw = %.2f" % (uberschuss, bezugdc / 4095)
          else:
             log += " Grid: %dw = ----" % uberschuss
+
+         if abs(self.last['batt'] - charging) > 100:
+            chargedc = self.scale('batt', charging)
+            self.pwm.set_pwm(ch_batt, 0, chargedc)
+            self.last['batt'] = charging
+            log += " Batt: %dw = %.2f" % (charging, chargedc / 4095)
+         else:
+            log += " Batt: %dw = ----" % charging
 
          if red == "blink":
             log += " r"
