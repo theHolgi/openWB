@@ -13,6 +13,7 @@ class SUNNYISLAND(Speichermodul):
    def setup(self, config) -> None:
       self.ip = config.get(self.configprefix + '_ip')
       self.client = ModbusTcpClient(self.ip, port=502)
+      super().setup()
 
    def _readregister(self, reg: int) -> int:
       resp = self.client.read_holding_registers(reg, 2, unit=3)

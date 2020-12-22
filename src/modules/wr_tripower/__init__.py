@@ -13,7 +13,7 @@ class TRIPOWER(PVModul):
          self.instance = ModbusWR(host)
       else:  # dashboard
          self.instance = SMADASH(host)
-      super().setup()
+      super().setup(config)
 
    def trigger(self):
       try:

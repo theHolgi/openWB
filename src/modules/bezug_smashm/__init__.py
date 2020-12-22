@@ -8,7 +8,7 @@ class SMASHM(EVUModul):
 
    def setup(self, config) -> None:
       self.serial = config.get(self.configprefix + '_serial')
-      super().setup()
+      super().setup(config)
 
    def trigger(self):
       ipbind = '0.0.0.0'

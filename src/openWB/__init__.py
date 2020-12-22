@@ -1,4 +1,5 @@
-from typing import Any, Union
+from numbers import Number
+from typing import Any, Union, Optional
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
@@ -53,6 +54,7 @@ class Modul(object):
       self.name = name
       self.configprefix = None  # Provided during setup
       self.core = getCore()
+      self.offsets = {}   # Place for storing offsets for daily data
 
    def setup(self, config):
       """Setup the module (another possibility than overriding the constructor)"""
@@ -61,6 +63,17 @@ class Modul(object):
    def event(self, event: Event):
       """Process an event"""
       pass
+
+   def reset_offset(self, prefix: str, name: str) -> None:
+      """Resets the offset data"""
+      if name in self.offsets:
+         self.offsets[f'{prefix}_{name}'] = self.offsets[name]
+
+   def offsetted(self, prefix, name, value) -> Optional[Number]:
+      """Return offsetted value <value> with the name <name>"""
+      self.offsets[name] = value
+      offsetname = f'{prefix}_{name}'
+      return value - self.offsets[offsetname] if offsetname in self.offsets else None
 
 
 class DataPackage(dict):
@@ -100,28 +113,19 @@ class EVUModul(DataProvider):
    - bezugkwh        - [kWh] Gesamte bezogene Energie
    """
 
-   def setup(self) -> None:
-      self.bezugkwh = 0
-      self.einspeisungkwh = 0
-      self.offsetikwh = 0
-      self.offsetekwh = 0
-
    def send(self, data) -> None:
       if 'bezugkwh' in data:
-         self.bezugkwh = data['bezugkwh']
-         data['daily_bezugkwh'] = (self.bezugkwh - self.offsetikwh)
+         self.offsets['in'] = data['bezugkwh']
+         data['daily_bezugkwh'] = self.offsetted('daily', 'in', data['bezugkwh'])
       if 'einspeisungkwh' in data:
-         self.einspeisungkwh = data['einspeisungkwh']
-         data['daily_einspeisungkwh'] = (self.einspeisungkwh - self.offsetekwh)
+         data['daily_einspeisungkwh'] = self.offsetted('daily', 'out', data['einspeisungkwh'])
 
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
       if event.type == EventType.resetDaily:
-         if hasattr(self, 'bezugkwh'):
-            self.offsetikwh = self.bezugkwh
-         if hasattr(self, 'einspeisungkwh'):
-            self.offsetekwh = self.einspeisungkwh
+         self.reset_offset('daily', 'in')
+         self.reset_offset('daily', 'out')
 
 
 class Speichermodul(DataProvider):
@@ -137,21 +141,20 @@ class Speichermodul(DataProvider):
    - speicherekwh     - [kWh] gesamte Entladeleistung
    """
 
+   def setup(self) -> None:
+      pass
+
    def send(self, data: dict) -> None:
-      if "speicherikwh" in data:
-         self.importkwh = data["speicherikwh"]
-         data["daily_sikwh"] = self.importkwh - self.offsetekwh
-      if "speicherekwh" in data:
-         self.exportkwh = data["speicherekwh"]
-         data["daily_sekwh"] = self.exportkwh - self.offsetekwh
+      if "speicherikwh" in data and self.offsets.get('off_in'):
+         data["daily_sikwh"] = self.offsetted('daily', 'in', data['speicherikwh'])
+      if "speicherekwh" in data and self.offsets.get('off_out'):
+         data["daily_sekwh"] = self.offsetted('daily', 'out', data['speicherekwh'])
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
       if event.type == EventType.resetDaily:
-         if hasattr(self, 'importkwh'):
-            self.offsetikwh = self.importkwh
-         if hasattr(self, 'exportkwh'):
-            self.offsetekwh = self.exportkwh
+         self.reset_offset('daily', 'in')
+         self.reset_offset('daily', 'out')
 
 class Ladepunkt(DataProvider):
    """
@@ -234,24 +237,23 @@ class Ladepunkt(DataProvider):
       plugged = data['plugstat']
       charging = data['chargestat']
       chargedkwh = data['llkwh']
+      data['pluggedladungbishergeladen'] = self.offsetted('plugin', 'kwh', chargedkwh) if plugged else 0
+      data['aktgeladen'] = self.offsetted('charge', 'kwh', chargedkwh)
       if plugged and not self.plugged:
-         self.kwhatplugin = chargedkwh
+         self.reset_offset('plugged', 'kwh')
          self.logger.info('Plugged in at %i kwh' % chargedkwh)
       if charging and not self.charging:
-         self.kwhatchargestart = chargedkwh
+         self.reset_offset('charge', 'kwh')
          self.logger.info('Start charging at %i kwh' % chargedkwh)
          self.setP = self.actP  # Initialisiere setP falls externer Start
-
-      data['pluggedladungbishergeladen'] = chargedkwh - self.kwhatplugin if plugged else 0
-      data['aktgeladen'] = chargedkwh - self.kwhatchargestart if hasattr(self, 'kwhatchargestart') else 0
       self.plugged = plugged
       self.charging = charging
-      self.chargedkwh = chargedkwh
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
       if event.type == EventType.resetEnergy and event.info == self.id:
-         self.kwhatchargestart = self.chargedkwh
+         # Reset invoked from UI
+         self.reset_offset('charge', 'kwh')
 
 
 class PVModul(DataProvider):
@@ -266,20 +268,15 @@ class PVModul(DataProvider):
    multiinstance = True
    type = "wr"
 
-   def setup(self) -> None:
-      self.offsetkwh = 0
-
    def send(self, data: dict) -> None:
       if "pvkwh" in data:
-         self.kwh = data['pvkwh']
-         data['daily_pvkwh'] = self.kwh - self.offsetkwh
+         data['daily_pvkwh'] = self.offsetted('daily', 'kwh', data['pvkwh'])
 
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
-      if hasattr(self, 'kwh'):
-         if event.type == EventType.resetDaily:
-            self.offsetkwh = self.kwh
+      if event.type == EventType.resetDaily:
+         self.reset_offset('daily', 'kwh')
 
 class Displaymodul(Modul):
    """Superklasse eines Displaymoduls"""

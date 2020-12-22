@@ -26,7 +26,7 @@ class GO_E(Ladepunkt):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
-      super().setup()
+      super().setup(config)
 
    # DataProvier trigger
    def trigger(self):

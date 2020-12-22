@@ -20,7 +20,7 @@ class LP_FHEMSWITCH(Ladepunkt):
       self.blockcnt = 0
       self.on_delay = 0
       self.setP = 0
-      super().setup()
+      super().setup(config)
 
    @property
    def is_blocked(self):

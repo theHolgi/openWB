@@ -91,13 +91,12 @@ class openWBValues(dict):
       self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'llaktuell', 'ladestatus'])
 
    def update(self, data: "DataPackage"):
-      if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
-         for (key, value) in data.items():
-            self[key + str(data.source.id)] = value
-#            self.sumvalues.add(key)
-      else:
-         for key, value in data.items():
-            self[key] = value
+      for key, value in data.items():
+         if value is not None:
+            if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
+               self[key + str(data.source.id)] = value
+            else:
+               self[key] = value
       self.fast_derive_values(data)
 
    def __getattr__(self, key):
