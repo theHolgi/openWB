@@ -34,11 +34,11 @@ class RamdiskPublisher(object):
 
       # PV
       'pvallwatt': 'pvwatt',
-      'pvwatt1': 'pvwatt1'
+      'pvwatt1': 'pvwatt1',
       # 'pvcounter'
       # 'pvallwh'
-      # 'daily_pvkwhk'
-      # 'monthly_pvkwhk'
+      'daily_pvkwhk': 'daily_pvkwh',
+      'monthly_pvkwhk': 'monthly_pvkwh'
       # 'yearly_pvkwhk'
       # 'daily_pvkwhk1'
       # 'monthly_pvkwhk1'

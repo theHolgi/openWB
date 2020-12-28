@@ -10,6 +10,7 @@ class EventType(Enum):
    configupdate = 1  # Konfig-Änderung. info: config-Item    payload: neuer Wert
    resetEnergy = 2   # Ladepunkt Reset. info: Ladepunkt-ID   payload: None
    resetDaily = 3    # Reset daily-Werte.
+   resetMonthly = 4  # Reset monthly-Werte
 
 @dataclass
 class Event:
@@ -127,8 +128,10 @@ class EVUModul(DataProvider):
    def send(self, data) -> None:
       if 'bezugkwh' in data:
          data['daily_bezugkwh'] = self.offsetted('daily', 'in', data['bezugkwh'])
+         data['monthly_bezugkwh'] = self.offsetted('monthly', 'in', data['bezugkwh'])
       if 'einspeisungkwh' in data:
          data['daily_einspeisungkwh'] = self.offsetted('daily', 'out', data['einspeisungkwh'])
+         data['monthly_einspeisungkwh'] = self.offsetted('monthly', 'out', data['einspeisungkwh'])
 
       self.core.sendData(DataPackage(self, data))
 
@@ -136,6 +139,9 @@ class EVUModul(DataProvider):
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'in')
          self.reset_offset('daily', 'out')
+      if event.type == EventType.resetMonthly:
+         self.reset_offset('monthly', 'in')
+         self.reset_offset('monthly', 'out')
 
 
 class Speichermodul(DataProvider):
@@ -157,14 +163,19 @@ class Speichermodul(DataProvider):
    def send(self, data: dict) -> None:
       if "speicherikwh" in data:
          data["daily_sikwh"] = self.offsetted('daily', 'in', data['speicherikwh'])
+         data["monthly_sikwh"] = self.offsetted('monthly', 'in', data['speicherikwh'])
       if "speicherekwh" in data:
          data["daily_sekwh"] = self.offsetted('daily', 'out', data['speicherekwh'])
+         data["monthly_sekwh"] = self.offsetted('monthly', 'out', data['speicherekwh'])
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'in')
          self.reset_offset('daily', 'out')
+      if event.type == EventType.resetMonthly:
+         self.reset_offset('monthly', 'in')
+         self.reset_offset('monthly', 'out')
 
 class Ladepunkt(DataProvider):
    """
@@ -280,11 +291,15 @@ class PVModul(DataProvider):
    def send(self, data: dict) -> None:
       if "pvkwh" in data:
          data['daily_pvkwh'] = self.offsetted('daily', 'kwh', data['pvkwh'])
+         data['monthly_pvkwh'] = self.offsetted('monthly', 'kwh', data['pvkwh'])
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'kwh')
+      if event.type == EventType.resetMonthly:
+         self.reset_offset('monthly', 'kwh')
+
 
 class Displaymodul(Modul):
    """Superklasse eines Displaymoduls"""
