@@ -31,12 +31,13 @@ class RamdiskPublisher(object):
       # Speicher
       'speicherikwh': 'speicherikwh',
       'speicherekwh': 'speicherekwh',
+      'speichersoc': 'speichersoc',
 
       # PV
       'pvallwatt': 'pvwatt',
       'pvwatt1': 'pvwatt1',
       # 'pvcounter'
-      # 'pvallwh'
+      'pvallwh': 'pvkwh',
       'daily_pvkwhk': 'daily_pvkwh',
       'monthly_pvkwhk': 'monthly_pvkwh'
       # 'yearly_pvkwhk'

@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import sys
 
 import paho.mqtt.client as mqtt
@@ -98,9 +99,9 @@ class Mqttpublisher(object):
 
    # Fields for long-time graph
 
-   all_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3
-                 "llaktuell1", "llaktuell2", "llaktuell3", "llaktuell4", "bezugw1", "bezugw2", "bezugw3",
-                 "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
+   all_fields = ("-wattbezug", "ladeleistung", "-pvwatt",  #3
+                 "llaktuell1", "llaktuell2", "llaktuell3", "llaktuell4", "llaktuell5", "bezugw1", "bezugw2", "bezugw3",  #11
+                 "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch",  #16
                  "verbraucher1_watt", "verbraucher2_watt"
                 )
    retain = True
@@ -302,6 +303,20 @@ class Mqttpublisher(object):
                if 1 <= device <= 8:
                   republish = True
                   self.core.setconfig('lpmodul%i_alwayson' % device, bool(int(msg.payload)))
+         elif (msg.topic == "openWB/set/graph/RequestDayGraph"):
+            # Anforderung eines Daily graphs.
+            # Format Wert: yyyymmdd
+            # Antwort: openWB/system/DayGraphData1<n>, n=1..12 je 25 Zeilen
+            # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cron5min.sh"
+            # echo $(date +%H%M),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$speicheri,$speichere,$verbraucher1,$verbrauchere1,$verbraucher2,$verbrauchere2,$verbraucher3,$ll4,$ll5,$ll6,$ll7,$ll8,$speichersoc,$soc,$soc1,$temp1,$temp2,$temp3,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10,$temp4,$temp5,$temp6 >> $dailyfile.csv
+            subprocess.Popen(['../../runs/senddaygraphdata.sh', msg.payload])
+         elif msg.topic == 'openWB/set/graph/RequestMonthGraph':
+            # Anforderung eines Month graphs.
+            # Format Wert: yyyymm
+            # Antwort: openWB/system/MonthGraphData<n>, n=1..12 je 25 Zeilen
+            # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cronnightly.sh"
+            # echo $(date +%Y%m%d),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$verbraucher1iwh,$verbraucher1ewh,$verbraucher2iwh,$verbraucher2ewh,$ll4,$ll5,$ll6,$ll7,$ll8,$speicherikwh,$speicherekwh,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10 >> $monthlyfile.csv
+            subprocess.Popen(['../../runs/sendmonthgraphdata.sh', msg.payload])
          else:
             self.logger.info("Nix gefunden.")
       except Exception as e:
