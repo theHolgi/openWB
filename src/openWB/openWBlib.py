@@ -21,7 +21,7 @@
 #     along with openWB.  If not, see <https://www.gnu.org/licenses/>.
 #
 #####
-
+import shelve
 import subprocess
 import logging
 from typing import Iterator, Any, Optional
@@ -135,20 +135,23 @@ class openWBValues(dict):
       self.uberschuss = self.get('speicherleistung') - self.wattbezug
       self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
 
+
 class ramdiskValues:
    """
    Represents the ramdisk of openWB
    behaves like a dictionary
    """
-   def __init__(self, ramdiskpath = basepath + 'ramdisk/'):
+   def __init__(self, ramdiskpath: str = basepath + 'ramdisk/'):
       if ramdiskpath[-1] != '/':
          ramdiskpath += '/'
       self.cache = {}
+      self.shelf = shelve.open(basepath + 'values.db')
       self.path = ramdiskpath
       self.sumvalues = set()
 
    def __getitem__(self, key):
-      if key not in self.cache: self.cache[key] = self._get(key)
+      if key not in self.cache:
+         self.cache[key] = self._get(key)
       return self.cache[key]
    #__getattr__ = __getitem__
 
@@ -159,6 +162,8 @@ class ramdiskValues:
 
    def _get(self, name):
       """Get content of Ramdisk file <name>"""
+      if name in self.shelf:
+         return self.shelf[name]
       try:
          with open(self.path + name, 'r') as f:
             val = f.read()
@@ -168,8 +173,10 @@ class ramdiskValues:
       except OSError:
          return None
       return val
+
    def _put(self, name, content):
       """Put <content> into Ramdisk file <name>"""
+      self.shelf[name] = content
       with open(self.path + name, 'w') as f:
          return f.write(str(content))
 

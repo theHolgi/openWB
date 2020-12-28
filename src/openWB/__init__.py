@@ -72,6 +72,7 @@ class Modul(object):
          offsetname = f'{prefix}_{name}'
          self.offsets[offsetname] = self.offsets[name]
          self.core.ramdisk[f'{self.name}_{offsetname}'] = self.offsets[name]
+         self.core.ramdisk[f'{self.core.today.strftime("%D")}.{self.name}_{offsetname}']
          self.logger.info(f'Setting {prefix} offset {name} to {self.offsets[name]}') 
 
    def offsetted(self, prefix, name, value) -> Optional[Number]:
@@ -87,6 +88,7 @@ class Modul(object):
          else:
             self.logger.info(f'Start-up initialize {prefix} offset {name} to {value}')
             self.core.ramdisk[f'{self.name}_{offsetname}'] = value
+
 
 class DataPackage(dict):
    """A package of Data points"""
@@ -176,6 +178,7 @@ class Speichermodul(DataProvider):
       if event.type == EventType.resetMonthly:
          self.reset_offset('monthly', 'in')
          self.reset_offset('monthly', 'out')
+
 
 class Ladepunkt(DataProvider):
    """

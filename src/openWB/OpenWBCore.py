@@ -31,7 +31,7 @@ class OpenWBCore:
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
-      self.today = datetime.today().day
+      self.today = datetime.today()
 
       setCore(self)
 
@@ -79,11 +79,11 @@ class OpenWBCore:
             for publisher in self.publishers:
                publisher.publish()
             time.sleep(10)
-            today = datetime.today().day
-            if self.today != today:
+            today = datetime.today()
+            if self.today.day != today.day:
                self.today = today
                self.triggerEvent(Event(EventType.resetDaily))
-               if today == 1:
+               if today.day == 1:
                   self.triggerEvent(Event(EventType.resetMonthly))
 
    def logdebug(self):
