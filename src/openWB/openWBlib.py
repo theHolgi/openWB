@@ -159,14 +159,15 @@ class ramdiskValues:
 
    def _get(self, name):
       """Get content of Ramdisk file <name>"""
-      with open(self.path + name, 'r') as f:
-         val = f.read()
-         try:
-            val = int(val)   # Try to convert to integer
-         except ValueError:
-            val = val.strip()
-         return val
-
+      try:
+         with open(self.path + name, 'r') as f:
+            val = f.read()
+            val = float(val)   # Try to convert to float
+      except ValueError:
+         val = val.strip()
+      except OSError:
+         return None
+      return val
    def _put(self, name, content):
       """Put <content> into Ramdisk file <name>"""
       with open(self.path + name, 'w') as f:

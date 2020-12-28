@@ -52,6 +52,7 @@ class Modul(object):
          self.id = instance_id
          name += '_' + str(instance_id)
       self.name = name
+      self.logger = logging.getLogger(self.name)
       self.configprefix = None  # Provided during setup
       self.core = getCore()
       self.offsets = {}   # Place for storing offsets for daily data
@@ -67,14 +68,24 @@ class Modul(object):
    def reset_offset(self, prefix: str, name: str) -> None:
       """Resets the offset data"""
       if name in self.offsets:
-         self.offsets[f'{prefix}_{name}'] = self.offsets[name]
+         offsetname = f'{prefix}_{name}'
+         self.offsets[offsetname] = self.offsets[name]
+         self.core.ramdisk[f'{self.name}_{offsetname}'] = self.offsets[name]
+         self.logger.info(f'Setting {prefix} offset {name} to {self.offsets[name]}') 
 
    def offsetted(self, prefix, name, value) -> Optional[Number]:
       """Return offsetted value <value> with the name <name>"""
       self.offsets[name] = value
       offsetname = f'{prefix}_{name}'
-      return value - self.offsets[offsetname] if offsetname in self.offsets else None
-
+      if offsetname in self.offsets:      
+         return value - self.offsets[offsetname]
+      else:
+         offset = self.core.ramdisk[f'{self.name}_{offsetname}']
+         if offset is not None:
+            self.offsets[offsetname] = offset
+         else:
+            self.logger.info(f'Start-up initialize {prefix} offset {name} to {value}')
+            self.core.ramdisk[f'{self.name}_{offsetname}'] = value
 
 class DataPackage(dict):
    """A package of Data points"""
@@ -115,7 +126,6 @@ class EVUModul(DataProvider):
 
    def send(self, data) -> None:
       if 'bezugkwh' in data:
-         self.offsets['in'] = data['bezugkwh']
          data['daily_bezugkwh'] = self.offsetted('daily', 'in', data['bezugkwh'])
       if 'einspeisungkwh' in data:
          data['daily_einspeisungkwh'] = self.offsetted('daily', 'out', data['einspeisungkwh'])
@@ -145,9 +155,9 @@ class Speichermodul(DataProvider):
       pass
 
    def send(self, data: dict) -> None:
-      if "speicherikwh" in data and self.offsets.get('off_in'):
+      if "speicherikwh" in data:
          data["daily_sikwh"] = self.offsetted('daily', 'in', data['speicherikwh'])
-      if "speicherekwh" in data and self.offsets.get('off_out'):
+      if "speicherekwh" in data:
          data["daily_sekwh"] = self.offsetted('daily', 'out', data['speicherekwh'])
       self.core.sendData(DataPackage(self, data))
 
@@ -180,10 +190,9 @@ class Ladepunkt(DataProvider):
    actP = 0  # Aktuell verwendete Leistung
    prio = 1  # Aktuelle Priorität
 
-   def setup(self) -> None:
+   def setup(self, config) -> None:
       self.plugged = False
       self.charging = False
-      self.logger = logging.getLogger(self.__class__.__name__)
 
    def powerproperties(self) -> PowerProperties:
       """Liefert Möglichkeiten/Wünsche der Leistungsanpassung"""
@@ -271,7 +280,6 @@ class PVModul(DataProvider):
    def send(self, data: dict) -> None:
       if "pvkwh" in data:
          data['daily_pvkwh'] = self.offsetted('daily', 'kwh', data['pvkwh'])
-
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):

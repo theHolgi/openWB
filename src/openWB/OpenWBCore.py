@@ -11,7 +11,9 @@ import re
 
 logging.basicConfig(level=logging.DEBUG)
 
-logging.getLogger("Adafruit_I2C.Device.Bus.1.Address.0X40").setLevel(logging.INFO)
+infologgers = ['Adafruit_I2C.Device.Bus.1.Address.0X40', 'pymodbus']
+for logger in infologgers:
+   logging.getLogger(logger).setLevel(logging.INFO)
 
 
 class OpenWBCore:
@@ -36,7 +38,7 @@ class OpenWBCore:
    def add_module(self, module: Modul, configprefix: str) -> None:
       module.configprefix = configprefix
       module.setup(self.config)
-      self.logger.info("Neues Modul: " + module.__class__.__name__)
+      self.logger.info("Neues Modul: " + module.name)
       if hasattr(module, 'type') and module.type == "display":
          self.outputmodules.append(module)
       else:
