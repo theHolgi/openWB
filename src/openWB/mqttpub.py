@@ -84,7 +84,7 @@ class Mqttpublisher(object):
       "housebattery/DailyYieldExportKwh": "daily_sekwh",
 
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
-      "global/DailyYieldAllChargePointsKwh": "xxx",  # Lademenge daily
+      "global/DailyYieldAllChargePointsKwh": "daily_llkwh",  # Lademenge daily
    }
    # Fields for live chart
    all_live_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3

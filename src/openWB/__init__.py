@@ -271,12 +271,16 @@ class Ladepunkt(DataProvider):
          self.setP = self.actP  # Initialisiere setP falls externer Start
       self.plugged = plugged
       self.charging = charging
+      data["daily_llkwh"] = self.offsetted('daily', 'kwh', data['llkwh'])
+
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: Event):
       if event.type == EventType.resetEnergy and event.info == self.id:
          # Reset invoked from UI
          self.reset_offset('charge', 'kwh')
+      if event.type == EventType.resetDaily:
+         self.reset_offset('daily', 'kwh')
 
 
 class PVModul(DataProvider):
