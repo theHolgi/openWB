@@ -1,4 +1,4 @@
-from . import Modul, DataPackage, setCore, getCore, Event, EventType
+from . import Modul, DataPackage, setCore, getCore, OpenWBEvent, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .ramdiskpublisher import RamdiskPublisher
@@ -55,6 +55,7 @@ class OpenWBCore:
                self.regelkreise[lpmode] = Regelgruppe(lpmode)
             self.regelkreise[lpmode].add(module)
             self.sendData(DataPackage(module, {'lpconf': True, 'lpenabled': True }))   # LP Konfiguriert und enabled
+      module.start()
 
    def run(self, loops: int = 0) -> None:
       """Run the given number of loops (0=infinite)"""
@@ -67,11 +68,17 @@ class OpenWBCore:
          condition = lambda: next(done)
       while condition():
          for module in self.modules:
-            module.trigger()
+            module.finished.clear()
+            module.trigger.set()   # Set the event trigger
+         # Now, wait until all backtriggers are set
+         for module in self.modules:
+            module.finished.wait()
+
+         ####### Now, all modules have run.
          self.data.derive_values()
          self.logger.debug("Values: " + str(self.data))
          for module in self.outputmodules:
-            module.trigger()
+            module.trigger.set()
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
          self.logdebug()
@@ -82,9 +89,9 @@ class OpenWBCore:
             today = datetime.today()
             if self.today.day != today.day:
                self.today = today
-               self.triggerEvent(Event(EventType.resetDaily))
+               self.triggerEvent(OpenWBEvent(EventType.resetDaily))
                if today.day == 1:
-                  self.triggerEvent(Event(EventType.resetMonthly))
+                  self.triggerEvent(OpenWBEvent(EventType.resetMonthly))
 
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
@@ -105,22 +112,24 @@ class OpenWBCore:
 
    def sendData(self, package: DataPackage) -> None:
       self.data.update(package)
+      # Register which module has sent data
+      package.source.finished.set()
       self.logger.debug(f'Daten von {package.source.name }: {package}')
 
    def setconfig(self, key:str, value) -> None:
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
       self.logger.info("Config updated %s = %s" % (key, value))
-      self.triggerEvent(Event(EventType.configupdate, key, value))
+      self.triggerEvent(OpenWBEvent(EventType.configupdate, key, value))
 
-   def triggerEvent(self, event: Event):
+   def triggerEvent(self, event: OpenWBEvent):
       self.logger.info("triggerEvent")
       for module in self.modules:
          self.logger.info("... to %s" % module)
          module.event(event)
       self.event(event)
 
-   def event(self, event: Event):
+   def event(self, event: OpenWBEvent):
       self.logger.info("Event: %s = %s" % (event.info, event.payload))
       try:
        if event.type == EventType.configupdate:

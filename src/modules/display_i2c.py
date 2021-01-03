@@ -54,8 +54,7 @@ class I2CDISPLAY(Displaymodul):
          last_x = x
       return last_y
 
-
-   def trigger(self):
+   def loop(self):
       pvwatt = -self.core.data.get('pvwatt')
       uberschuss = -self.core.data.get('wattbezug')
       charging = self.core.data.get('speicherleistung')

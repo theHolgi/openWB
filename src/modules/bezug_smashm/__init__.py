@@ -10,7 +10,7 @@ class SMASHM(EVUModul):
       self.serial = config.get(self.configprefix + '_serial')
       super().setup(config)
 
-   def trigger(self):
+   def loop(self):
       ipbind = '0.0.0.0'
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522

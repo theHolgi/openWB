@@ -28,8 +28,7 @@ class GO_E(Ladepunkt):
       self.laststate = {}
       super().setup(config)
 
-   # DataProvier trigger
-   def trigger(self):
+   def loop(self):
       try:
          with request.urlopen('http://%s/status' % self.ip, timeout=self.timeout) as req:
             if req.getcode() != 200:
@@ -53,7 +52,7 @@ class GO_E(Ladepunkt):
                'llaktuell': self.actP})
             # restzeitlp
       except:  # e.g. socket.timeout
-         pass
+         self.send({})
 
    def powerproperties(self) -> PowerProperties:
       if not self.plugged:

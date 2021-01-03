@@ -8,7 +8,7 @@ class OpenWBAPI(Thread):
    PORT = 8080
 
    def __init__(self, core: OpenWBCore):
-      super().__init__()
+      super().__init__(daemon=True)
       self.server = ThreadingHTTPServer(("", self.PORT), DataHandler)
       self.server.core = core
       self.server.logger = logging.getLogger()

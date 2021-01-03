@@ -26,7 +26,7 @@ class LP_FHEMSWITCH(Ladepunkt):
    def is_blocked(self):
       return self.blockcnt >= 5
 
-   def trigger(self):
+   def loop(self):
       # Da wir den Verbrauch selber nicht messen können, erkenne wenigstens unplausiblen Hausverbrauch
       if self.core.data.get('hausverbrauch') < 0:
          self.blockcnt += 1

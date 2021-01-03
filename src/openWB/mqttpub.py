@@ -11,7 +11,7 @@ from datetime import datetime
 from time import time
 import logging
 
-from .OpenWBCore import Event, EventType
+from .OpenWBCore import OpenWBEvent, EventType
 
 basePath = os.path.dirname(os.path.realpath(__file__)) + '/'
 projectPath = os.path.realpath(os.path.dirname(__file__) + '/../../ramdisk/')

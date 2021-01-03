@@ -1,4 +1,5 @@
 from numbers import Number
+from threading import Thread, Event
 from typing import Any, Union, Optional
 from collections import namedtuple
 from dataclasses import dataclass
@@ -13,7 +14,7 @@ class EventType(Enum):
    resetMonthly = 4  # Reset monthly-Werte
 
 @dataclass
-class Event:
+class OpenWBEvent:
    type: EventType
    info: Any = None
    payload: Any = None
@@ -41,14 +42,19 @@ PowerProperties = namedtuple('PowerProperties', 'minP maxP inc')
 # core.data   - Data
 
 
-class Modul(object):
+class Modul(Thread):
    """
    Abstrakte Klasse für ein Modul.
    Konkrete Klassen dürften sich in erster Linie nicht hiervon, sondern von DataProvider ableiten.
    """
 
    def __init__(self, instance_id: int):
+      super().__init__(daemon=True)
       name = self.__class__.__name__
+      self.trigger = Event()    # A trigger to start the module
+      self.finished = Event()   # A trigger to signal that the module has run
+      self.trigger.clear()
+      self.finished.clear()
       if hasattr(self.__class__, 'multiinstance') and self.__class__.multiinstance:
          self.id = instance_id
          name += '_' + str(instance_id)
@@ -62,7 +68,18 @@ class Modul(object):
       """Setup the module (another possibility than overriding the constructor)"""
       pass
 
-   def event(self, event: Event):
+   def run(self):
+      """Thread Main function. Wartet auf das Trigger-Event und führt jeweils eine Loop aus."""
+      while True:
+         self.trigger.wait()
+         self.trigger.clear()
+         self.loop()
+
+   def loop(self):
+      """Modul Main function. Führt das Modul 1x aus."""
+      ...
+
+   def event(self, event: OpenWBEvent):
       """Process an event"""
       pass
 
@@ -102,11 +119,11 @@ class DataProvider(Modul):
    Abstrakte Klasse eines Daten sendenden Moduls.
    """
 
-   def trigger(self):
+   def loop(self):
       """
       Trigger Datenerfassung. Als Bestätigung muss(!) ein Aufruf von self.core.sendData erfolgen.
       Üblicherweise durch Aufruf von "send" einer abgeleiteten Klasse.
-      Ein Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast
+      Ein sendData() Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast
       """
       ...
 
@@ -137,7 +154,7 @@ class EVUModul(DataProvider):
 
       self.core.sendData(DataPackage(self, data))
 
-   def event(self, event: Event):
+   def event(self, event: OpenWBEvent):
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'in')
          self.reset_offset('daily', 'out')
@@ -171,7 +188,7 @@ class Speichermodul(DataProvider):
          data["monthly_sekwh"] = self.offsetted('monthly', 'out', data['speicherekwh'])
       self.core.sendData(DataPackage(self, data))
 
-   def event(self, event: Event):
+   def event(self, event: OpenWBEvent):
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'in')
          self.reset_offset('daily', 'out')
@@ -275,7 +292,7 @@ class Ladepunkt(DataProvider):
 
       self.core.sendData(DataPackage(self, data))
 
-   def event(self, event: Event):
+   def event(self, event: OpenWBEvent):
       if event.type == EventType.resetEnergy and event.info == self.id:
          # Reset invoked from UI
          self.reset_offset('charge', 'kwh')
@@ -301,7 +318,7 @@ class PVModul(DataProvider):
          data['monthly_pvkwh'] = self.offsetted('monthly', 'kwh', data['pvkwh'])
       self.core.sendData(DataPackage(self, data))
 
-   def event(self, event: Event):
+   def event(self, event: OpenWBEvent):
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'kwh')
       if event.type == EventType.resetMonthly:

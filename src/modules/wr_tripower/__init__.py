@@ -15,7 +15,7 @@ class TRIPOWER(PVModul):
          self.instance = SMADASH(host)
       super().setup(config)
 
-   def trigger(self):
+   def loop(self):
       try:
          power, generation = self.instance.read()
          self.send({'pvwatt': power, 'pvkwh': generation})

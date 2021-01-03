@@ -21,7 +21,7 @@ class SUNNYISLAND(Speichermodul):
       all = bytes.fromhex(format(resp.registers[0], '04x') + format(resp.registers[1], '04x'))
       return struct.unpack('>i', all)[0]
 
-   def trigger(self):
+   def loop(self):
       try:
          # state = self._readregister(30201)
          # 35 - Fehler
