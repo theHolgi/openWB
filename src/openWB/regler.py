@@ -30,7 +30,7 @@ class Request(dict):
    - max-P Maximum Leistungsdekrement
    jeder dieser Schlüssel hat einen Wert und eine Priorität.
    """
-   def __init__(self, id: int, prio: int = 1, flags: Set[str] = None):
+   def __init__(self, id: int, prio: int = 1, flags: Optional[Set[str]] = None):
       self.id = id
       self.defaultprio = prio
       self.flags = set() if flags is None else flags  # can't do this in function default, as this will return the same single object for every usage.
@@ -82,7 +82,7 @@ class Regler:
       if self.wallbox.is_charging:
          request.flags.add('on')
          debugstr += " (on)"
-         if self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
+         if props.inc > 0 and self.wallbox.setP - props.inc >= props.minP:  # Verringerung noch möglich
             request += RequestPoint('min-P', props.inc)
             request += RequestPoint('max-P', self.wallbox.setP - props.minP)
          elif not self.config[self.wallbox.configprefix + '_alwayson']:  # Nein, nur ganz ausschalten

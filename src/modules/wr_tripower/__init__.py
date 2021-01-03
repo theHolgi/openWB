@@ -2,6 +2,7 @@ from openWB import *
 from .modbuswr import ModbusWR
 from .smadash import SMADASH
 
+
 class TRIPOWER(PVModul):
    """SMA Tripower"""
 
@@ -12,17 +13,15 @@ class TRIPOWER(PVModul):
          self.instance = ModbusWR(host)
       else:  # dashboard
          self.instance = SMADASH(host)
+      super().setup(config)
 
    def trigger(self):
       try:
          power, generation = self.instance.read()
-         self.core.sendData(DataPackage(self, {'pvwatt': power,
-                                               'pvkwh': generation}))
+         self.send({'pvwatt': power, 'pvkwh': generation})
       except ConnectionError:
-         pass
+         self.send({})
 
-   def event(self, event):
-      pass
 
 def getClass():
    return TRIPOWER

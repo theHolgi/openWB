@@ -1,10 +1,8 @@
-from urllib import request, error
+from urllib import request
 import json
-import logging
 
 from threading import Thread
 from openWB import *
-from openWB.OpenWBCore import Event, EventType
 
 
 class GO_E_SET(Thread):
@@ -28,10 +26,8 @@ class GO_E(Ladepunkt):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
-      self.plugged = False
-      self.charging = False
-      self.logger = logging.getLogger('GO_E')
-      
+      super().setup(config)
+
    # DataProvier trigger
    def trigger(self):
       try:
@@ -41,53 +37,23 @@ class GO_E(Ladepunkt):
                return
             goe = json.loads(req.read().decode())
             self.laststate = goe
-            u1 = int(goe['nrg'][0])   # V
-            u2 = int(goe['nrg'][1])
-            u3 = int(goe['nrg'][2])
-            a1 = int(goe['nrg'][4])/10  # 0.1A
-            a2 = int(goe['nrg'][5])/10
-            a3 = int(goe['nrg'][6])/10
             self.actP = int(goe['nrg'][11]) * 10  # 0.01kW
             
-            # car status 1 Ladestation bereit, kein Auto
-            # car status 2 Auto lädt
-            # car status 3 Warte auf Fahrzeug
-            # car status 4 Ladung beendet, Fahrzeug verbunden
-            chargedkwh = int(goe['eto'])/10  # 0.1kwh
-            plugged = goe['car'] != '1'
-            charging = goe['car'] == '2'
-            
-            # Reset von Werten beim Einstecken
-            self.chargedkwh = chargedkwh
-            if plugged and not self.plugged:
-               self.kwhatplugin = chargedkwh
-               self.logger.info('Plugged in at %i kwh' % chargedkwh)
-            if charging and not self.charging:
-               self.kwhatchargestart = chargedkwh
-               self.logger.info('Start charging in at %i kwh' % chargedkwh)
-               self.setP = amp2power(int(goe['amp']), self.phasen)   # Initialisiere setP falls externer Start
-
-            pluggedgeladen = chargedkwh - self.kwhatplugin if plugged else 0
-            aktgeladen = chargedkwh - self.kwhatchargestart if hasattr(self, 'kwhatchargestart') else 0
-            self.plugged = plugged
-            self.charging = charging
-            self.core.sendData(DataPackage(self, {
-               'llv1': u1, 'llv2': u2, 'llv3': u3,
-               'lla1': a1, 'lla2': a2, 'lla3': a3,
-               'llkwh': chargedkwh,
-               'pluggedladungbishergeladen': pluggedgeladen,
-               'aktgeladen': aktgeladen,
-               'plugstat': plugged,
-               'chargestat': charging,
-               'llaktuell': self.actP,
-               'lpphasen': self.phasen}))
+            # goe['car']: 1 Ladestation bereit, kein Auto
+            #             2 Auto lädt
+            #             3 Warte auf Fahrzeug
+            #             4 Ladung beendet, Fahrzeug verbunden
+            self.send({
+               'llv1': int(goe['nrg'][0]),    'llv2': int(goe['nrg'][1]),    'llv3': int(goe['nrg'][2]),    # [V]
+               'lla1': int(goe['nrg'][4])/10, 'lla2': int(goe['nrg'][5])/10, 'lla3': int(goe['nrg'][6])/10, # [0.1A]
+               'llpf1': int(goe['nrg'][12]),  'llpf2': int(goe['nrg'][13]),  'llpf3': int(goe['nrg'][14]),  # %
+               'llkwh': int(goe['eto'])/10,  # [0.1kwh]
+               'plugstat': goe['car'] != '1',
+               'chargestat': goe['car'] == '2',
+               'llaktuell': self.actP})
             # restzeitlp
       except:  # e.g. socket.timeout
          pass
-
-   def event(self, event: Event):
-      if event.type == EventType.resetEnergy and event.info == self.id:
-         self.kwhatchargestart = self.chargedkwh
 
    def powerproperties(self) -> PowerProperties:
       if not self.plugged:
@@ -108,6 +74,7 @@ class GO_E(Ladepunkt):
          GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()
       if self.laststate['amp'] != str(ampere):  # Power
          GO_E_SET('http://%s/mqtt?payload=amp=%s' % (self.ip, ampere), self.timeout).start()
+
 
 def getClass():
    return GO_E

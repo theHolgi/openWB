@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import sys
 
 import paho.mqtt.client as mqtt
@@ -46,6 +47,13 @@ class Mqttpublisher(object):
       "pv/W": "pvwatt",
       "pv/WhCounter": "pvkwh",
 
+      # Speicher
+      "housebattery/W": "speicherleistung",
+      "housebattery/DailyYieldImportKwh": "speicherikwh",
+      "housebattery/DailyYieldExportKwh": "speicherekwh",
+      "housebattery/%Soc": "speichersoc",
+      "housebattery/boolHouseBatteryConfigured": "speichervorhanden",
+
       # LP
       "global/WAllChargePoints": "llaktuell",
       "lp/%n/W": "llaktuell%n",
@@ -71,14 +79,15 @@ class Mqttpublisher(object):
       # Daily Daten
       "evu/DailyYieldImportKwh": "daily_bezugkwh",
       "evu/DailyYieldExportKwh": "daily_einspeisungkwh",
-      "pv/DailyYieldKwh": "daily_pvkwhk",
+      "pv/DailyYieldKwh": "daily_pvkwh",
       "housebattery/DailyYieldImportKwh": "daily_sikwh",
       "housebattery/DailyYieldExportKwh": "daily_sekwh",
 
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
-      "global/DailyYieldAllChargePointsKwh": "xxx",  # Lademenge daily
+      "global/DailyYieldAllChargePointsKwh": "daily_llkwh",  # Lademenge daily
    }
-   all_live_fields = ("uberschuss", "ladeleistung", "-pvwatt", #3
+   # Fields for live chart
+   all_live_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
                       "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
                       "verbraucher1_watt", "verbraucher2_watt", #13
@@ -87,6 +96,14 @@ class Mqttpublisher(object):
                       "shd1_w", "shd2_w", "shd3_w", "shd4_w", #23
                       "shd5_w", "shd6_w", "shd7_w", "shd8_w" #27
                       )
+
+   # Fields for long-time graph
+
+   all_fields = ("-wattbezug", "ladeleistung", "-pvwatt",  #3
+                 "llaktuell1", "llaktuell2", "llaktuell3", "llaktuell4", "llaktuell5", "bezugw1", "bezugw2", "bezugw3",  #11
+                 "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch",  #16
+                 "verbraucher1_watt", "verbraucher2_watt"
+                )
    retain = True
    num_lps = 0   # Anzahl Ladepunkte
    configqos = 2
@@ -106,8 +123,9 @@ class Mqttpublisher(object):
       self.client.connect(hostname)
       self.client.loop_start()
       self.publish_config()
+      self.graphtimer = 0
 
-   def subscribe(self):
+   def setup(self):
       """Subscribe to set topics"""
       self.logger.info('Subscribing.')
       self.client.subscribe("openWB/set/#", 2)
@@ -152,6 +170,10 @@ class Mqttpublisher(object):
          self.all_live = read_ramdisk('all-live.graph').split('\n')
       except FileNotFoundError:
          self.all_live = []
+      try:
+         self.all_data = read_ramdisk('all.graph').split('\n')
+      except FileNotFoundError:
+         self.all_data = []
 
    def publish(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
@@ -162,6 +184,7 @@ class Mqttpublisher(object):
             val = 1 if val else 0
           if val != self.lastdata[mqttkey]:
             self.lastdata[mqttkey] = val
+#            self.logger.info(f"Send data: {mqttkey}={val}") 
             self.client.publish("openWB/" + mqttkey, payload=val, qos=0, retain=True)
 
       # Live values
@@ -172,11 +195,11 @@ class Mqttpublisher(object):
          
       last_live = ",".join(last_live)
       self.all_live.append(last_live)
-      print("Live: %s" % last_live)
+      self.logger.debug("Live: %s" % last_live)
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
       self.client.publish("openWB/graph/lastlivevalues", payload=last_live)
-      self.client.publish("openWB/system/Timestamp", int(time()) , qos=0)
+      self.client.publish("openWB/system/Timestamp", int(time()), qos=0)
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
@@ -186,11 +209,26 @@ class Mqttpublisher(object):
             pl = "-\n"
          self.client.publish("openWB/graph/%ialllivevalues" % index, payload=pl, retain=self.retain)
 
+      # All (long-time chart) values
+      self.graphtimer += 1
+      if self.graphtimer == 4:
+         self.graphtimer = 0
+         all_live = [datetime.now().strftime("%Y/%m/%d %H:%M:%S")]
+         for key in self.all_fields:
+            all_live.append(str(-self.core.data.get(key[1:])) if key[0] == '-' else str(self.core.data.get(key)))
+         self.all_data.append(','.join(all_live))
+         self.logger.debug("Longtime Live: %s" % all_live)
+         if len(self.all_data) > 2000:
+            self.all_data = self.all_data[-2000:]
+         ramdisk('all.graph', "\n".join(self.all_data))
+
       # Graphen aus der Ramdisk
       ramdisk('all-live.graph', "\n".join(self.all_live))
       ramdisk('pv-live.graph', self.core.data.get("pvwatt"), 'a')
       ramdisk('evu-live.graph', self.core.data.get("uberschuss"), 'a')
       ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
+      ramdisk('speicher-live.graph', self.core.data.get('speicherleistung'), 'a')
+      ramdisk('speichersoc-live.graph', self.core.data.get('speichersoc'), 'a')
 
    def publish_config(self):
       """Sende Config als MQTT"""
@@ -265,6 +303,20 @@ class Mqttpublisher(object):
                if 1 <= device <= 8:
                   republish = True
                   self.core.setconfig('lpmodul%i_alwayson' % device, bool(int(msg.payload)))
+         elif (msg.topic == "openWB/set/graph/RequestDayGraph"):
+            # Anforderung eines Daily graphs.
+            # Format Wert: yyyymmdd
+            # Antwort: openWB/system/DayGraphData1<n>, n=1..12 je 25 Zeilen
+            # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cron5min.sh"
+            # echo $(date +%H%M),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$speicheri,$speichere,$verbraucher1,$verbrauchere1,$verbraucher2,$verbrauchere2,$verbraucher3,$ll4,$ll5,$ll6,$ll7,$ll8,$speichersoc,$soc,$soc1,$temp1,$temp2,$temp3,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10,$temp4,$temp5,$temp6 >> $dailyfile.csv
+            subprocess.Popen(['../../runs/senddaygraphdata.sh', msg.payload])
+         elif msg.topic == 'openWB/set/graph/RequestMonthGraph':
+            # Anforderung eines Month graphs.
+            # Format Wert: yyyymm
+            # Antwort: openWB/system/MonthGraphData<n>, n=1..12 je 25 Zeilen
+            # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cronnightly.sh"
+            # echo $(date +%Y%m%d),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$verbraucher1iwh,$verbraucher1ewh,$verbraucher2iwh,$verbraucher2ewh,$ll4,$ll5,$ll6,$ll7,$ll8,$speicherikwh,$speicherekwh,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10 >> $monthlyfile.csv
+            subprocess.Popen(['../../runs/sendmonthgraphdata.sh', msg.payload])
          else:
             self.logger.info("Nix gefunden.")
       except Exception as e:

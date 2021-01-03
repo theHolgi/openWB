@@ -1,21 +1,21 @@
-from openWB import *
+from openWB import EVUModul
 from .speedwiredecoder import decode_speedwire
 import socket
 import struct
 
-class SMASHM(DataProvider):
+class SMASHM(EVUModul):
    """SMA Smart home Meter (or Energy Meter)"""
 
    def setup(self, config) -> None:
       self.serial = config.get(self.configprefix + '_serial')
+      super().setup(config)
 
    def trigger(self):
       ipbind = '0.0.0.0'
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522
 
-      #                filename:  channel
-      mapping = {'evuhu': 'frequency'}
+      mapping = {'evuhz': 'frequency'}
       phasemapping = {'evua%i': {'from': 'i%i', 'sign': True},
                       'evuv%i': {'from': 'u%i'},
                       'evupf%i': {'from': 'cosphi%i'}
@@ -40,15 +40,14 @@ class SMASHM(DataProvider):
          positive = [1] * 4
          if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
             # Special treatment for positive / negative power
-            data = DataPackage(self)
-            watt = int(emparts['pconsume'])
+            watt = int(emparts['pconsume'])       # W
             if watt < 5:
                watt = -int(emparts['psupply'])
                positive[0] = -1
-            data['wattbezug'] = watt
-            data['einspeisungkwh'] = emparts['psupplycounter'] * 1000
-            data['bezugkwh'] = emparts['pconsumecounter'] * 1000
-            # print("Bezug: %i Einspeisung: %i" % (emparts['pconsume'], emparts['psupply']))
+            data = {'wattbezug': watt,
+                    'einspeisungkwh': emparts['psupplycounter'],  # kWh
+                    'bezugkwh':       emparts['pconsumecounter'] # kWh
+                    }
             for phase in [1, 2, 3]:
                power = int(emparts['p%iconsume' % phase])
                if power < 5:
@@ -65,12 +64,9 @@ class SMASHM(DataProvider):
             for datakey, empartskey in mapping.items():
                if empartskey in emparts:
                   data[datakey] = emparts[empartskey]
-            self.core.sendData(data)
-#            publish(self.core.data, {'verbose': 1})
+            self.send(data)
             break
 
-   def event(self, event):
-      pass
 
 def getClass():
    return SMASHM

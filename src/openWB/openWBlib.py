@@ -21,7 +21,7 @@
 #     along with openWB.  If not, see <https://www.gnu.org/licenses/>.
 #
 #####
-
+import shelve
 import subprocess
 import logging
 from typing import Iterator, Any, Optional
@@ -42,10 +42,13 @@ class openWBconfig:
                if line[0] == '#' or line[0] == '\n':
                   continue
                key, value = line.split('=')
-               try:
-                  value = int(value)   # Try to convert to integer
-               except ValueError:
-                  value = value.strip()
+               if value[:2] == "0x":
+                  value = int(value, 16)
+               else:
+                  try:
+                     value = int(value)   # Try to convert to integer
+                  except ValueError:
+                     value = value.strip()
                self.settings[key] = value
       except IOError:
          pass
@@ -85,16 +88,15 @@ class openWBValues(dict):
    behaves like a dictionary
    """
    def __init__(self):
-      self.sumvalues = set(['pvwatt', 'llaktuell', 'ladestatus'])
+      self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'monthly_pvkwh', 'llaktuell', 'daily_llkwh', 'ladestatus'])
 
    def update(self, data: "DataPackage"):
-      if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
-         for (key, value) in data.items():
-            self[key + str(data.source.id)] = value
-#            self.sumvalues.add(key)
-      else:
-         for key, value in data.items():
-            self[key] = value
+      for key, value in data.items():
+         if value is not None:
+            if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
+               self[key + str(data.source.id)] = value
+            else:
+               self[key] = value
       self.fast_derive_values(data)
 
    def __getattr__(self, key):
@@ -130,45 +132,51 @@ class openWBValues(dict):
                break
             sumVal += int(value)
          self[key] = sumVal
-      self.uberschuss = -self.wattbezug
+      self.uberschuss = self.get('speicherleistung') - self.wattbezug
       self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
+
 
 class ramdiskValues:
    """
    Represents the ramdisk of openWB
    behaves like a dictionary
    """
-   def __init__(self, ramdiskpath = basepath + 'ramdisk/'):
+   def __init__(self, ramdiskpath: str = basepath + 'ramdisk/'):
       if ramdiskpath[-1] != '/':
          ramdiskpath += '/'
       self.cache = {}
+      self.shelf = shelve.open(basepath + 'values.db')
       self.path = ramdiskpath
       self.sumvalues = set()
 
    def __getitem__(self, key):
-      if key not in self.cache: self.cache[key] = self._get(key)
-      debug("%s => %s" % (key, self.cache[key]))
+      if key not in self.cache:
+         self.cache[key] = self._get(key)
       return self.cache[key]
    #__getattr__ = __getitem__
 
    def __setitem__(self, key, value):
       self.cache[key] = value
-      debug("%s <= %s" % (key, value))
       self._put(key, value)
    #__setattr__ = __setitem__
 
    def _get(self, name):
       """Get content of Ramdisk file <name>"""
-      with open(self.path + name, 'r') as f:
-         val = f.read()
-         try:
-            val = int(val)   # Try to convert to integer
-         except ValueError:
-            val = val.strip()
-         return val
+      if name in self.shelf:
+         return self.shelf[name]
+      try:
+         with open(self.path + name, 'r') as f:
+            val = f.read()
+            val = float(val)   # Try to convert to float
+      except ValueError:
+         val = val.strip()
+      except OSError:
+         return None
+      return val
 
    def _put(self, name, content):
       """Put <content> into Ramdisk file <name>"""
+      self.shelf[name] = content
       with open(self.path + name, 'w') as f:
          return f.write(str(content))
 

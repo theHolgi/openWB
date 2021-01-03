@@ -306,10 +306,10 @@ function processEvuMessages(mqttmsg, mqttpayload) {
 			powerEvu = 0;
 		}
 		if ( powerEvu > 0 ) {
-			prefix = ' ⬇️ ';
+			prefix = ' ➡️️ ';
 		} else if ( powerEvu < 0 ) {
 			powerEvu *= -1;
-			prefix = ' ⬆️: ';
+			prefix = ' ⬅️️: ';
 		}
 		if ( powerEvu > 999 ) {
 			powerEvu = (powerEvu / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -450,11 +450,11 @@ function processHousebatteryMessages(mqttmsg, mqttpayload) {
 		if ( isNaN(speicherwatt) ) {
 			speicherwatt = 0;
 		}
-		if ( speicherwatt > 0 ) {
-			prefix = '-Ladung: ';
-		} else if ( speicherwatt < 0 ) {
+		if ( speicherwatt > 0 ) {  // charging
+			prefix = '⬅️';
+		} else if ( speicherwatt < 0 ) { // discharging
 			speicherwatt *= -1;
-			prefix = '-Entladung: ';
+			prefix = '➡️';
 		}
 		if ( speicherwatt > 999 ) {
 			speicherwatt = (speicherwatt / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
