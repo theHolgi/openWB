@@ -11,7 +11,8 @@ class EventType(Enum):
    configupdate = 1  # Konfig-Änderung. info: config-Item    payload: neuer Wert
    resetEnergy = 2   # Ladepunkt Reset. info: Ladepunkt-ID   payload: None
    resetDaily = 3    # Reset daily-Werte.
-   resetMonthly = 4  # Reset monthly-Werte
+   resetNoon = 4     # Reset daily (at noon)
+   resetMonthly = 5  # Reset monthly-Werte
 
 @dataclass
 class OpenWBEvent:
@@ -189,7 +190,7 @@ class Speichermodul(DataProvider):
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
-      if event.type == EventType.resetDaily:
+      if event.type == EventType.resetNoon:
          self.reset_offset('daily', 'in')
          self.reset_offset('daily', 'out')
       if event.type == EventType.resetMonthly:

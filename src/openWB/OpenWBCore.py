@@ -72,7 +72,8 @@ class OpenWBCore:
             module.trigger.set()   # Set the event trigger
          # Now, wait until all backtriggers are set
          for module in self.modules:
-            module.finished.wait()
+            if not module.finished.wait(timeout=10.0):
+               self.logger.warn("Timeout waiting for " + module.name)
 
          ####### Now, all modules have run.
          self.data.derive_values()
@@ -88,10 +89,12 @@ class OpenWBCore:
             time.sleep(10)
             today = datetime.today()
             if self.today.day != today.day:
-               self.today = today
                self.triggerEvent(OpenWBEvent(EventType.resetDaily))
                if today.day == 1:
                   self.triggerEvent(OpenWBEvent(EventType.resetMonthly))
+            elif self.today.hour != 12 and today.hour == 12:
+               self.triggerEvent(OpenWBEvent(EventType.resetNoon))
+            self.today = today
 
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
