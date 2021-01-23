@@ -88,7 +88,8 @@ class openWBValues(dict):
    behaves like a dictionary
    """
    def __init__(self):
-      self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'monthly_pvkwh', 'llaktuell', 'daily_llkwh', 'ladestatus'])
+      self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'monthly_pvkwh',
+                            'llaktuell', 'llkwh', 'daily_llkwh', 'ladestatus'])
 
    def update(self, data: "DataPackage"):
       for key, value in data.items():

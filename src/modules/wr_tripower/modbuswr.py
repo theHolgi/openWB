@@ -13,7 +13,7 @@ class ModbusWR:
 
     def read(self):
         try:
-            client = ModbusTcpClient(self.host, port=502)
+            client = ModbusTcpClient(self.host, port=502, timeout=10)
 
             #pv watt
             resp = client.read_holding_registers(30775, 2, unit=3)  # Wirkleistung alle Außenleiter, S32 W

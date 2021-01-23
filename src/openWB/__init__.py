@@ -176,6 +176,7 @@ class Speichermodul(DataProvider):
    - speicherikwh     - [kWh] gesamte Ladeleistung
    - speicherekwh     - [kWh] gesamte Entladeleistung
    """
+   # multiinstance = True
 
    def setup(self) -> None:
       pass

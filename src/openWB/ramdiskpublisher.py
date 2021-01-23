@@ -27,6 +27,7 @@ class RamdiskPublisher(object):
 
       'llaktuell': 'llaktuell1',
       'llkwh': 'aktgeladen1',
+      'llkwhges': 'llkwh',
 
       # Speicher
       'speicherikwh': 'speicherikwh',
@@ -37,7 +38,7 @@ class RamdiskPublisher(object):
       'pvallwatt': 'pvwatt',
       'pvwatt1': 'pvwatt1',
       # 'pvcounter'
-      'pvallwh': 'pvkwh',
+      'pvkwh': 'pvkwh',
       'daily_pvkwhk': 'daily_pvkwh',
       'monthly_pvkwhk': 'monthly_pvkwh'
       # 'yearly_pvkwhk'

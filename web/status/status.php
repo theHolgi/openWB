@@ -346,7 +346,7 @@
 					}
 				});
 				$.ajax({
-					url: "/openWB/ramdisk/pvallwh",
+					url: "/openWB/ramdisk/pvkwh",
 					complete: function(request){
 						$("#pvkwhdiv").html((request.responseText / 1000).toFixed(2));
 					}

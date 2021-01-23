@@ -13,6 +13,13 @@ class SUNNYISLAND(Speichermodul):
    def setup(self, config) -> None:
       self.ip = config.get(self.configprefix + '_ip')
       self.client = ModbusTcpClient(self.ip, port=502)
+      if config.get(self.configprefix + '_bms') == "batrium":
+         from .bms_batrium import BATRIUM
+         self.bms = BATRIUM(1)
+         self.bms.setup(config)
+         self.bms.start()
+      else:
+         self.bms = None
       super().setup()
 
    def _readregister(self, reg: int) -> int:
@@ -28,12 +35,14 @@ class SUNNYISLAND(Speichermodul):
          # 303 - Aus
          # 307 - Ok
          # 455 - Warnung
-         self.send({
-           'speichersoc': self._readregister(30845),           # SOC [%],
-           'speicherleistung': -self._readregister(30775),     # Leistung [W] (>0: Laden)
-           'speicherikwh': self._readregister(30595)/ 1000,    # Aufgenommen [Wh]
-           'speicherekwh': self._readregister(30597)/ 1000     # Abgegeben   [Wh]
-         })
+         data = {
+           'speicherikwh': self._readregister(30595) / 1000,    # Aufgenommen [Wh]
+           'speicherekwh': self._readregister(30597) / 1000     # Abgegeben   [Wh]
+         }
+         if self.bms is None:
+            data['speichersoc'] = self._readregister(30845),  # SOC [%],
+            data['speicherleistung'] = -self._readregister(30775),  # Leistung [W] (>0: Laden)
+         self.send(data)
       except AttributeError:
          # modbus client seems to return (!) an ModbusIOExcption which is then tried to examine (resp.registers[])
          self.send({})
