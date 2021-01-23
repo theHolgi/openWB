@@ -13,7 +13,8 @@ if 'http_proxy' in os.environ:
 if 'https_proxy' in os.environ:
    os.environ.pop('https_proxy')
 
-core = OpenWBCore.OpenWBCore(mypath + "/pyconfig.conf")
+core = OpenWBCore.OpenWBCore()
+core.setup(mypath + "/pyconfig.conf")
 
 # Start the API
 api = api.OpenWBAPI(core)

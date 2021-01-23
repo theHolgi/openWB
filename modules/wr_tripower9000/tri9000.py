@@ -38,7 +38,7 @@ def GetWR(host, typ):
       instance = SMADASH(host)
    return instance
 
-config = openWBlib.openWBconfig()
+config = openWBlib.OpenWBconfig()
 settings = [ 'tri9000ip', 'wrsma2ip', 'wrsma3ip', 'wrsma4ip']
 
 for nameconf in settings:

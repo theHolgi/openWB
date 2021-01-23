@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from openWB import Speichermodul
+from openWB.Modul import Speichermodul
 import struct
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.exceptions import ConnectionException

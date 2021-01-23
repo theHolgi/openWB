@@ -1,7 +1,8 @@
-from openWB import EVUModul
+from openWB.Modul import EVUModul
 from .speedwiredecoder import decode_speedwire
 import socket
 import struct
+
 
 class SMASHM(EVUModul):
    """SMA Smart home Meter (or Energy Meter)"""

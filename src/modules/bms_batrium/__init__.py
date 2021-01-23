@@ -1,6 +1,6 @@
 import socket
 
-from openWB import DataProvider, DataPackage
+from openWB.Modul import DataProvider, DataPackage
 from .batriumdecoder import decode_batrium
 
 class BATRIUM(DataProvider):

@@ -1,9 +1,11 @@
 import enum
+from openWB.OpenWBCore import OpenWBCore
+from openWB.Modul import amp2power
 from typing import Set, Optional
-from . import getCore, amp2power, DataPackage
 from itertools import groupby
 from dataclasses import dataclass
 import logging
+
 
 class Priority(enum.IntEnum):
    low = 1
@@ -163,7 +165,7 @@ class Regelgruppe():
    def __init__(self, mode:str):
       self.mode = mode
       self.regler = dict()
-      self.hysterese = getCore().config.hysterese
+      self.hysterese = OpenWBCore().config.hysterese
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
 
       if self.mode == 'pv':
@@ -190,8 +192,8 @@ class Regelgruppe():
 
          self.get_increment = get_increment
          self.get_decrement = get_decrement
-         self.limit = getCore().config.offsetpv
-         self.hysterese = getCore().config.hysterese
+         self.limit = OpenWBCore().config.offsetpv
+         self.hysterese = OpenWBCore().config.hysterese
 
       elif self.mode == 'peak':
          """
@@ -199,7 +201,7 @@ class Regelgruppe():
             - P > Limit: erhöhe bis < Limit
             - P < Limit: reduziere solange < Limit
          """
-         self.limit = getCore().config.offsetpvpeak
+         self.limit = OpenWBCore().config.offsetpvpeak
          def get_increment(r: Request, deltaP: int) -> Optional[int]:
             if deltaP <= 0:  # Kein Bedarf
                return None
@@ -255,7 +257,7 @@ class Regelgruppe():
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
       self.logger.debug(f"LP Props: {properties!r}")
       if self.mode == 'sofort':
-         core = getCore()
+         core = OpenWBCore()
          for id, regler in self.regler.items():
             power = amp2power(core.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             if regler.wallbox.setP != power:

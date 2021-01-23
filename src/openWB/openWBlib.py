@@ -25,10 +25,11 @@ import shelve
 import subprocess
 import logging
 from typing import Iterator, Any, Optional
+from . import Singleton
 
 basepath = '/var/www/html/openWB/'
 
-class openWBconfig:
+class OpenWBconfig(Singleton):
    """
    Represents openwb.conf
    behaves like a dictionary (non-existent settings return None)
@@ -87,6 +88,13 @@ class openWBValues(dict):
    Represents openWB values dictionary
    behaves like a dictionary
    """
+   def __new__(cls, *args, **kwargs):
+      """ Create a new instance
+      """
+      if '_inst' not in vars(cls):
+         cls._inst = dict()
+      return cls._inst
+
    def __init__(self):
       self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'monthly_pvkwh',
                             'llaktuell', 'llkwh', 'daily_llkwh', 'ladestatus'])
@@ -137,7 +145,7 @@ class openWBValues(dict):
       self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
 
 
-class ramdiskValues:
+class RamdiskValues(Singleton):
    """
    Represents the ramdisk of openWB
    behaves like a dictionary
@@ -146,7 +154,7 @@ class ramdiskValues:
       if ramdiskpath[-1] != '/':
          ramdiskpath += '/'
       self.cache = {}
-      self.shelf = shelve.open(basepath + 'values.db')
+      self.shelf = shelve.open(ramdiskpath + 'values.db')
       self.path = ramdiskpath
       self.sumvalues = set()
 
@@ -187,7 +195,7 @@ def log(message):
 
 
 def debug(message):
-   if True or openWBconfig()['debug'] != 0:
+   if True or OpenWBconfig()['debug'] != 0:
       logging.debug(message)
 
 def setCurrent(req):

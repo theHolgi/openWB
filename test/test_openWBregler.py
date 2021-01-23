@@ -1,18 +1,15 @@
 import unittest
 import os
-from openWB.openWBlib import openWBconfig
-from openWB import *
-from openWB.OpenWBCore import OpenWBCore
+from openWB import DataPackage
+from openWB.Modul import *
+from openWB.openWBlib import OpenWBconfig
 from openWB.regler import *
 global core
 
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 class StubCore():
-   config = openWBconfig(mypath + 'test.conf')
-
-   def __init__(self):
-      setCore(self)
+   config = OpenWBconfig(mypath + 'test.conf')
 
    @staticmethod
    def add_module(module: Modul, configprefix: str):
@@ -59,7 +56,7 @@ class StubEVU(DataProvider):
 
 class Test_Regler(unittest.TestCase):
    """Teste Regler Klasse"""
-   core = StubCore()
+   OpenWBCore()._inst = StubCore()
    EVU = StubEVU(1)
    LP = StubLP(1)
 
@@ -146,7 +143,8 @@ class Test_Regler(unittest.TestCase):
 class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
    def setUp(self):
-      self.core = OpenWBCore(mypath + "/test.conf")
+      self.core = OpenWBCore()
+      self.core.setup(mypath + "/test.conf")
       self.core.config["lpmodul1_mode"] = "pv"
       self.core.config["lpmodul1_alwayson"] = False
       self.PV = StubPV(1)
@@ -283,7 +281,8 @@ class TEST_LP1(unittest.TestCase):
 class TEST_LP1_PEAK(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt im Peak-mode"""
    def setUp(self):
-      self.core = OpenWBCore(mypath + "/test.conf")
+      self.core = OpenWBCore()
+      self.core.setup(mypath + "/test.conf")
       self.core.config["lpmodul1_mode"] = "peak"
       self.core.config["lpmodul1_alwayson"] = False
       self.PV = StubPV(1)

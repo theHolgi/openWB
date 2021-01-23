@@ -1,8 +1,9 @@
-from . import Modul, DataPackage, setCore, getCore, OpenWBEvent, EventType
+from openWB import DataPackage
+from openWB.Event import OpenWBEvent, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .ramdiskpublisher import RamdiskPublisher
-from .regler import *
+# from .regler import *
 from datetime import datetime
 
 import logging
@@ -16,26 +17,25 @@ for logger in infologgers:
    logging.getLogger(logger).setLevel(logging.INFO)
 
 
-class OpenWBCore:
+class OpenWBCore(Singleton):
    """openWB core and scheduler"""
-   def __init__(self, configFile: str):
+   def __init__(self):
       self.modules = []
       self.outputmodules = []
-      self.data = openWBValues()
-      self.config = openWBconfig(configFile)
-      self.ramdisk = ramdiskValues()
-      if self.config.get('testmode') is None:
-         self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
-      else:
-         self.publishers = []
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
       self.today = datetime.today()
+      self.publishers = []
 
-      setCore(self)
+   def setup(self, configFile: str) -> None:
+      self.config = OpenWBconfig(configFile)
+      self.data = openWBValues()
+      self.ramdisk = RamdiskValues()
+      if self.config.get('testmode') is None:
+         self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
 
-   def add_module(self, module: Modul, configprefix: str) -> None:
+   def add_module(self, module: "Modul", configprefix: str) -> None:
       module.configprefix = configprefix
       module.setup(self.config)
       self.logger.info("Neues Modul: " + module.name)

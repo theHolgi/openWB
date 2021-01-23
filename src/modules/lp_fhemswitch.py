@@ -1,4 +1,5 @@
-from openWB import *
+from openWB.Modul import *
+from openWB.OpenWBCore import OpenWBCore
 import socket
 
 
@@ -10,6 +11,7 @@ def fhem_send(ip: str, cmd: str) -> None:
    s.close()
 
 ON_DELAY = 5
+
 
 class LP_FHEMSWITCH(Ladepunkt):
    """Ladepunkt als FHEM-Schaltsteckdose"""

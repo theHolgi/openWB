@@ -1,9 +1,8 @@
-from . import Modul, DataPackage
-from dataclasses import dataclass
-from enum import Enum
+from openWB.Modul import Modul, DataPackage
+from openWB.Event import OpenWBEvent
 
 
-class OpenWBCore:
+class OpenWBCore(Singleton):
    def __init__(self, configFile: str)): ...
 
    @staticmethod
@@ -17,4 +16,4 @@ class OpenWBCore:
       """Set the configuration, but also announce this in the system."""
       ...
 
-   def triggerEvent(self, event: Event): ...
+   def triggerEvent(self, event: OpenWBEvent): ...

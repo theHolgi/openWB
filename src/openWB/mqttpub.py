@@ -5,13 +5,13 @@ import sys
 
 import paho.mqtt.client as mqtt
 
-from . import DataPackage
+from openWB import DataPackage
 from typing import Iterator, Tuple, overload
 from datetime import datetime
 from time import time
 import logging
 
-from .OpenWBCore import OpenWBEvent, EventType
+from openWB.Event import OpenWBEvent, EventType
 
 basePath = os.path.dirname(os.path.realpath(__file__)) + '/'
 projectPath = os.path.realpath(os.path.dirname(__file__) + '/../../ramdisk/')
@@ -283,7 +283,7 @@ class Mqttpublisher(object):
                      self.core.setconfig('sofortsoclp%i' % device, val)
                elif msg.topic.endswith('resetEnergyToCharge'):
                   if msg.payload == b'Reset':
-                     self.core.event(Event(EventType.resetEnergy, device))
+                     self.core.event(OpenWBEvent(EventType.resetEnergy, device))
 
          elif msg.topic == "openWB/config/set/pv/stopDelay":
             if val is not None and 0 <= val <= 10000:

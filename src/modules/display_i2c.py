@@ -2,7 +2,7 @@
 #  MBTechWorks.com 2016
 #  Pulse Width Modulation (PWM) demo to cycle brightness of an LED
 
-from openWB import Displaymodul
+from openWB.Modul import Displaymodul
 import Adafruit_PCA9685 as Ada
 import threading
 import time

@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from openWB.openWBlib import openWBconfig, ramdiskValues
+from openWB.openWBlib import OpenWBconfig, RamdiskValues
 
 
 class TestWBlib(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestWBlib(unittest.TestCase):
          os.remove(testfile)
       except OSError:
          pass
-      config = openWBconfig(testfile)
+      config = OpenWBconfig(testfile)
       self.assertIsNone(config['test'])
       config['evseids1'] = 1
       config['evselanips1'] = "10.20.0.180"
@@ -20,17 +20,17 @@ class TestWBlib(unittest.TestCase):
       self.assertEqual(config['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
 
       # Read it another time
-      config2 = openWBconfig(testfile)
+      config2 = OpenWBconfig(testfile)
       self.assertEqual(config2['evseids1'], 1)
       self.assertEqual(config2['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
 
    def test_values(self):
-      values = ramdiskValues('/tmp')
+      values = RamdiskValues('/tmp')
       values['test'] = 'test'
       values['test2'] = 5
       self.assertTrue(os.path.isfile('/tmp/test'))
       self.assertTrue(os.path.isfile('/tmp/test2'))
-      values2 = ramdiskValues('/tmp')
+      values2 = RamdiskValues('/tmp')
       self.assertEqual(values2['test'],  'test', "Retrieve a string value")
       self.assertEqual(values2['test2'], 5)
 

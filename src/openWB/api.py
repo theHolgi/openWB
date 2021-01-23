@@ -1,6 +1,5 @@
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from .OpenWBCore import OpenWBCore
-from . import getCore
 from threading import Thread
 import logging
 

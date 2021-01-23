@@ -1,8 +1,9 @@
+from openWB import DataPackage
 from urllib import request
 import json
 
 from threading import Thread
-from openWB import *
+from openWB.Modul import *
 
 
 class GO_E_SET(Thread):

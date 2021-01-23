@@ -4,6 +4,7 @@
    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
    "version": "0.2.0",
    "configurations": [
+
       {
          "name": "Python: lademodus",
          "type": "python",
@@ -19,6 +20,20 @@
          "program": "${workspaceFolder}/openWBrunner.py",
          "console": "integratedTerminal",
          "args": [ ]            
+      },
+      {
+         "name": "convert",
+         "type": "cppdbg",
+         "request": "launch",         
+         "cwd": "${workspaceRoot}",
+         "program": "${workspaceRoot}/test/convert",
+         "stopAtEntry": false,
+         "launchCompleteCommand": "exec-run",
+         "linux": {
+           "MIMode": "gdb",
+           "miDebuggerPath": "/usr/bin/gdb"
+         },
+         "args": [ "4.09" ]
       }
    ]
 }
