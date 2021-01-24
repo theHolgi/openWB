@@ -10,7 +10,7 @@ class SMASHM(EVUModul):
       self.serial = config.get(self.configprefix + '_serial')
       super().setup(config)
 
-   def loop(self):
+   def run(self):
       ipbind = '0.0.0.0'
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522
@@ -31,41 +31,43 @@ class SMASHM(EVUModul):
          return
       # processing received messages
       while True:
-         emparts = decode_speedwire(sock.recv(608))
-         # Output...
-         # don't know what P,Q and S means:
-         # http://en.wikipedia.org/wiki/AC_power or http://de.wikipedia.org/wiki/Scheinleistung
-         # thd = Total_Harmonic_Distortion http://de.wikipedia.org/wiki/Total_Harmonic_Distortion
-         # cos phi is always positive, no matter what quadrant
-         positive = [1] * 4
-         if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
-            # Special treatment for positive / negative power
-            watt = int(emparts['pconsume'])       # W
-            if watt < 5:
-               watt = -int(emparts['psupply'])
-               positive[0] = -1
-            data = {'wattbezug': watt,
-                    'einspeisungkwh': emparts['psupplycounter'],  # kWh
-                    'bezugkwh':       emparts['pconsumecounter'] # kWh
-                    }
-            for phase in [1, 2, 3]:
-               power = int(emparts['p%iconsume' % phase])
-               if power < 5:
-                  power = -int(emparts['p%isupply' % phase])
-                  positive[phase] = -1
-               data['bezugw%i' % phase] = power
-            for key, pasemap in phasemapping.items():
-               for phase in range(1, 4):
-                  if pasemap['from'] % phase in emparts:
-                     value = emparts[pasemap['from'] % phase]
-                     if pasemap.get('sign'):
-                        value *= positive[phase]
-                     data[key % phase] = value
-            for datakey, empartskey in mapping.items():
-               if empartskey in emparts:
-                  data[datakey] = emparts[empartskey]
-            self.send(data)
-            break
+#        try:
+            emparts = decode_speedwire(sock.recv(608))
+            # Output...
+            # don't know what P,Q and S means:
+            # http://en.wikipedia.org/wiki/AC_power or http://de.wikipedia.org/wiki/Scheinleistung
+            # thd = Total_Harmonic_Distortion http://de.wikipedia.org/wiki/Total_Harmonic_Distortion
+            # cos phi is always positive, no matter what quadrant
+            positive = [1] * 4
+            if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
+               # Special treatment for positive / negative power
+               watt = int(emparts['pconsume'])       # W
+               if watt < 5:
+                  watt = -int(emparts['psupply'])
+                  positive[0] = -1
+               data = {'wattbezug': watt,
+                       'einspeisungkwh': emparts['psupplycounter'],  # kWh
+                       'bezugkwh':       emparts['pconsumecounter'] # kWh
+                       }
+               for phase in [1, 2, 3]:
+                  power = int(emparts['p%iconsume' % phase])
+                  if power < 5:
+                     power = -int(emparts['p%isupply' % phase])
+                     positive[phase] = -1
+                  data['bezugw%i' % phase] = power
+               for key, pasemap in phasemapping.items():
+                  for phase in range(1, 4):
+                     if pasemap['from'] % phase in emparts:
+                        value = emparts[pasemap['from'] % phase]
+                        if pasemap.get('sign'):
+                           value *= positive[phase]
+                        data[key % phase] = value
+               for datakey, empartskey in mapping.items():
+                  if empartskey in emparts:
+                     data[datakey] = emparts[empartskey]
+               self.send(data)
+#         except Exception as e:
+#            self.logger.error("Exception:", e)
 
 
 def getClass():

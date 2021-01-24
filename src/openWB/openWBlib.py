@@ -122,6 +122,9 @@ class openWBValues(dict):
          self.maxevu = max(data['evua' + str(phase)] for phase in range(1, 4))
          self.lowevu = min(data['evua' + str(phase)] for phase in range(1, 4))
          self.schieflast = self.maxevu - self.lowevu
+      if 'speicherleistung' in data or 'wattbezug' in data:
+         self.uberschuss = self.get('speicherleistung') - self.wattbezug
+         self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
 
    def derive_values(self):
       """Calculate derived values"""
@@ -133,8 +136,6 @@ class openWBValues(dict):
                break
             sumVal += int(value)
          self[key] = sumVal
-      self.uberschuss = self.get('speicherleistung') - self.wattbezug
-      self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
 
 
 class ramdiskValues:

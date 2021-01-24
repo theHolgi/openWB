@@ -78,8 +78,6 @@ class OpenWBCore:
          ####### Now, all modules have run.
          self.data.derive_values()
          self.logger.debug("Values: " + str(self.data))
-         for module in self.outputmodules:
-            module.trigger.set()
          for gruppe in self.regelkreise.values():
             gruppe.controlcycle(self.data)
          self.logdebug()
@@ -117,6 +115,8 @@ class OpenWBCore:
       self.data.update(package)
       # Register which module has sent data
       package.source.finished.set()
+      for module in self.outputmodules:
+         module.trigger.set()
       self.logger.debug(f'Daten von {package.source.name }: {package}')
 
    def setconfig(self, key:str, value) -> None:
