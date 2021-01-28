@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from typing import List
 
 from openWB import Speichermodul
 import struct
@@ -22,11 +23,21 @@ class SUNNYISLAND(Speichermodul):
          self.bms = None
       super().setup()
 
-   def _readregister(self, reg: int) -> int:
-      resp = self.client.read_holding_registers(reg, 2, unit=3)
+   @staticmethod
+   def decode_s32(value: List[int]) -> int:
+      if value[0] == 32768 and value[1] == 0:
+          return 0
+      # To enforce signed decoding, there seems to be no better way.
+      return struct.unpack('>i', bytes.fromhex(format(value[0], '04x') + format(value[1], '04x')))[0]
 
-      all = bytes.fromhex(format(resp.registers[0], '04x') + format(resp.registers[1], '04x'))
-      return struct.unpack('>i', all)[0]
+   @staticmethod
+   def decode_u32(value: List[int]) -> int:
+      if value[0] == 32768 and value[1] == 0:
+          return 0
+      return int(format(value[0], '04x') + format(value[1], '04x'), 16)
+
+   def _readregister(self, reg: int, count=2) -> List[int]:
+      return self.client.read_holding_registers(reg, count, unit=3).registers
 
    def loop(self):
       try:
@@ -35,13 +46,14 @@ class SUNNYISLAND(Speichermodul):
          # 303 - Aus
          # 307 - Ok
          # 455 - Warnung
+         resp = self._readregister(30595, 4)
          data = {
-           'speicherikwh': self._readregister(30595) / 1000,    # Aufgenommen [Wh]
-           'speicherekwh': self._readregister(30597) / 1000     # Abgegeben   [Wh]
+           'speicherikwh': self.decode_u32(resp[0:2]) / 1000,    # Aufgenommen [Wh]
+           'speicherekwh': self.decode_u32(resp[2:4]) / 1000     # Abgegeben   [Wh]
          }
          if self.bms is None:
-            data['speichersoc'] = self._readregister(30845),  # SOC [%],
-            data['speicherleistung'] = -self._readregister(30775),  # Leistung [W] (>0: Laden)
+            data['speichersoc'] = self.decode_u32(self._readregister(30845))        # SOC [%],
+            data['speicherleistung'] = -self.decode_s32(self._readregister(30775))  # Leistung [W] (>0: Laden)
          self.send(data)
       except AttributeError:
          # modbus client seems to return (!) an ModbusIOExcption which is then tried to examine (resp.registers[])

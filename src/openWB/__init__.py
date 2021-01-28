@@ -124,9 +124,19 @@ class DataProvider(Modul):
       """
       Trigger Datenerfassung. Als Bestätigung muss(!) ein Aufruf von self.core.sendData erfolgen.
       Üblicherweise durch Aufruf von "send" einer abgeleiteten Klasse.
-      Ein sendData() Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast
+      Ein sendData() Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast;
+      in diesem Fall wird die Klasse lieber die Methode run() implementieren.
       """
       ...
+
+   def scheduling(self) -> int:
+      """
+      Liefert zurück, wie oft der Provider geschedult werden möchte (in s).
+      Übliche Werte:
+      0 - gar nicht (liefert spontan)
+      10
+      """
+
 
 
 class EVUModul(DataProvider):
