@@ -8,8 +8,9 @@ class ModbusWR:
     Read values from SMA inverter via Modbus
     In order to work, Modbus must be enabled.
     """
-    def __init__(self, ip):
+    def __init__(self, ip, instances: int):
         self.host = ip
+        self.instances = instances
 
     def read(self):
         try:

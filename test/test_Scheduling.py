@@ -36,7 +36,7 @@ class TestScheduling(unittest.TestCase):
          '/some/path/subpath/b': 3,
          '/another/path/c': 4
       }))
-      Scheduler().exit = True
+      Scheduler.simulated = True
       Scheduler().dataRunner.join()
       self.assertEqual(1, len(self.listener1.data), "Listener 1 has received one package")
       self.assertDictEqual({
@@ -57,7 +57,7 @@ class TestScheduling(unittest.TestCase):
          '/some/path/subpath/b': 3,
          '/another/path/c': 4
       }))
-      Scheduler().exit = True
+      Scheduler.simulated = True
       Scheduler().dataRunner.join()
       self.assertEqual(1, len(self.listener1.data), "Listener 1 has received one package")
       self.assertEqual(1, len(self.listener2.data), "Listener 2 has received one package")

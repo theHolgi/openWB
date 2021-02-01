@@ -1,0 +1,4 @@
+
+class FakeRamdisk(dict):
+   pass
+

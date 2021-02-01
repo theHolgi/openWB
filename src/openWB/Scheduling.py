@@ -1,23 +1,24 @@
 import logging
 import queue
 from time import sleep
-from typing import Callable, Tuple, List
 
 from openWB import DataPackage, Singleton
 from fnmatch import fnmatch
 from itertools import groupby
 from threading import Thread
 
+
 class Scheduler(Singleton):
-   def __init__(self):
+   def __init__(self, simulated: bool = False):
       if "dataListener" not in vars(self):
          self.dataListener = {}   # Listeners are a mapping of pattern: [listeners]
          self.timeTable = {}      # Timetable is a mapping of  listener: time
          self.dataQueue = queue.Queue()
-         self.dataRunner = Thread(target=self._dataQueue, daemon=True)
-         self.dataRunner.start()
+         if not simulated:
+            self.dataRunner = Thread(target=self._dataQueue, daemon=True)
+            self.dataRunner.start()
          self.logger = logging.getLogger()
-         self.exit = False           # Token for testing
+         Scheduler.simulated = simulated           # Token for testing
 
    def registerData(self, pattern: str, listener) -> None:
       """
@@ -59,7 +60,7 @@ class Scheduler(Singleton):
             for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: id(tuple[0])), key=lambda tuple: tuple[0]):
                data = dict(tuple[1:] for tuple in tuples)
                recipient.dataUpdate(data)
-         if self.exit:
+         if self.simulated:
             return
 
 
@@ -81,8 +82,17 @@ class Scheduler(Singleton):
             timetable = [(d-delay, task) for d, task in timetable]
          # re-schedule the task
          reschedule = self.timeTable[next_task]
-         if simulated:  # In simulation, do not rescheduling beyond the end of list. This makes the loop stop after the slowest task has been run once.
+         if simulated:  # In simulation, do not reschedule beyond the end of list. This makes the loop stop after the slowest task has been run once.
             last = timetable[-1][0]
-            if last < reschedule: continue
+            if last < reschedule:
+               continue
          timetable.append((reschedule, next_task))
          timetable.sort(key=delaysort)
+
+   def test_callAll(self) -> None:
+      """
+      Call all scheduled tasks (for testing)
+      """
+      assert self.simulated, "call is only allowed in simulation mode."
+      for task in self.timeTable.keys():
+         task.loop()

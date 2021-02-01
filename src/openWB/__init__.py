@@ -1,3 +1,5 @@
+from typing import Mapping, Any
+
 
 class Singleton(object):
    """
@@ -15,6 +17,6 @@ class Singleton(object):
 
 class DataPackage(dict):
    """A package of Data points"""
-   def __init__(self, source: "Modul", payload: dict = {}):
+   def __init__(self, source: "Modul", payload: Mapping[str, Any] = {}):
       self.source = source
       self.update(payload)

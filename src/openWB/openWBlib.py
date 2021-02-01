@@ -34,7 +34,7 @@ class OpenWBconfig(Singleton):
    Represents openwb.conf
    behaves like a dictionary (non-existent settings return None)
    """
-   def __init__(self, configfile: str = basepath + 'openwb.conf'):
+   def setup(self, configfile: str = basepath + 'openwb.conf'):
       self.settings = {}
       self.configfile = configfile
       try:
@@ -96,17 +96,10 @@ class openWBValues(dict):
       return cls._inst
 
    def __init__(self):
-      self.sumvalues = set(['pvwatt', 'pvkwh', 'daily_pvkwh', 'monthly_pvkwh',
-                            'llaktuell', 'llkwh', 'daily_llkwh', 'ladestatus'])
+      self.sumvalues = set(['llaktuell', 'llkwh', 'daily_llkwh', 'ladestatus'])
 
-   def update(self, data: "DataPackage"):
-      for key, value in data.items():
-         if value is not None:
-            if hasattr(data.source, 'multiinstance') and data.source.multiinstance:
-               self[key + str(data.source.id)] = value
-            else:
-               self[key] = value
-      self.fast_derive_values(data)
+   def update(self, data: "DataPackage") -> None:
+      super().update(data)
 
    def __getattr__(self, key):
       return self[key] if key in self else 0

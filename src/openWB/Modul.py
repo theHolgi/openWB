@@ -1,5 +1,8 @@
+import importlib
+
+from openWB import DataPackage
 from openWB.openWBlib import RamdiskValues, OpenWBconfig
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 
 import logging
 from threading import Thread, Event
@@ -80,12 +83,13 @@ class Modul(Thread):
          return value - self.offsets[offsetname]
       else:
          ramdisk = RamdiskValues()
-         offset = ramdisk[f'{self.name}_{offsetname}']
+         offset = ramdisk.get(f'{self.name}_{offsetname}')
          if offset is not None:
             self.offsets[offsetname] = offset
          else:
             self.logger.info(f'Start-up initialize {prefix} offset {name} to {value}')
             ramdisk[f'{self.name}_{offsetname}'] = value
+         return 0
 
 class DataProvider(Modul):
    """
@@ -280,16 +284,16 @@ class PVModul(DataProvider):
    MUSS:
    - pvwatt - [W] Momentanleistung
    KANN:
-   - pvkwh  - [kWh] gesamte Erzeugungsleistung
+   - kwh    - [kWh] gesamte Erzeugungsleistung
    """
    multiinstance = True
    type = "wr"
 
    def send(self, data: dict) -> None:
-      if "pvkwh" in data:
-         data['daily_pvkwh'] = self.offsetted('daily', 'kwh', data['pvkwh'])
-         data['monthly_pvkwh'] = self.offsetted('monthly', 'kwh', data['pvkwh'])
-      OpenWBCore().sendData(DataPackage(self, data))
+      if "kwh" in data:
+         data['DailyKwh']  = self.offsetted('daily', 'kwh', data['kwh'])
+         data['MonthlyKwh'] = self.offsetted('monthly', 'kwh', data['kwh'])
+      self.master.send(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetDaily:
@@ -328,3 +332,14 @@ def power2amp(power:int, phasen: int) -> int:
 def amp2power(amp: int, phasen: int) -> int:
    """Konvertiere Strom zu Leistung"""
    return amp * 230 * phasen
+
+def for_all_modules(prefix, callback: Callable[[Modul], None]):
+   """Suche alle Module mit <prefix> und rufe für die erzeugte <Modul>-Instanz den callback auf"""
+   instance = 1
+   while True:
+      modulename = OpenWBconfig()[prefix + 'modul' + str(instance)]
+      if modulename is None:
+         break
+      module = importlib.import_module(f'modules.{prefix}_{modulename}')
+      callback(module.getClass()(instance))
+      instance += 1
