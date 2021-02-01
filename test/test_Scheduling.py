@@ -1,7 +1,10 @@
+import logging
 import unittest
 
 from openWB import DataPackage
 from openWB.Scheduling import Scheduler
+
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 class Listener:
@@ -20,16 +23,21 @@ class TestScheduling(unittest.TestCase):
    def setUp(self):
       self.listener1 = Listener()
       self.listener2 = Listener()
+      if '_inst' in vars(Scheduler):   # Delete the Scheduler singleton
+         del Scheduler._inst
 
    def test_dataUpdate_1listener(self):
       Scheduler().registerData('/some/path/*', self.listener1)
       Scheduler().registerData('/another/path/*', self.listener1)
       Scheduler().dataUpdate(DataPackage(Listener, {
          '/some/other/path': 1,
-         '/some/path/a': 2,
+         '/some/path/a': 2}))
+      Scheduler().dataUpdate(DataPackage(Listener, {
          '/some/path/subpath/b': 3,
          '/another/path/c': 4
       }))
+      Scheduler().exit = True
+      Scheduler().dataRunner.join()
       self.assertEqual(1, len(self.listener1.data), "Listener 1 has received one package")
       self.assertDictEqual({
          '/some/path/a': 2,
@@ -44,10 +52,13 @@ class TestScheduling(unittest.TestCase):
       Scheduler().registerData('/another/path/*', self.listener2)
       Scheduler().dataUpdate(DataPackage(Listener, {
          '/some/other/path': 1,
-         '/some/path/a': 2,
+         '/some/path/a': 2}))
+      Scheduler().dataUpdate(DataPackage(Listener, {
          '/some/path/subpath/b': 3,
          '/another/path/c': 4
       }))
+      Scheduler().exit = True
+      Scheduler().dataRunner.join()
       self.assertEqual(1, len(self.listener1.data), "Listener 1 has received one package")
       self.assertEqual(1, len(self.listener2.data), "Listener 2 has received one package")
       self.assertDictEqual({

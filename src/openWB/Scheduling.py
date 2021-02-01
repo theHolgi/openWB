@@ -1,16 +1,23 @@
+import logging
+import queue
 from time import sleep
 from typing import Callable, Tuple, List
 
 from openWB import DataPackage, Singleton
 from fnmatch import fnmatch
 from itertools import groupby
+from threading import Thread
 
 class Scheduler(Singleton):
    def __init__(self):
       if "dataListener" not in vars(self):
          self.dataListener = {}   # Listeners are a mapping of pattern: [listeners]
          self.timeTable = {}      # Timetable is a mapping of  listener: time
-         self.dataQueue = []
+         self.dataQueue = queue.Queue()
+         self.dataRunner = Thread(target=self._dataQueue, daemon=True)
+         self.dataRunner.start()
+         self.logger = logging.getLogger()
+         self.exit = False           # Token for testing
 
    def registerData(self, pattern: str, listener) -> None:
       """
@@ -36,12 +43,24 @@ class Scheduler(Singleton):
       :param data: data Package
       :return:
       """
+      self.dataQueue.put(data)
+
+   def _dataQueue(self):
       # {'path/1': val, 'path/2': val2 }
       # -> [ (class1, 'path11', val1), ( class2, 'path2', val2)
-      recipients = [(l,k,v) for k, v in data.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
-      for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: id(tuple[0])), key=lambda tuple: tuple[0]):
-         data = dict(tuple[1:] for tuple in tuples)
-         recipient.dataUpdate(data)
+      while True:
+         sleep(1)
+         data = {}
+         while not self.dataQueue.empty():    # empty the queue
+            data.update(self.dataQueue.get())
+         self.logger.debug(f"Collected data: {data}")
+         if data:
+            recipients = [(l,k,v) for k, v in data.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
+            for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: id(tuple[0])), key=lambda tuple: tuple[0]):
+               data = dict(tuple[1:] for tuple in tuples)
+               recipient.dataUpdate(data)
+         if self.exit:
+            return
 
 
    def run(self, simulated: bool = False) -> None:
