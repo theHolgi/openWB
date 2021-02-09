@@ -30,18 +30,9 @@ class PVModule:
       """
       package = DataPackage(data.source, dict(map(lambda item: ('pv/%i/%s' % (data.source.id, item[0]), item[1]), data.items())))
       self.data.update(package)
-      power = 0
-      generated = 0
-      dailykwh = 0
-      monthlykwh = 0
-      for i in range(1, len(self.modules) + 1):
-         power += self.data.get('pv/%i/W' % i, 0)
-         generated += self.data.get('pv/%i/kwh' % i, 0)
-         dailykwh  += self.data.get('pv/%i/DailyKwh' % i, 0)
-         monthlykwh += self.data.get('pv/%i/MonthlyKwh' % i, 0)
-      self.data.update(DataPackage(self, {
-         'pv/W': power,
-         'pv/WhCounter': generated,
-         'pv/DailyYieldKwh': dailykwh,
-         'pv/MonthlyYieldKwh': monthlykwh
-      }))
+      package = DataPackage(self, {})
+      package['pv/W'] = self.data.sum('pv/%i/W')
+      package['pv/WhCounter'] = self.data.sum('pv/%i/kwh')
+      package['pv/DailyYieldKwh'] = self.data.sum('pv/%i/DailyKwh')
+      package['pv/MonthlyYieldKwh'] = self.data.sum('pv/%i/MonthlyKwh')
+      self.data.update(package)

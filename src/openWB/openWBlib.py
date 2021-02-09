@@ -83,7 +83,7 @@ class OpenWBconfig(Singleton):
       return self.settings.get(key, default)
 
 
-class openWBValues(dict):
+class openWBValues(object):
    """
    Represents openWB values dictionary
    behaves like a dictionary
@@ -92,38 +92,44 @@ class openWBValues(dict):
       """ Create a new instance
       """
       if '_inst' not in vars(cls):
-         cls._inst = dict()
+         cls._inst = object.__new__(cls)
+         cls._inst.val = dict()
       return cls._inst
 
    def __init__(self):
       self.sumvalues = set(['llaktuell', 'llkwh', 'daily_llkwh', 'ladestatus'])
 
    def update(self, data: "DataPackage") -> None:
-      super().update(data)
+      self.val.update(data)
 
-   def __getattr__(self, key):
-      return self[key] if key in self else 0
+   def __getitem__(self, key):
+      return self.val[key] if key in self.val else 0
 
-   def __setattr__(self, key, value):
-      self[key] = value
+   def __setitem__(self, key, value):
+      self.val[key] = value
 
-   def get(self, key, id: Optional[int] = None, default=0) -> Any:
+   def get(self, key, default: Any = 0, id: Optional[int] = None, ) -> Any:
       """Returns the value or the given default, if not available"""
       if id is not None:
          key = key+str(id)
-      return self[key] if key in self else default
+      return self.val[key] if key in self.val else default
 
    def get_all_phased(self, basename: str) -> Iterator:
       """Iterates basename<i> over phase i=1..3"""
-      return (self[basename + str(phase)] for phase in range(1, 4))
+      return (self.val.get(basename + str(phase)) for phase in range(1, 4))
 
-   def fast_derive_values(self, data: "DataPackage"):
-      """Immediately derive values from a new data package"""
-      if 'evua1' in data:
-         self.maxevu = max(data['evua' + str(phase)] for phase in range(1, 4))
-         self.lowevu = min(data['evua' + str(phase)] for phase in range(1, 4))
-         self.schieflast = self.maxevu - self.lowevu
+   def sum(self, pattern: str) -> int:
+      """Summiere Daten aus pattern auf"""
+      summe = 0
+      i = 1
+      while True:
+         name = pattern % i
+         if name not in self.val:
+            return summe
+         summe += self.get(name)
+         i += 1
 
+   # TODO: deprecated
    def derive_values(self):
       """Calculate derived values"""
       for key in self.sumvalues:

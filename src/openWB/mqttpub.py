@@ -31,27 +31,9 @@ class Mqttpublisher(object):
       "lp/%n/energyConsumptionPer100km": "durchslp%n"
    }
    datamapping = {
-      # EVU
-      "evu/W": "wattbezug",
-      "evu/WhExported": "einspeisungkwh",
-      "evu/WhImported": "bezugkwh",
-      "evu/APhase%p": "bezuga%p",
-      "evu/VPhase%p": "evuv%p",
-      "evu/WPhase%p": "bezuga%p",
-      "evu/PfPhase%p": "evupf%p",
-      "evu/ASchieflast": "schieflast",
-      "evu/Hz": "evuhz",
       "global/WHouseConsumption": "hausverbrauch",
 
-      # PV
-      "pv/W": "pvwatt",
-      "pv/WhCounter": "pvkwh",
-
       # Speicher
-      "housebattery/W": "speicherleistung",
-      "housebattery/DailyYieldImportKwh": "speicherikwh",
-      "housebattery/DailyYieldExportKwh": "speicherekwh",
-      "housebattery/%Soc": "speichersoc",
       "housebattery/boolHouseBatteryConfigured": "speichervorhanden",
 
       # LP
@@ -75,13 +57,6 @@ class Mqttpublisher(object):
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
       "config/get/sofort/lp/%n/current": "lpsofortll%n",
-
-      # Daily Daten
-      "evu/DailyYieldImportKwh": "daily_bezugkwh",
-      "evu/DailyYieldExportKwh": "daily_einspeisungkwh",
-      "pv/DailyYieldKwh": "daily_pvkwh",
-      "housebattery/DailyYieldImportKwh": "daily_sikwh",
-      "housebattery/DailyYieldExportKwh": "daily_sekwh",
 
       "global/DailyYieldHausverbrauchKwh": "xxx",  # Hausverbrauch daily
       "global/DailyYieldAllChargePointsKwh": "daily_llkwh",  # Lademenge daily

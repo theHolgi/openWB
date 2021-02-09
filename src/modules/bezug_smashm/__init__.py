@@ -16,10 +16,10 @@ class SMASHM(EVUModul):
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522
 
-      mapping = {'evuhz': 'frequency'}
-      phasemapping = {'evua%i': {'from': 'i%i', 'sign': True},
-                      'evuv%i': {'from': 'u%i'},
-                      'evupf%i': {'from': 'cosphi%i'}
+      mapping = {'Hz': 'frequency'}
+      phasemapping = {'A%i': {'from': 'i%i', 'sign': True},
+                      'V%i': {'from': 'u%i'},
+                      'Pf%i': {'from': 'cosphi%i'}
                       }
       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
       sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -45,16 +45,16 @@ class SMASHM(EVUModul):
             if watt < 5:
                watt = -int(emparts['psupply'])
                positive[0] = -1
-            data = {'wattbezug': watt,
-                    'einspeisungkwh': emparts['psupplycounter'],  # kWh
-                    'bezugkwh':       emparts['pconsumecounter'] # kWh
+            data = {'W': watt,
+                    'kwhOut': emparts['psupplycounter'],  # kWh
+                    'kwhIn':  emparts['pconsumecounter'] # kWh
                     }
             for phase in [1, 2, 3]:
                power = int(emparts['p%iconsume' % phase])
                if power < 5:
                   power = -int(emparts['p%isupply' % phase])
                   positive[phase] = -1
-               data['bezugw%i' % phase] = power
+               data['W%i' % phase] = power
             for key, pasemap in phasemapping.items():
                for phase in range(1, 4):
                   if pasemap['from'] % phase in emparts:

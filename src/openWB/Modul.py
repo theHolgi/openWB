@@ -108,28 +108,17 @@ class DataProvider(Modul):
 class EVUModul(DataProvider):
    """
    Abstrakt Klasse einer EVU-Messung.
-   Ein EVU-Modul sendet folgende Datenpunkte:
-   MUSS:
-   - wattbezug - [W] Leistung am EVU-Übergabepunkt (>0: Bezug)
-   KANN:
-   - evuv1 ... evuv3 - [V] Spannung
-   - evua1 ... evua3 - [A] Strom
-   - evupf1 ... evupf3 - [%] Leistungsfaktor
-   - bezugw1 ... bezugw3 - [W] Leistung an Phase n
-   - evuhz           - [Hz] Netzfrequenz
-   - einspeisungkwh  - [kWh] Gesamte eingespeiste Energie
-   - bezugkwh        - [kWh] Gesamte bezogene Energie
    """
 
-   def send(self, data) -> None:
-      if 'bezugkwh' in data:
-         data['daily_bezugkwh'] = self.offsetted('daily', 'in', data['bezugkwh'])
-         data['monthly_bezugkwh'] = self.offsetted('monthly', 'in', data['bezugkwh'])
-      if 'einspeisungkwh' in data:
-         data['daily_einspeisungkwh'] = self.offsetted('daily', 'out', data['einspeisungkwh'])
-         data['monthly_einspeisungkwh'] = self.offsetted('monthly', 'out', data['einspeisungkwh'])
+   def send(self, data: dict) -> None:
+      if 'kwhIn' in data:
+         data['daily_kwhIn'] = self.offsetted('daily', 'in', data['kwhIn'])
+         data['monthly_kwhIn'] = self.offsetted('monthly', 'in', data['kwhIn'])
+      if 'kwhOut' in data:
+         data['daily_kwhOut'] = self.offsetted('daily', 'out', data['kwhOut'])
+         data['monthly_kwhOut'] = self.offsetted('monthly', 'out', data['kwhOut'])
 
-      OpenWBCore().sendData(DataPackage(self, data))
+      self.master.send(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetDaily:
@@ -143,27 +132,19 @@ class EVUModul(DataProvider):
 class Speichermodul(DataProvider):
    """
    Abstrakte Klasse eines Speichers.
-   Ein Speichermodul sendet folgende Datenpunkte:
-   MUSS:
-   - speicherleistung - [W] Ladeleistung (>0: Laden)
-   SOLLTE:
-   - speichersoc      - [%] State of charge
-   KANN:
-   - speicherikwh     - [kWh] gesamte Ladeleistung
-   - speicherekwh     - [kWh] gesamte Entladeleistung
    """
    multiinstance = True
    def setup(self) -> None:
       pass
 
    def send(self, data: dict) -> None:
-      if "speicherikwh" in data:
-         data["daily_sikwh"] = self.offsetted('daily', 'in', data['speicherikwh'])
-         data["monthly_sikwh"] = self.offsetted('monthly', 'in', data['speicherikwh'])
-      if "speicherekwh" in data:
-         data["daily_sekwh"] = self.offsetted('daily', 'out', data['speicherekwh'])
-         data["monthly_sekwh"] = self.offsetted('monthly', 'out', data['speicherekwh'])
-      OpenWBCore().sendData(DataPackage(self, data))
+      if "kwhIn" in data:
+         data["dailykwhIn"]   = self.offsetted('daily',   'in', data['kwhIn'])
+         data["monthlykwhIn"] = self.offsetted('monthly', 'in', data['kwhIn'])
+      if "kwhOut" in data:
+         data["dailykwhOut"]   = self.offsetted('daily',   'out', data['kwhOut'])
+         data["monthlykwhOut"] = self.offsetted('monthly', 'out', data['kwhOut'])
+      self.master.send(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetNoon:
@@ -280,11 +261,6 @@ class Ladepunkt(DataProvider):
 class PVModul(DataProvider):
    """
    Abstrakte Klasse eines Wechselrichters.
-   Ein Wechselrichter sendet folgende Datenpunkte:
-   MUSS:
-   - pvwatt - [W] Momentanleistung
-   KANN:
-   - kwh    - [kWh] gesamte Erzeugungsleistung
    """
    multiinstance = True
    type = "wr"
@@ -343,3 +319,10 @@ def for_all_modules(prefix, callback: Callable[[Modul], None]):
       module = importlib.import_module(f'modules.{prefix}_{modulename}')
       callback(module.getClass()(instance))
       instance += 1
+
+def for_module(prefix, callback: Callable[[Modul], None]):
+   """Suche das Modul mit <prefix> und rufe für die erzeugte <Modul>-Instanz den callback auf"""
+   modulename = OpenWBconfig()[prefix + 'modul']
+   if modulename is not None:
+      module = importlib.import_module(f'modules.{prefix}_{modulename}')
+      callback(module.getClass()(1))

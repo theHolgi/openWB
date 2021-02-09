@@ -1,6 +1,6 @@
 import unittest
 
-from openWB.PVModule import PVModule
+from plugins import PVModule
 from openWB.Scheduling import Scheduler
 from openWB.openWBlib import *
 
@@ -13,7 +13,7 @@ class Test_PVModule(unittest.TestCase):
       Scheduler(simulated=True)
 
    def test_data(self):
-      OpenWBconfig().setup('test.conf')
+      OpenWBconfig().setup('resources/test.conf')
       module = PVModule()
       self.assertEqual(2, len(module.modules))
 
