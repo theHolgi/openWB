@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import importlib
 
 from openWB import DataPackage
@@ -8,7 +10,7 @@ import logging
 from threading import Thread, Event
 from numbers import Number
 from collections import namedtuple
-from openWB.OpenWBCore import OpenWBCore
+from openWB.openWBlib import openWBValues
 from openWB.Event import *
 
 
@@ -44,7 +46,6 @@ class Modul(Thread):
       self.logger = logging.getLogger(self.name)
       self.configprefix = None  # Provided during setup
       self.offsets = {}   # Place for storing offsets for daily data
-      self.core = OpenWBCore()
 
    def setup(self, config):
       """Setup the module (another possibility than overriding the constructor)"""
@@ -71,8 +72,9 @@ class Modul(Thread):
          offsetname = f'{prefix}_{name}'
          self.offsets[offsetname] = self.offsets[name]
          ramdisk = RamdiskValues()
+         today = datetime.today()
          ramdisk[f'{self.name}_{offsetname}'] = self.offsets[name]
-         ramdisk[f'{OpenWBCore().today.strftime("%D")}.{self.name}_{offsetname}']
+         ramdisk[f'{today.strftime("%D")}.{self.name}_{offsetname}']
          self.logger.info(f'Setting {prefix} offset {name} to {self.offsets[name]}')
 
    def offsetted(self, prefix, name, value) -> Optional[Number]:
@@ -196,7 +198,7 @@ class Ladepunkt(DataProvider):
       if self.is_charging:
          phasen = 0
          for p in range(1, 4):
-            if OpenWBCore().data.get('lla%i' % p, self.id) > 4:
+            if openWBValues().get('lla%i' % p, self.id) > 4:
                phasen += 1
          if phasen != 0:
             self.phasen = phasen
@@ -209,7 +211,8 @@ class Ladepunkt(DataProvider):
    @property
    def is_blocked(self) -> bool:
       """Fahrzeug folgt dem Sollstrom nicht"""
-      return OpenWBCore().data.get('lla1', self.id) <= OpenWBCore().data.get('llsoll', self.id) - 1
+      data = openWBValues()
+      return data.get('lla1', self.id) <= data.get('llsoll', self.id) - 1
 
    @property
    def minP(self) -> int:
@@ -248,7 +251,7 @@ class Ladepunkt(DataProvider):
       self.charging = charging
       data["daily_llkwh"] = self.offsetted('daily', 'kwh', data['llkwh'])
 
-      OpenWBCore().sendData(DataPackage(self, data))
+      # OpenWBCore().sendData(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetEnergy and event.info == self.id:

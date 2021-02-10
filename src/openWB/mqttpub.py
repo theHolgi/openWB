@@ -12,6 +12,7 @@ from time import time
 import logging
 
 from openWB.Event import OpenWBEvent, EventType
+from openWB.Scheduling import Scheduler
 
 basePath = os.path.dirname(os.path.realpath(__file__)) + '/'
 projectPath = os.path.realpath(os.path.dirname(__file__) + '/../../ramdisk/')
@@ -25,12 +26,23 @@ def read_ramdisk(fileName: str) -> str:
    with open(projectPath + '/' + fileName) as f:
       return f.read()
 
+def _loop(key1: str, key2: str) -> Iterator[Tuple[str, str]]:
+   if key1.find('%n') >= 0:  # Instance
+      for n in range(1, 9):   # Mqttpublisher.num_lps + 1
+         yield key1.replace('%n', str(n)), key2.replace('%n', str(n))
+   elif key1.find('%p') >= 0:  # Phase
+      for phase in range(1, 4):
+         yield key1.replace('%p', str(phase)), key2.replace('%p', str(phase))
+   else:
+      yield key1, key2
+
+
 class Mqttpublisher(object):
    configmapping = {
       "lp/%n/strChargePointName": "lp%nname",
       "lp/%n/energyConsumptionPer100km": "durchslp%n"
    }
-   datamapping = {
+   datamapping = {   # UNUSED
       "global/WHouseConsumption": "hausverbrauch",
 
       # Speicher
@@ -62,9 +74,9 @@ class Mqttpublisher(object):
       "global/DailyYieldAllChargePointsKwh": "daily_llkwh",  # Lademenge daily
    }
    # Fields for live chart
-   all_live_fields = ("-wattbezug", "ladeleistung", "-pvwatt", #3
+   all_live_fields = ("-evu/W", "ladeleistung", "pv/W", #3
                       "llaktuell1", "llaktuell2", "llaktuell", #6
-                      "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch", #11
+                      "housebattery/W", "housebattery/%Soc", "soc", "soc1", "hausverbrauch", #11
                       "verbraucher1_watt", "verbraucher2_watt", #13
                       "llaktuell3", "llaktuell4", "llaktuell5", #16
                       "llaktuell6", "llaktuell7", "llaktuell8", # 19
@@ -74,9 +86,9 @@ class Mqttpublisher(object):
 
    # Fields for long-time graph
 
-   all_fields = ("-wattbezug", "ladeleistung", "-pvwatt",  #3
-                 "llaktuell1", "llaktuell2", "llaktuell3", "llaktuell4", "llaktuell5", "bezugw1", "bezugw2", "bezugw3",  #11
-                 "speicherleistung", "speichersoc", "soc", "soc1", "hausverbrauch",  #16
+   all_fields = ("-evu/W", "ladeleistung", "pv/W",  #3
+                 "llaktuell1", "llaktuell2", "llaktuell3", "llaktuell4", "llaktuell5", "evu/WPhase1", "evu/WPhase2", "evu/WPhase3",  #11
+                 "housebattery/W", "housebattery/%Soc", "soc", "soc1", "hausverbrauch",  #16
                  "verbraucher1_watt", "verbraucher2_watt"
                 )
    retain = True
@@ -91,9 +103,7 @@ class Mqttpublisher(object):
       self.core = core
       self.name = "MQTT"
       self.logger = logging.getLogger('MQTT')
-      self.lastdata = {}
-      self._init_data()
-      self.client = mqtt.Client("openWB-python-bulkpublisher-" + str(os.getpid()))
+      self.client = mqtt.Client("openWB-bulkpublisher-" + str(os.getpid()))
       self.client.on_message = on_message
       self.client.connect(hostname)
       self.client.loop_start()
@@ -102,65 +112,19 @@ class Mqttpublisher(object):
 
    def setup(self):
       """Subscribe to set topics"""
-      self.logger.info('Subscribing.')
+      self.logger.debug('Subscribing.')
       self.client.subscribe("openWB/set/#", 2)
       self.client.subscribe("openWB/config/set/#", 2)
+      scheduler = Scheduler()
+      scheduler.registerData(["*"], self.publishData)
+      scheduler.registerTimer(10, self.publishLiveData)   # TODO: React on Chargepoint  end-of-loop event
 
-   @overload
-   @staticmethod
-   def _loop(key: str) -> Iterator[str]:
-      ...
+   def publishData(self, data: dict):
+      for key, value in data.items():
+         self.client.publish("openWB/" + key, payload=value)
 
-   @overload
-   @staticmethod
-   def _loop(key: Tuple[str, str]) -> Iterator[Tuple[str, str]]:
-      ...
-
-   @staticmethod
-   def _loop(key: str, key2: str = None) -> Iterator[str]:
-      if key.find('%n') >= 0:  # Instance
-         for n in range(1, 9):   # Mqttpublisher.num_lps + 1
-            if key2 is None:
-               for k1 in Mqttpublisher._loop(key.replace('%n', str(n))):
-                 yield k1
-            else:
-               for k1, k2 in Mqttpublisher._loop(key.replace('%n', str(n)), key2.replace('%n', str(n))):
-                 yield k1, k2
-      elif key.find('%p') >= 0:  # Phase
-         for phase in range(1, 4):
-            if key2 is None:
-               yield key.replace('%p', str(phase))
-            else:
-               yield key.replace('%p', str(phase)), key2.replace('%p', str(phase))
-      else:
-         if key2 is None:
-            yield key
-         else:
-            yield key, key2
-
-   def _init_data(self):
-      for key in self.datamapping.keys():
-         self.lastdata.update((mqttkey, None) for mqttkey in self._loop(key))
-      try:
-         self.all_live = read_ramdisk('all-live.graph').split('\n')
-      except FileNotFoundError:
-         self.all_live = []
-      try:
-         self.all_data = read_ramdisk('all.graph').split('\n')
-      except FileNotFoundError:
-         self.all_data = []
-
-   def publish(self):
+   def publishLiveData(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
-      for k, v in self.datamapping.items():
-        for mqttkey, datakey in self._loop(k, v):
-          val = self.core.data.get(datakey)
-          if isinstance(val, bool):   # Convert booleans into 1/0
-            val = 1 if val else 0
-          if val != self.lastdata[mqttkey]:
-            self.lastdata[mqttkey] = val
-#            self.logger.info(f"Send data: {mqttkey}={val}") 
-            self.client.publish("openWB/" + mqttkey, payload=val, qos=0, retain=True)
 
       # Live values
       last_live = [datetime.now().strftime("%H:%M:%S")]
@@ -174,7 +138,7 @@ class Mqttpublisher(object):
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
       self.client.publish("openWB/graph/lastlivevalues", payload=last_live)
-      self.client.publish("openWB/system/Timestamp", int(time()), qos=0)
+      self.client.publish("openWB/system/Timestamp", int(time()))
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
@@ -208,7 +172,7 @@ class Mqttpublisher(object):
    def publish_config(self):
       """Sende Config als MQTT"""
       for k, v in self.configmapping.items():
-         for mqttkey, datakey in self._loop(k, v):
+         for mqttkey, datakey in _loop(k, v):
             val = self.core.config.get(datakey)
             if isinstance(val, bool):   # Convert booleans into 1/0
                val = 1 if val else 0

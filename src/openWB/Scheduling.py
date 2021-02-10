@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Iterable
 
 import logging
 import queue
@@ -9,6 +9,13 @@ from openWB.Event import *
 from fnmatch import fnmatch
 from itertools import groupby
 from threading import Thread
+
+
+def add2key(hash, key, value):
+   if key in hash:
+      hash[key].append(value)
+   else:
+      hash[key] = [value]
 
 
 class Scheduler(Singleton):
@@ -24,16 +31,14 @@ class Scheduler(Singleton):
          self.logger = logging.getLogger()
          Scheduler.simulated = simulated           # Token for testing
 
-   def registerData(self, pattern: str, listener: Callable[[dict], None]) -> None:
+   def registerData(self, patterns: Iterable[str], listener: Callable[[dict], None]) -> None:
       """
       Registers a callback for a data pattern.
-      :param pattern: data path pattern, e.g. "pv/*"
+      :param patterns: data path pattern, e.g. "pv/*"
       :param listener: callback
       """
-      if pattern in self.dataListener:
-         self.dataListener[pattern].append(listener)
-      else:
-         self.dataListener[pattern] = [listener]
+      for pattern in patterns:
+         add2key(self.dataListener, pattern, listener)
 
    def registerTimer(self, time: int, listener: Callable[[], None]) -> None:
       """
@@ -50,10 +55,7 @@ class Scheduler(Singleton):
       :param event: Event to listen on
       :param listener: callback function
       """
-      if event in self.eventListener:
-         self.eventListener[event].append(listener)
-      else:
-         self.eventListener[event] = [listener]
+      add2key(self.eventListener, event, listener)
 
    def dataUpdate(self, data: DataPackage) -> None:
       """
@@ -67,7 +69,6 @@ class Scheduler(Singleton):
       # {'path/1': val, 'path/2': val2 }
       # -> [ (class1, 'path11', val1), ( class2, 'path2', val2)
       while True:
-         sleep(1)
          data = {}
          while not self.dataQueue.empty():    # empty the queue
             data.update(self.dataQueue.get())
@@ -79,6 +80,7 @@ class Scheduler(Singleton):
                recipient(data)
          if self.simulated:
             return
+         sleep(1)
 
 
    def run(self, simulated: bool = False) -> None:
@@ -113,6 +115,7 @@ class Scheduler(Singleton):
       assert self.simulated, "call is only allowed in simulation mode."
       for task in self.timeTable.keys():
          task()
+      self._dataQueue()
 
    def signalEvent(self, event: OpenWBEvent) -> None:
       """signals an event"""

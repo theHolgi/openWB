@@ -3,6 +3,7 @@ from openWB.Event import OpenWBEvent, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .ramdiskpublisher import RamdiskPublisher
+from plugins import *
 # from .regler import *
 from datetime import datetime
 
@@ -20,18 +21,20 @@ for logger in infologgers:
 class OpenWBCore(Singleton):
    """openWB core and scheduler"""
    def __init__(self):
-      self.modules = []
-      self.outputmodules = []
+      self.modules = {}
       self.logger = logging.getLogger(self.__class__.__name__)
       self.pvmodule = 0
       self.regelkreise = dict()
       self.today = datetime.today()
       self.publishers = []
 
-   def setup(self, configFile: str) -> None:
-      self.config = OpenWBconfig(configFile)
+   def setup(self) -> None:
+      self.config = OpenWBconfig()
       self.data = openWBValues()
-      self.ramdisk = RamdiskValues()
+      self.modules['EVU'] = EVUModule()
+      self.modules['PV'] = PVModule()
+      self.modules['SPEICHER'] = SpeicherModule()
+      self.modules['HELPER'] = [DependentData()]
       if self.config.get('testmode') is None:
          self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
 
@@ -46,7 +49,7 @@ class OpenWBCore(Singleton):
 
       if hasattr(module, 'type'):
          if module.type == "wr":
-            self.pvmodule += 1
+            pass
          elif module.type == "speicher":
             self.sendData(DataPackage(module, {'speichervorhanden': True}))  # Speicher vorhanden
          elif module.type == "lp":
@@ -113,12 +116,6 @@ class OpenWBCore(Singleton):
       debug += " Haus: %iW" % self.data.get("hausverbrauch")
       self.logger.info(datetime.now().strftime("%H:%M:%S") + ':' + debug)
 
-   def sendData(self, package: DataPackage) -> None:
-      self.data.update(package)
-      # Register which module has sent data
-      package.source.finished.set()
-      self.logger.debug(f'Daten von {package.source.name }: {package}')
-
    def setconfig(self, key:str, value) -> None:
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
@@ -156,8 +153,6 @@ class OpenWBCore(Singleton):
                   self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                   break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
-         elif re.match('speichermodul1', event.info):
-            self.ramdisk['speichervorhanden'] = 1 if event.payload != "none" else 0
-             
+
       except Exception as e:
          print("BAM!!! %s" % e)

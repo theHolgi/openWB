@@ -2,8 +2,11 @@ import unittest
 import os
 from openWB import DataPackage
 from openWB.Modul import *
+from openWB.Scheduling import Scheduler
 from openWB.openWBlib import OpenWBconfig
 from openWB.regler import *
+from fakes import FakeRamdisk
+
 global core
 
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
@@ -61,6 +64,8 @@ class Test_Regler(unittest.TestCase):
    LP = StubLP(1)
 
    def setUp(self):
+      Scheduler(simulated=True)
+
       self.regler = Regler(self.LP)
       StubCore.add_module(self.LP, 'lpmodul1')
       self.LP.actP = 0
@@ -143,39 +148,41 @@ class Test_Regler(unittest.TestCase):
 class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
    def setUp(self):
+      OpenWBconfig().setup("resources/test_1PV.conf")
+      Scheduler(simulated=True)
+      RamdiskValues._inst = FakeRamdisk()
       self.core = OpenWBCore()
-      self.core.setup(mypath + "/test.conf")
-      self.core.config["lpmodul1_mode"] = "pv"
-      self.core.config["lpmodul1_alwayson"] = False
-      self.PV = StubPV(1)
+      self.core.setup()
+      self.core.config['lpmodul1_alwayson'] = False
+      self.PV = self.core.modules['PV'].modules[0]
       self.LP = StubLP(1)
-      self.EVU = StubEVU(1)
-      self.core.add_module(self.PV, 'wrmodul1')
-      self.core.add_module(self.LP, 'lpmodul1')
-      self.core.add_module(self.EVU, 'bezugmodul1')
+      self.EVU = self.core.modules['EVU'].modul
+      #self.core.add_module(self.PV, 'wrmodul1')
+      #self.core.add_module(self.LP, 'lpmodul1')
+      #self.core.add_module(self.EVU, 'bezugmodul1')
 
       self.PV.P = 0
       self.LP.actP = 0
       self.EVU.P = 0
 
       # Zur leichteren Verfügbarkeit
-      self.LPregler = self.core.regelkreise['pv'].regler[1]
+      # self.LPregler = self.core.regelkreise['pv'].regler[1]
 
    def test_consume(self):
       """Bezug, kein Laden, Ruheverbrauch"""
       self.PV.P = 500
       self.EVU.P = 500
-      self.core.run(2)
-      self.assertEqual(-500, self.core.data.uberschuss, "Kein Überschuss")
-      self.assertEqual(1000, self.core.data.hausverbrauch, "Ruheverbrauch")
+      Scheduler().test_callAll()
+      self.assertEqual(-500, self.core.data.get('global/uberschuss'), "Kein Überschuss")
+      self.assertEqual(1000, self.core.data.get('global/WHouseConsumption'), "Ruheverbrauch")
 
    def test_supply_toolow(self):
       """Wenig Überschuss, kein Ladestart"""
       self.PV.P = 2200
       self.EVU.P = -1900
       self.core.run(5)
-      self.assertEqual(1900, self.core.data.uberschuss, "Überschuss")
-      self.assertEqual(300, self.core.data.hausverbrauch, "Ruheverbrauch")
+      self.assertEqual(1900, self.core.data.get('global/uberschuss'), "Überschuss")
+      self.assertEqual(300, self.core.data.get('global/WHouseConsumption'), "Ruheverbrauch")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
 
@@ -189,8 +196,8 @@ class TEST_LP1(unittest.TestCase):
       self.PV.P = 2300
       self.EVU.P = -2000
       self.core.run(5)
-      self.assertEqual(2000, self.core.data.uberschuss, "Überschuss")
-      self.assertEqual(self.PV.P + self.EVU.P, self.core.data.hausverbrauch, "Ruheverbrauch")
+      self.assertEqual(2000, self.core.data.get('global/uberschuss'), "Überschuss")
+      self.assertEqual(self.PV.P + self.EVU.P, self.core.data.get('global/WHouseConsumption'), "Ruheverbrauch")
       self.assertNotEqual(0, self.LPregler.oncount, "Ladestart")
       self.EVU.P = -1000
       self.core.run(1)
@@ -215,7 +222,7 @@ class TEST_LP1(unittest.TestCase):
          self.assertTrue(self.LP.is_charging, "LP gestartet")
          self.assertTrue(self.LPregler.blocked, "Regler ist blockiert")
          self.assertEqual(self.LP.minP, self.LP.setP, "Keine Erhöhung bei Blockierung")
-         self.assertEqual(self.PV.P + self.EVU.P - self.LP.actP, self.core.data.hausverbrauch, "LP Verbrauch nicht im Hausverbrauch") # XXX
+         self.assertEqual(self.PV.P + self.EVU.P - self.LP.actP, self.core.data.get('global/WHouseConsumption'), "LP Verbrauch nicht im Hausverbrauch") # XXX
 
       with self.subTest('Mehr PV-Leistung'):
          self.LP.actP = self.LP.setP - 200  # charge more
@@ -304,8 +311,8 @@ class TEST_LP1_PEAK(unittest.TestCase):
       self.PV.P = 9000
       self.EVU.P = -6400
       self.core.run(5)
-      self.assertEqual(6400, self.core.data.uberschuss, "Überschuss")
-      self.assertEqual(2600, self.core.data.hausverbrauch, "Ruheverbrauch")
+      self.assertEqual(6400, self.core.data.get('global/uberschuss'), "Überschuss")
+      self.assertEqual(2600, self.core.data.get('global/WHouseConsumption'), "Ruheverbrauch")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
 
@@ -386,7 +393,7 @@ class TEST_LP2(unittest.TestCase):
       self.PV.P = 2300
       self.EVU.P = -2000
       self.core.run(5)
-      self.assertEqual(2000, self.core.data.uberschuss, "Überschuss")
+      self.assertEqual(2000, self.core.data.get('global/uberschuss'), "Überschuss")
       self.assertNotEqual(0, self.LPregler1.oncount, "Ladestart LP1")
       self.assertEqual(0, self.LPregler2.oncount, "kein Ladestart LP2")
 
@@ -399,7 +406,7 @@ class TEST_LP2(unittest.TestCase):
       self.PV.P = 4000
       self.EVU.P = -3800
       self.core.run(5)
-      self.assertEqual(3800, self.core.data.uberschuss, "Überschuss")
+      self.assertEqual(3800, self.core.data.get('global/uberschuss'), "Überschuss")
       self.assertNotEqual(0, self.LPregler1.oncount, "Ladestart LP1")
       self.assertNotEqual(0, self.LPregler2.oncount, "Ladestart LP2")
 

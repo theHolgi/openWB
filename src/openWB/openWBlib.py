@@ -26,6 +26,7 @@ import subprocess
 import logging
 from typing import Iterator, Any, Optional
 from . import Singleton
+from .Scheduling import Scheduler
 
 basepath = '/var/www/html/openWB/'
 
@@ -101,6 +102,7 @@ class openWBValues(object):
 
    def update(self, data: "DataPackage") -> None:
       self.val.update(data)
+      Scheduler().dataUpdate(data)
 
    def __getitem__(self, key):
       return self.val[key] if key in self.val else 0
@@ -128,21 +130,6 @@ class openWBValues(object):
             return summe
          summe += self.get(name)
          i += 1
-
-   # TODO: deprecated
-   def derive_values(self):
-      """Calculate derived values"""
-      for key in self.sumvalues:
-         sumVal = 0
-         for instance in range(1, 10):
-            value = self.get(key + str(instance))
-            if value is None:
-               break
-            sumVal += int(value)
-         self[key] = sumVal
-      self.uberschuss = self.get('speicherleistung') - self.wattbezug
-      self.hausverbrauch = self.wattbezug - self.pvwatt - self.get('llaktuell') - self.get('speicherleistung')
-
 
 class RamdiskValues(Singleton):
    """
