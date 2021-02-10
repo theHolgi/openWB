@@ -7,7 +7,7 @@ class DUMMYWR(PVModul):
    def setup(self, config):
       self.P  = 0
       self.Wh = 0
-      Scheduler().registerTimer(1, self)
+      Scheduler().registerTimer(1, self.loop)
 
    def loop(self):
       self.send({

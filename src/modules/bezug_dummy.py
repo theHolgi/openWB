@@ -11,7 +11,7 @@ class DUMMYEVU(EVUModul):
       # Weitere Attribute:
       # A1..A3
       # V1..V3
-      Scheduler().registerTimer(1, self)
+      Scheduler().registerTimer(1, self.loop)
 
    def loop(self):
       data = {

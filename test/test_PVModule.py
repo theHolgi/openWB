@@ -6,8 +6,8 @@ from openWB.openWBlib import *
 
 from fakes import FakeRamdisk
 
-class Test_PVModule(unittest.TestCase):
 
+class Test_PVModule(unittest.TestCase):
    def setUp(self):
       RamdiskValues._inst = FakeRamdisk()
       Scheduler(simulated=True)

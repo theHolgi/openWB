@@ -1,8 +1,11 @@
+from typing import Callable
+
 import logging
 import queue
 from time import sleep
 
 from openWB import DataPackage, Singleton
+from openWB.Event import *
 from fnmatch import fnmatch
 from itertools import groupby
 from threading import Thread
@@ -13,6 +16,7 @@ class Scheduler(Singleton):
       if "dataListener" not in vars(self):
          self.dataListener = {}   # Listeners are a mapping of pattern: [listeners]
          self.timeTable = {}      # Timetable is a mapping of  listener: time
+         self.eventListener = {}  # Event listeners are a mapping of Event: [listeners]
          self.dataQueue = queue.Queue()
          if not simulated:
             self.dataRunner = Thread(target=self._dataQueue, daemon=True)
@@ -20,23 +24,36 @@ class Scheduler(Singleton):
          self.logger = logging.getLogger()
          Scheduler.simulated = simulated           # Token for testing
 
-   def registerData(self, pattern: str, listener) -> None:
+   def registerData(self, pattern: str, listener: Callable[[dict], None]) -> None:
       """
       Registers a callback for a data pattern.
+      :param pattern: data path pattern, e.g. "pv/*"
+      :param listener: callback
       """
       if pattern in self.dataListener:
          self.dataListener[pattern].append(listener)
       else:
          self.dataListener[pattern] = [listener]
 
-   def registerTimer(self, time: int, listener) -> None:
+   def registerTimer(self, time: int, listener: Callable[[], None]) -> None:
       """
       Registers a callback for regular scheduling.
-      :param time:
-      :param listener:
+      :param time: scheduling time in seconds
+      :param listener: a callback
       :return:
       """
       self.timeTable[listener] = time
+
+   def registerEvent(self, event: EventType, listener: Callable[[OpenWBEvent], None]) -> None:
+      """
+      Registers a callback for an event.
+      :param event: Event to listen on
+      :param listener: callback function
+      """
+      if event in self.eventListener:
+         self.eventListener[event].append(listener)
+      else:
+         self.eventListener[event] = [listener]
 
    def dataUpdate(self, data: DataPackage) -> None:
       """
@@ -59,7 +76,7 @@ class Scheduler(Singleton):
             recipients = [(l,k,v) for k, v in data.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
             for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: id(tuple[0])), key=lambda tuple: tuple[0]):
                data = dict(tuple[1:] for tuple in tuples)
-               recipient.dataUpdate(data)
+               recipient(data)
          if self.simulated:
             return
 
@@ -74,7 +91,7 @@ class Scheduler(Singleton):
          delay, next_task = timetable.pop(0)
          if delay > 0 and not simulated:
             sleep(delay)
-         next_task.loop()
+         next_task()
          if len(timetable) == 0:
             break
          # Advance the timetable
@@ -95,4 +112,10 @@ class Scheduler(Singleton):
       """
       assert self.simulated, "call is only allowed in simulation mode."
       for task in self.timeTable.keys():
-         task.loop()
+         task()
+
+   def signalEvent(self, event: OpenWBEvent) -> None:
+      """signals an event"""
+      if event.type in self.eventListener:
+         for callback in self.eventListener[event.type]:
+            callback(event)
