@@ -12,19 +12,22 @@ class Test_SpeicherModule(unittest.TestCase):
    def setUp(self):
       RamdiskValues._inst = FakeRamdisk()
       Scheduler(simulated=True)
+      if '_inst' in vars(OpenWBconfig):
+         del OpenWBconfig._inst
 
    def test_invalidmodule(self):
-      OpenWBconfig().setup('resources/test_invalidmodule.conf')
+      OpenWBconfig('resources/test_invalidmodule.conf')
       with self.assertRaises(ModuleNotFoundError):
          module = SpeicherModule()
 
    def test_dummySpeicher(self):
-      OpenWBconfig().setup('resources/test.conf')
+      OpenWBconfig('resources/test.conf')
+      data = openWBValues()
       module = SpeicherModule()
       self.assertEqual(2, len(module.modules))
+      self.assertEqual(1, data.get('housebattery/boolHouseBatteryConfigured'), 'Speicher enabled')
 
       BAT1, BAT2 = module.modules
-      data = openWBValues()
       BAT1.P = 1000
       BAT2.P = 2000
       BAT1.soc = 25

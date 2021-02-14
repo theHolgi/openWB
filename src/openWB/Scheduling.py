@@ -108,14 +108,15 @@ class Scheduler(Singleton):
          timetable.append((reschedule, next_task))
          timetable.sort(key=delaysort)
 
-   def test_callAll(self) -> None:
+   def test_callAll(self, n:int = 1) -> None:
       """
       Call all scheduled tasks (for testing)
       """
       assert self.simulated, "call is only allowed in simulation mode."
-      for task in self.timeTable.keys():
-         task()
-      self._dataQueue()
+      for i in range(n):
+         for task in self.timeTable.keys():
+            task()
+         self._dataQueue()
 
    def signalEvent(self, event: OpenWBEvent) -> None:
       """signals an event"""

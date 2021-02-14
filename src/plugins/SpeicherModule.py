@@ -27,6 +27,7 @@ class SpeicherModule:
       module.master = self
       self.modules.append(module)
       module.setup(OpenWBconfig())
+      self.data.update({"housebattery/boolHouseBatteryConfigured": 1})
 
    def send(self, data: DataPackage) -> None:
       """

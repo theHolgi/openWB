@@ -11,9 +11,11 @@ class Test_PVModule(unittest.TestCase):
    def setUp(self):
       RamdiskValues._inst = FakeRamdisk()
       Scheduler(simulated=True)
+      if '_inst' in vars(OpenWBconfig):
+         del OpenWBconfig._inst
 
    def test_data(self):
-      OpenWBconfig().setup('resources/test.conf')
+      OpenWBconfig('resources/test.conf')
       module = PVModule()
       self.assertEqual(2, len(module.modules))
 

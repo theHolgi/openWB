@@ -44,13 +44,13 @@ class GO_E(Ladepunkt):
             #             3 Warte auf Fahrzeug
             #             4 Ladung beendet, Fahrzeug verbunden
             self.send({
-               'llv1': int(goe['nrg'][0]),    'llv2': int(goe['nrg'][1]),    'llv3': int(goe['nrg'][2]),    # [V]
-               'lla1': int(goe['nrg'][4])/10, 'lla2': int(goe['nrg'][5])/10, 'lla3': int(goe['nrg'][6])/10, # [0.1A]
-               'llpf1': int(goe['nrg'][12]),  'llpf2': int(goe['nrg'][13]),  'llpf3': int(goe['nrg'][14]),  # %
-               'llkwh': int(goe['eto'])/10,  # [0.1kwh]
-               'plugstat': goe['car'] != '1',
-               'chargestat': goe['car'] == '2',
-               'llaktuell': self.actP})
+               'V1': int(goe['nrg'][0]),    'V2': int(goe['nrg'][1]),    'V3': int(goe['nrg'][2]),    # [V]
+               'A1': int(goe['nrg'][4])/10, 'A2': int(goe['nrg'][5])/10, 'A3': int(goe['nrg'][6])/10, # [0.1A]
+               'Pf1': int(goe['nrg'][12]),  'Pf2': int(goe['nrg'][13]),  'Pf3': int(goe['nrg'][14]),  # %
+               'kwh': int(goe['eto'])/10,  # [0.1kwh]
+               'boolPlugStat': goe['car'] != '1',
+               'boolChargeStat': goe['car'] == '2',
+               'W': self.actP})
             # restzeitlp
       except:  # e.g. socket.timeout
          self.send({})
@@ -69,7 +69,7 @@ class GO_E(Ladepunkt):
       ampere = power2amp(power, self.phasen)
       self.core.logger.info(f"GO-E request {power}W ({ampere}A)")
       aktiv = 1 if ampere > 0 else 0
-      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': aktiv}))
+      self.core.sendData(DataPackage(self, {'A': ampere, 'ChargeStatus': aktiv}))
       if self.laststate['alw'] != str(aktiv):  # Allow
          GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()
       if self.laststate['amp'] != str(ampere):  # Power

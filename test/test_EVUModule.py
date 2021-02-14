@@ -9,14 +9,16 @@ class Test_EVUModule(unittest.TestCase):
    def setUp(self):
       RamdiskValues._inst = FakeRamdisk()
       Scheduler(simulated=True)
+      if '_inst' in vars(OpenWBconfig):
+         del OpenWBconfig._inst
 
    def test_invalidmodule(self):
-      OpenWBconfig().setup('resources/test_invalidmodule.conf')
+      OpenWBconfig('resources/test_invalidmodule.conf')
       with self.assertRaises(ModuleNotFoundError):
          module = EVUModule()
 
    def test_dummyEVU(self):
-      OpenWBconfig().setup('resources/test.conf')
+      OpenWBconfig('resources/test.conf')
       module = EVUModule()
       self.assertIsNotNone(module.modul)
 

@@ -43,29 +43,14 @@ class Mqttpublisher(object):
       "lp/%n/energyConsumptionPer100km": "durchslp%n"
    }
    datamapping = {   # UNUSED
-      "global/WHouseConsumption": "hausverbrauch",
-
-      # Speicher
-      "housebattery/boolHouseBatteryConfigured": "speichervorhanden",
 
       # LP
-      "global/WAllChargePoints": "llaktuell",
-      "lp/%n/W": "llaktuell%n",
-      "lp/%n/VPhase%p": "llv%p%n",
-      "lp/%n/APhase%p": "lla%p%n",
-      "lp/%n/PfPhase%p": "llpf%p%n",
-      "lp/%n/kWhCounter": "llkwh%n",
       "lp/%n/AConfigured": "llsoll%n",         # Soll Strom
-      "lp/%n/ChargeStatus": "ladestatus%n",    # Soll geladen werden
-      "lp/%n/boolPlugStat": "plugstat%n",      # plugged
-      "lp/%n/boolChargeStat": "chargestat%n",  # charging
 
-      "lp/%n/countPhasesInUse": "lpphasen%n",
       "lp/%n/kWhActualCharged": "aktgeladen%n",
       "lp/%n/kWhChargedSincePlugged": "pluggedladungbishergeladen%n",
       "lp/%n/TimeRemaining": "restzeitlp%n",
       "lp/%n/ChargePointEnabled": "lpenabled%n",       # Nicht enabled ist z.B. nach Ablauf der Lademenge
-      "lp/%n/boolChargePointConfigured": "lpconf%n",   # Configured -> Geräte konfiguriert
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
       "config/get/sofort/lp/%n/current": "lpsofortll%n",

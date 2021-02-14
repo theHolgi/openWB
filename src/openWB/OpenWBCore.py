@@ -33,6 +33,7 @@ class OpenWBCore(Singleton):
       self.data = openWBValues()
       self.modules['EVU'] = EVUModule()
       self.modules['PV'] = PVModule()
+      self.modules['LP'] = LPModule()
       self.modules['SPEICHER'] = SpeicherModule()
       self.modules['HELPER'] = [DependentData()]
       if self.config.get('testmode') is None:

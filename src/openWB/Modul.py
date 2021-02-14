@@ -74,7 +74,7 @@ class Modul(Thread):
          ramdisk = RamdiskValues()
          today = datetime.today()
          ramdisk[f'{self.name}_{offsetname}'] = self.offsets[name]
-         ramdisk[f'{today.strftime("%D")}.{self.name}_{offsetname}']
+         ramdisk[f'{today.strftime("%D")}.{self.name}_{offsetname}'] = self.offsets[name]
          self.logger.info(f'Setting {prefix} offset {name} to {self.offsets[name]}')
 
    def offsetted(self, prefix, name, value) -> Optional[Number]:
@@ -163,7 +163,7 @@ class Ladepunkt(DataProvider):
      Superklasse eines Ladepunktes.
      Ein Ladepunkt sendet folgende Datenpunkte:
      MUSS:
-     - llaktuell - Aktuelle Ladeleistung [W]
+     - W - Aktuelle Ladeleistung [W]
      KANN:
      - plugstat - Stecker eingesteckt [bool]
      - chargestat - Auto lädt wirklich [bool]
@@ -199,7 +199,7 @@ class Ladepunkt(DataProvider):
       if self.is_charging:
          phasen = 0
          for p in range(1, 4):
-            if openWBValues().get('lla%i' % p, self.id) > 4:
+            if openWBValues().get('lp/%i/APhase%i' % (self.id, p)) > 4:
                phasen += 1
          if phasen != 0:
             self.phasen = phasen
@@ -213,34 +213,34 @@ class Ladepunkt(DataProvider):
    def is_blocked(self) -> bool:
       """Fahrzeug folgt dem Sollstrom nicht"""
       data = openWBValues()
-      return data.get('lla1', self.id) <= data.get('llsoll', self.id) - 1
+      return data.get('lp/%i/APhase1' % self.id) <= data.get('lp/%i/AConfigured' % self.id) - 1
 
    @property
    def minP(self) -> int:
       """Minimalleistung"""
-      return OpenWBconfig().minimalstromstaerke * self.phasen * 230
+      return OpenWBconfig().get('minimalstromstaerke') * self.phasen * 230
 
    @property
    def maxP(self) -> int:
       """Maximalleistung"""
-      return OpenWBconfig().maximalstromstaerke * self.phasen * 230
+      return OpenWBconfig().get('maximalstromstaerke') * self.phasen * 230
 
    def send(self, data: dict) -> None:
-      if "plugstat" not in data:
-         data["plugstat"] = not self.is_blocked
-      if "chargestat" not in data:
-         data["chargestat"] = self.is_charging
-      if "lpphasen" not in data:
-         data['lpphasen'] = self.phasen
-      if "llkwh" not in data:
-         data['llkwh'] = 0
+      if "boolPlugStat" not in data:
+         data["boolPlugStat"] = not self.is_blocked
+      if "boolChargeStat" not in data:
+         data["boolChargeStat"] = self.is_charging
+      if "countPhasesInUse" not in data:
+         data['countPhasesInUse'] = self.phasen
+      if "kwh" not in data:
+         data['kwh'] = 0
 
       # Handle Ladung seit Plug / Ladung seit Chargstart
-      plugged = data['plugstat']
-      charging = data['chargestat']
-      chargedkwh = data['llkwh']
-      data['pluggedladungbishergeladen'] = self.offsetted('plugin', 'kwh', chargedkwh) if plugged else 0
-      data['aktgeladen'] = self.offsetted('charge', 'kwh', chargedkwh)
+      plugged = data['boolPlugStat']
+      charging = data['boolChargeStat']
+      chargedkwh = data['kwh']
+      data['kWhChargedSincePlugged'] = self.offsetted('plugin', 'kwh', chargedkwh) if plugged else 0
+      data['kWhActualCharged'] = self.offsetted('charge', 'kwh', chargedkwh)
       if plugged and not self.plugged:
          self.reset_offset('plugged', 'kwh')
          self.logger.info('Plugged in at %i kwh' % chargedkwh)
@@ -250,9 +250,9 @@ class Ladepunkt(DataProvider):
          self.setP = self.actP  # Initialisiere setP falls externer Start
       self.plugged = plugged
       self.charging = charging
-      data["daily_llkwh"] = self.offsetted('daily', 'kwh', data['llkwh'])
+      data["DailyKwh"] = self.offsetted('daily', 'kwh', data['kwh'])
 
-      # OpenWBCore().sendData(DataPackage(self, data))
+      self.master.send(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetEnergy and event.info == self.id:
@@ -296,10 +296,10 @@ def amp2amp(amp: Union[float, int]) -> int:
    config = OpenWBconfig()
    if amp < 1:
       return 0
-   elif amp < config.minimalstromstaerke:
-      amp = config.minimalstromstaerke
-   elif amp > config.maximalstromstaerke:
-      amp = config.maximalstromstaerke
+   elif amp < config.get('minimalstromstaerke'):
+      amp = config.get('minimalstromstaerke')
+   elif amp > config.get('maximalstromstaerke'):
+      amp = config.get('maximalstromstaerke')
    return int(amp)
 
 def power2amp(power:int, phasen: int) -> int:

@@ -30,34 +30,35 @@ from .Scheduling import Scheduler
 
 basepath = '/var/www/html/openWB/'
 
+
 class OpenWBconfig(Singleton):
    """
    Represents openwb.conf
    behaves like a dictionary (non-existent settings return None)
    """
-   def setup(self, configfile: str = basepath + 'openwb.conf'):
-      self.settings = {}
-      self.configfile = configfile
-      try:
-         with open(configfile, 'r') as f:
-            for line in f.readlines():
-               if line[0] == '#' or line[0] == '\n':
-                  continue
-               key, value = line.split('=')
-               if value[:2] == "0x":
-                  value = int(value, 16)
-               else:
-                  try:
-                     value = int(value)   # Try to convert to integer
-                  except ValueError:
-                     value = value.strip()
-               self.settings[key] = value
-      except IOError:
-         pass
+   def __init__(self, configfile: str = basepath + 'openwb.conf'):
+      if not hasattr(self, 'settings'):
+         self.settings = {}
+         self.configfile = configfile
+         try:
+            with open(configfile, 'r') as f:
+               for line in f.readlines():
+                  if line[0] == '#' or line[0] == '\n':
+                     continue
+                  key, value = line.split('=')
+                  if value[:2] == "0x":
+                     value = int(value, 16)
+                  else:
+                     try:
+                        value = int(value)   # Try to convert to integer
+                     except ValueError:
+                        value = value.strip()
+                  self.settings[key] = value
+         except IOError:
+            pass
 
    def __getitem__(self, key):
       return self.settings.get(key)
-   __getattr__ = __getitem__
 
    def __setitem__(self, key, value):
       import re
@@ -78,7 +79,6 @@ class OpenWBconfig(Singleton):
          content += line + '\n'
       with open(self.configfile, 'w') as f:
          f.write(content)
-   #__setattr__ = __setitem__
 
    def get(self, key, default=None):
       return self.settings.get(key, default)

@@ -12,7 +12,7 @@ global core
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 class StubCore():
-   config = OpenWBconfig(mypath + 'test.conf')
+   config = OpenWBconfig(mypath + 'resources/test.conf')
 
    @staticmethod
    def add_module(module: Modul, configprefix: str):
@@ -59,7 +59,7 @@ class StubEVU(DataProvider):
 
 class Test_Regler(unittest.TestCase):
    """Teste Regler Klasse"""
-   OpenWBCore()._inst = StubCore()
+   OpenWBCore._inst = StubCore()
    EVU = StubEVU(1)
    LP = StubLP(1)
 
@@ -148,7 +148,7 @@ class Test_Regler(unittest.TestCase):
 class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
    def setUp(self):
-      OpenWBconfig().setup("resources/test_1PV.conf")
+      OpenWBconfig("resources/test_1PV.conf")
       Scheduler(simulated=True)
       RamdiskValues._inst = FakeRamdisk()
       self.core = OpenWBCore()
@@ -157,9 +157,6 @@ class TEST_LP1(unittest.TestCase):
       self.PV = self.core.modules['PV'].modules[0]
       self.LP = StubLP(1)
       self.EVU = self.core.modules['EVU'].modul
-      #self.core.add_module(self.PV, 'wrmodul1')
-      #self.core.add_module(self.LP, 'lpmodul1')
-      #self.core.add_module(self.EVU, 'bezugmodul1')
 
       self.PV.P = 0
       self.LP.actP = 0
@@ -288,17 +285,19 @@ class TEST_LP1(unittest.TestCase):
 class TEST_LP1_PEAK(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt im Peak-mode"""
    def setUp(self):
-      self.core = OpenWBCore()
-      self.core.setup(mypath + "/test.conf")
-      self.core.config["lpmodul1_mode"] = "peak"
-      self.core.config["lpmodul1_alwayson"] = False
-      self.PV = StubPV(1)
-      self.LP = StubLP(1)
-      self.EVU = StubEVU(1)
-      self.core.add_module(self.PV, 'wrmodul1')
-      self.core.add_module(self.LP, 'lpmodul1')
-      self.core.add_module(self.EVU, 'bezugmodul1')
+      OpenWBconfig("resources/test_1PV.conf")
+      if '_inst' in vars(OpenWBCore):
+         del OpenWBCore._inst
 
+      self.core = OpenWBCore()
+
+      OpenWBconfig()["lpmodul1_mode"] = "peak"
+      OpenWBconfig()["lpmodul1_alwayson"] = False
+      self.core.setup()
+
+      self.PV = self.core.modules['PV'].modules[0]
+      self.LP = self.core.modules['LP'].modules[0]
+      self.EVU = self.core.modules['EVU'].modul
       self.PV.P = 0
       self.LP.actP = 0
       self.EVU.P = 0
