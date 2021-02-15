@@ -32,12 +32,13 @@ mapping = {
 
 class I2CDISPLAY(Displaymodul):
    """Display-Modul via I2C"""
+   priority = 1000   # Display has lowest data dependency priority
 
    def setup(self, config):
       self.pwm = Ada.PCA9685(address=config.get(self.configprefix + '_address'))
       self.pwm.set_pwm_freq(100)
       self.last = {'pv': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
-      Scheduler().registerData(mapping.keys(), self.update)
+      Scheduler().registerData(mapping.keys(), self)
       Scheduler().registerTimer(10, self.leds)
 
    def blink(self, port):
@@ -66,7 +67,7 @@ class I2CDISPLAY(Displaymodul):
          last_x = x
       return last_y
 
-   def update(self, updated: dict):
+   def newdata(self, updated: dict):
       try:
          for key, values in mapping.items():
             if key in updated:

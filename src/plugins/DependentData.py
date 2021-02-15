@@ -4,12 +4,15 @@ from openWB.openWBlib import openWBValues
 
 
 class DependentData:
-   def __init__(self):
-      Scheduler().registerData(['evu/W', 'housebattery/W', 'pv/W'], self.houseconsumption)
+   priority = 1     # Dependent data has highest data dependency priority
 
-   def houseconsumption(self, updated: dict) -> None:
+   def __init__(self):
+      Scheduler().registerData(['evu/W', 'housebattery/W', 'pv/W'], self)
+
+   def newdata(self, updated: dict) -> None:
       data = openWBValues()
-      packet = DataPackage(self, {})
-      packet['global/uberschuss'] = data.get('housebattery/W') - data.get('evu/W')
-      packet['global/WHouseConsumption'] = data.get('evu/W') + data.get('pv/W') - data.get('global/WAllChargePoints') - data.get('housebattery/W')
+      packet = DataPackage(self, {
+         'global/uberschuss': data.get('housebattery/W') - data.get('evu/W'),
+         'global/WHouseConsumption': data.get('evu/W') + data.get('pv/W') - data.get('global/WAllChargePoints') - data.get('housebattery/W')
+      })
       data.update(packet)

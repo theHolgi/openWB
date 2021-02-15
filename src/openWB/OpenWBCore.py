@@ -4,7 +4,6 @@ from .openWBlib import *
 from .mqttpub import Mqttpublisher
 from .ramdiskpublisher import RamdiskPublisher
 from plugins import *
-# from .regler import *
 from datetime import datetime
 
 import logging
@@ -38,28 +37,14 @@ class OpenWBCore(Singleton):
       self.modules['HELPER'] = [DependentData()]
       if self.config.get('testmode') is None:
          self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
-
-   def add_module(self, module: "Modul", configprefix: str) -> None:
-      module.configprefix = configprefix
-      module.setup(self.config)
-      self.logger.info("Neues Modul: " + module.name)
-      if hasattr(module, 'type') and module.type == "display":
-         self.outputmodules.append(module)
-      else:
-         self.modules.append(module)
-
-      if hasattr(module, 'type'):
-         if module.type == "wr":
-            pass
-         elif module.type == "speicher":
-            self.sendData(DataPackage(module, {'speichervorhanden': True}))  # Speicher vorhanden
-         elif module.type == "lp":
-            lpmode = self.config.get(configprefix + '_mode')
-            if lpmode not in self.regelkreise:
-               self.regelkreise[lpmode] = Regelgruppe(lpmode)
-            self.regelkreise[lpmode].add(module)
-            self.sendData(DataPackage(module, {'lpconf': True, 'lpenabled': True }))   # LP Konfiguriert und enabled
-      module.start()
+      for lp in self.modules['LP'].modules:
+         lpmode = self.config.get(lp.configprefix + '_mode')
+         if lpmode not in self.regelkreise:
+            from openWB.regler import Regelgruppe
+            self.regelkreise[lpmode] = Regelgruppe(lpmode)
+         self.regelkreise[lpmode].add(lp)
+      for gruppe in self.regelkreise.values():
+         Scheduler().registerData(['global/uberschuss'], gruppe)   # TODO: Thread, nicht öfter als alle x s
 
    def run(self, loops: int = 0) -> None:
       """Run the given number of loops (0=infinite)"""

@@ -185,6 +185,7 @@ class Ladepunkt(DataProvider):
    def setup(self, config) -> None:
       self.plugged = False
       self.charging = False
+      self.configprefix = f"lpmodul{self.id}"
 
    def powerproperties(self) -> PowerProperties:
       """Liefert Möglichkeiten/Wünsche der Leistungsanpassung"""
@@ -226,31 +227,32 @@ class Ladepunkt(DataProvider):
       return OpenWBconfig().get('maximalstromstaerke') * self.phasen * 230
 
    def send(self, data: dict) -> None:
-      if "boolPlugStat" not in data:
-         data["boolPlugStat"] = not self.is_blocked
-      if "boolChargeStat" not in data:
-         data["boolChargeStat"] = self.is_charging
-      if "countPhasesInUse" not in data:
-         data['countPhasesInUse'] = self.phasen
-      if "kwh" not in data:
-         data['kwh'] = 0
+      if 'W' in data:   # Only for normal data packages
+         if "boolPlugStat" not in data:
+            data["boolPlugStat"] = not self.is_blocked
+         if "boolChargeStat" not in data:
+            data["boolChargeStat"] = self.is_charging
+         if "countPhasesInUse" not in data:
+            data['countPhasesInUse'] = self.phasen
+         if "kwh" not in data:
+            data['kwh'] = 0
 
-      # Handle Ladung seit Plug / Ladung seit Chargstart
-      plugged = data['boolPlugStat']
-      charging = data['boolChargeStat']
-      chargedkwh = data['kwh']
-      data['kWhChargedSincePlugged'] = self.offsetted('plugin', 'kwh', chargedkwh) if plugged else 0
-      data['kWhActualCharged'] = self.offsetted('charge', 'kwh', chargedkwh)
-      if plugged and not self.plugged:
-         self.reset_offset('plugged', 'kwh')
-         self.logger.info('Plugged in at %i kwh' % chargedkwh)
-      if charging and not self.charging:
-         self.reset_offset('charge', 'kwh')
-         self.logger.info('Start charging at %i kwh' % chargedkwh)
-         self.setP = self.actP  # Initialisiere setP falls externer Start
-      self.plugged = plugged
-      self.charging = charging
-      data["DailyKwh"] = self.offsetted('daily', 'kwh', data['kwh'])
+         # Handle Ladung seit Plug / Ladung seit Chargstart
+         plugged = data['boolPlugStat']
+         charging = data['boolChargeStat']
+         chargedkwh = data['kwh']
+         data['kWhChargedSincePlugged'] = self.offsetted('plugin', 'kwh', chargedkwh) if plugged else 0
+         data['kWhActualCharged'] = self.offsetted('charge', 'kwh', chargedkwh)
+         if plugged and not self.plugged:
+            self.reset_offset('plugged', 'kwh')
+            self.logger.info('Plugged in at %i kwh' % chargedkwh)
+         if charging and not self.charging:
+            self.reset_offset('charge', 'kwh')
+            self.logger.info('Start charging at %i kwh' % chargedkwh)
+            #  self.setP = self.actP  # Initialisiere setP falls externer Start
+         self.plugged = plugged
+         self.charging = charging
+         data["DailyKwh"] = self.offsetted('daily', 'kwh', data['kwh'])
 
       self.master.send(DataPackage(self, data))
 

@@ -38,6 +38,7 @@ def _loop(key1: str, key2: str) -> Iterator[Tuple[str, str]]:
 
 
 class Mqttpublisher(object):
+   priority = 999
    configmapping = {
       "lp/%n/strChargePointName": "lp%nname",
       "lp/%n/energyConsumptionPer100km": "durchslp%n"
@@ -101,10 +102,10 @@ class Mqttpublisher(object):
       self.client.subscribe("openWB/set/#", 2)
       self.client.subscribe("openWB/config/set/#", 2)
       scheduler = Scheduler()
-      scheduler.registerData(["*"], self.publishData)
+      scheduler.registerData(["*"], self)
       scheduler.registerTimer(10, self.publishLiveData)   # TODO: React on Chargepoint  end-of-loop event
 
-   def publishData(self, data: dict):
+   def newdata(self, data: dict):
       for key, value in data.items():
          self.client.publish("openWB/" + key, payload=value)
 

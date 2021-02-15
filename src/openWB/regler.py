@@ -1,6 +1,7 @@
 import enum
-from openWB.OpenWBCore import OpenWBCore
+from openWB import DataPackage
 from openWB.Modul import amp2power
+from openWB.openWBlib import OpenWBconfig, openWBValues
 from typing import Set, Optional
 from itertools import groupby
 from dataclasses import dataclass
@@ -69,7 +70,7 @@ class Regler:
       self.offcount = 0
       self.blockcount = 0
       self.state = 'idle'
-      self.config = self.wallbox.core.config
+      self.config = OpenWBconfig()
       self.request = self.req_idle
       self.logger = logging.getLogger(self.__class__.__name__ + f'-{self.wallbox.id}')
 
@@ -123,7 +124,7 @@ class Regler:
       if self.config[self.wallbox.configprefix + '_alwayson']:
          self.wallbox.set(self.wallbox.powerproperties().minP)
          self.request = self.req_charging
-      elif self.oncount >= self.config.einschaltverzoegerung:
+      elif self.oncount >= self.config.get('einschaltverzoegerung',10):
          self.state = 'init'
          self.oncount = 0
          self.request = self.req_charging
@@ -141,10 +142,10 @@ class Regler:
    def req_charging(self, increment: int) -> None:
       """Set the given power"""
       power = self.wallbox.setP + increment
-      self.wallbox.core.logger.info("WB %i requested %iW" % (self.wallbox.id, power))
+      self.logger.info("WB %i requested %iW" % (self.wallbox.id, power))
       if power < 100:
          self.offcount += 1
-         if self.offcount >= self.config.abschaltverzoegerung:
+         if self.offcount >= self.config.get('abschaltverzoegerung'):
             self.state = 'idle'
             self.offcount = 0
             self.request = self.req_idle
@@ -162,10 +163,12 @@ class Regelgruppe():
    - "peak" - Peak shaving
    - "sofort" - Sofortladen
    """
+   priority = 500   # Regelung hat eine mittlere Priorität
    def __init__(self, mode:str):
       self.mode = mode
       self.regler = dict()
-      self.hysterese = OpenWBCore().config.hysterese
+      self.config = OpenWBconfig()
+      self.hysterese = self.config.get('hysterese')
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
 
       if self.mode == 'pv':
@@ -192,8 +195,8 @@ class Regelgruppe():
 
          self.get_increment = get_increment
          self.get_decrement = get_decrement
-         self.limit = OpenWBCore().config.offsetpv
-         self.hysterese = OpenWBCore().config.hysterese
+         self.limit = self.config.get('offsetpv')
+         self.hysterese = self.config.get('hysterese')
 
       elif self.mode == 'peak':
          """
@@ -201,7 +204,7 @@ class Regelgruppe():
             - P > Limit: erhöhe bis < Limit
             - P < Limit: reduziere solange < Limit
          """
-         self.limit = OpenWBCore().config.offsetpvpeak
+         self.limit = self.config.get('offsetpvpeak')
          def get_increment(r: Request, deltaP: int) -> Optional[int]:
             if deltaP <= 0:  # Kein Bedarf
                return None
@@ -252,33 +255,35 @@ class Regelgruppe():
       """
       return len(self.regler) == 0
 
-   def controlcycle(self, data) -> None:
+   def newdata(self, newdata: dict) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
       self.logger.debug(f"LP Props: {properties!r}")
+      uberschuss = newdata.get('global/uberschuss')
       if self.mode == 'sofort':
-         core = OpenWBCore()
+         data = openWBValues()
          for id, regler in self.regler.items():
-            power = amp2power(core.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
+            prefix = 'lp/%i/' % id
+            power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
-         limitierung = core.config.get('msmoduslp%i' % id)
-         self.logger.debug(f"Limitierung LP{id}: {limitierung}")
-         if limitierung == 1 and core.data.get('llaktuell', id) != 0:  # Limitierung: kWh
-            print(f"Ziel: {core.config.get('lademkwh%i' % id)} Akt: {core.data.get('aktgeladen', id)} Leistung: {core.data.get('llaktuell', id)}")
-            restzeit = (core.config.get('lademkwh%i' % id) - core.data.get('aktgeladen', id))*1000 / (60 * core.data.get('llaktuell', id))
-            print(f"Restzeit: {restzeit}")
-            core.sendData(DataPackage(regler.wallbox, {'restzeitlp': f"{restzeit} min"}))
-         elif limitierung == 2:  # Limitierung: SOC
-            pass
+            limitierung = self.config.get('msmoduslp%i' % id)
+            self.logger.debug(f"Limitierung LP{id}: {limitierung}")
+            if limitierung == 1 and data.get(prefix + 'W') != 0:  # Limitierung: kWh
+               print(f"Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')}")
+               restzeit = (self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000 / (60 * data.get('lp/%i/W' % id))
+               print(f"Restzeit: {restzeit}")
+               data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
+            elif limitierung == 2:  # Limitierung: SOC
+               pass
 
       elif self.mode in ['stop', 'standby']:
          for regler in self.regler.values():
             if regler.wallbox.setP != 0:
                self.logger.info(f"(LP {regler.wallbox.id}: {regler.wallbox.setP}W -> Reset")
                regler.wallbox.set(0)
-      elif data.uberschuss > self.limit:  # Leistungserhöhung
-         deltaP = data.uberschuss - self.limit
+      elif uberschuss > self.limit:  # Leistungserhöhung
+         deltaP = uberschuss - self.limit
          # Erhöhe eingeschaltete LPs
          for r in sorted(filter(lambda r: 'min+P' in r and 'on' in r.flags, properties), key=lambda r: r['min+P'].priority):
             p = self.get_increment(r, deltaP)
@@ -294,7 +299,7 @@ class Regelgruppe():
             highest_prio = max(candidates.keys())
             candidates = candidates[highest_prio]
             # Budget zum Einschalten: Erstmal der Überschuss
-            budget = data.uberschuss - self.limit
+            budget = uberschuss - self.limit
             if self.mode == "pv":
                budget -= self.hysterese
             # Zusätzliches Budget kommt vom Regelpotential eingeschalteter LPs gleicher oder niedrigerer Prio
@@ -304,8 +309,8 @@ class Regelgruppe():
                   self.logger.info(f"Budget: {budget}; LP {r.id} min+P {r['min+P'].value} passt noch")  
                   arbitriert[r.id] = r['min+P'].value
                   budget -= r['min+P'].value
-      elif data.uberschuss < self.limit:  # Leistungsreduktion
-         deltaP = self.limit - data.uberschuss
+      elif uberschuss < self.limit:  # Leistungsreduktion
+         deltaP = self.limit - uberschuss
          for r in sorted(filter(lambda r: 'min-P' in r and 'min' not in r.flags, properties), key=lambda r: r['min-P'].priority):
             p = self.get_decrement(r, deltaP)
             if p is not None:
@@ -315,7 +320,7 @@ class Regelgruppe():
                if deltaP <= 0:
                   break
          # Schalte LPs aus
-         deltaP = self.limit - data.uberschuss
+         deltaP = self.limit - uberschuss
          if self.mode == "peak":
             deltaP -= self.hysterese
          for r in sorted(filter(lambda r: 'min' in r.flags, properties), key=lambda r: r['min-P'].priority):

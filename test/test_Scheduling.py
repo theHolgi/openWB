@@ -9,11 +9,12 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 
 class Listener:
+   priority = 10
    def __init__(self):
       self.data = []
       self.executed = 0
 
-   def newData(self, data: DataPackage):
+   def newdata(self, data: DataPackage):
       self.data.append(data)
 
    def loop(self):
@@ -28,7 +29,7 @@ class TestScheduling(unittest.TestCase):
          del Scheduler._inst
 
    def test_dataUpdate_1listener(self):
-      Scheduler().registerData(['/some/path/*', '/another/path/*'], self.listener1.newData)
+      Scheduler().registerData(['/some/path/*', '/another/path/*'], self.listener1)
       Scheduler().dataUpdate(DataPackage(Listener, {
          '/some/other/path': 1,
          '/some/path/a': 2}))
@@ -46,10 +47,10 @@ class TestScheduling(unittest.TestCase):
       }, self.listener1.data[0], "Listener shall have received the registered data branches")
 
    def test_dataUpdate_2listeners(self):
-      Scheduler().registerData(['/some/path/*'], self.listener1.newData)
-      Scheduler().registerData(['/another/path/*'], self.listener1.newData)
-      Scheduler().registerData(['/some/path/a'], self.listener2.newData)
-      Scheduler().registerData(['/another/path/*'], self.listener2.newData)
+      Scheduler().registerData(['/some/path/*'], self.listener1)
+      Scheduler().registerData(['/another/path/*'], self.listener1)
+      Scheduler().registerData(['/some/path/a'], self.listener2)
+      Scheduler().registerData(['/another/path/*'], self.listener2)
       Scheduler().dataUpdate(DataPackage(Listener, {
          '/some/other/path': 1,
          '/some/path/a': 2}))

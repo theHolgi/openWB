@@ -1,4 +1,6 @@
-from typing import Callable, Iterable
+from collections import OrderedDict
+
+from typing import Callable, Iterable, TypeVar, Mapping, List
 
 import logging
 import queue
@@ -10,12 +12,15 @@ from fnmatch import fnmatch
 from itertools import groupby
 from threading import Thread
 
+T = TypeVar('T')
+V = TypeVar('V')
 
-def add2key(hash, key, value):
-   if key in hash:
-      hash[key].append(value)
+
+def add2key(d: Mapping[T, List[V]], key: T, value: V) -> None:
+   if key in d:
+      d[key].append(value)
    else:
-      hash[key] = [value]
+      d[key] = [value]
 
 
 class Scheduler(Singleton):
@@ -31,11 +36,13 @@ class Scheduler(Singleton):
          self.logger = logging.getLogger()
          Scheduler.simulated = simulated           # Token for testing
 
-   def registerData(self, patterns: Iterable[str], listener: Callable[[dict], None]) -> None:
+   def registerData(self, patterns: Iterable[str], listener: object) -> None:
       """
       Registers a callback for a data pattern.
       :param patterns: data path pattern, e.g. "pv/*"
-      :param listener: callback
+      :param listener: object that implements:
+      - newdata(data) -> signal new data
+      - priority      -> execution priority
       """
       for pattern in patterns:
          add2key(self.dataListener, pattern, listener)
@@ -61,26 +68,37 @@ class Scheduler(Singleton):
       """
       Announces that data has been updated.
       :param data: data Package
-      :return:
       """
       self.dataQueue.put(data)
 
    def _dataQueue(self):
       # {'path/1': val, 'path/2': val2 }
       # -> [ (class1, 'path11', val1), ( class2, 'path2', val2)
+      notifylist = OrderedDict()
+      queuedata = dict(self.dataQueue.get(block=True))  # Wait until an element becomes available.
       while True:
-         data = {}
-         while not self.dataQueue.empty():    # empty the queue
-            data.update(self.dataQueue.get())
-         self.logger.debug(f"Collected data: {data}")
-         if data:
-            recipients = [(l,k,v) for k, v in data.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
-            for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: id(tuple[0])), key=lambda tuple: tuple[0]):
+         while not self.dataQueue.empty():  # empty the queue
+            queuedata.update(self.dataQueue.get())
+         if queuedata:
+            self.logger.debug(f"Collected data: {queuedata}")
+            recipients = [(l,k,v) for k, v in queuedata.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
+            for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: tuple[0].priority), key=lambda tuple: tuple[0]):
                data = dict(tuple[1:] for tuple in tuples)
-               recipient(data)
-         if self.simulated:
+               priority = recipient.priority
+               if priority in notifylist:
+                  notifylist[priority][1].update(data)
+               else:
+                  notifylist[priority] = (recipient, data)
+            queuedata = {}
+            # now, execute the first element
+         elif notifylist:
+            recipient, data = notifylist.pop(next(notifylist.keys().__iter__()))
+            recipient.newdata(data)
+         elif self.simulated:   # During simulation, quit when no activity any more.
             return
-         sleep(1)
+         else:
+            queuedata.update(self.dataQueue.get(block=True))
+#         sleep(1)
 
 
    def run(self, simulated: bool = False) -> None:

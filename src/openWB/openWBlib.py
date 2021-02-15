@@ -83,11 +83,70 @@ class OpenWBconfig(Singleton):
    def get(self, key, default=None):
       return self.settings.get(key, default)
 
+config = None
+def getConfig() -> OpenWBconfig:
+   if config is None:
+      config = OpenWBconfig()
+   return config
+
 
 class openWBValues(object):
    """
    Represents openWB values dictionary
    behaves like a dictionary
+
+   Glossar daten:
+   EVU:
+      evu/W
+      evu/WhExported
+      evu/WhImported
+      evu/APhase*
+      evu/VPhase*
+      evu/WPhase*
+      evu/PfPhase*
+      evu/Hz
+      evu/DailyYieldImportKwh
+      evu/DailyYieldExportKwh
+      evu/MonthlyYieldImportKwh
+      evu/MonthlyYieldExportKwh
+   PV:
+      pv/W
+      pv/WhCounter
+      pv/DailyYieldKwh
+      pv/MonthlyYieldKwh
+   Batterie:
+      housebattery/boolHouseBatteryConfigured
+      housebattery/W
+      housebattery/%Soc
+      housebattery/WhImported
+      housebattery/WhExported
+      housebattery/DailyYieldExportKwh
+      housebattery/DailyYieldImportKwh
+      housebattery/MonthlyYieldExportKwh
+      housebattery/MonthlyYieldImportKwh
+   LP:
+      lp/%i/boolChargePointConfigured
+      lp/%i/ChargePointEnabled
+      lp/%i/AConfigured    - sollwert
+      lp/%i/VPhase*
+      lp/%i/APhase*
+      lp/%i/PfPhase*
+      lp/%i/countPhasesInUse
+      lp/%i/W
+      lp/%i/kwh
+      lp/%i/DailyKwh
+      lp/%i/boolPlugStat
+      lp/%i/boolChargeStat
+      lp/%i/kWhChargedSincePlugged
+      lp/%i/kWhActualCharged
+      lp/%i/TimeRemaining           [str] Rest Ladezeit
+
+      lp/WhCounter
+      lp/DailyYieldKwh
+   Global:
+      global/WAllChargePoints
+      global/uberschuss
+      global/WHouseConsumption
    """
    def __new__(cls, *args, **kwargs):
       """ Create a new instance
