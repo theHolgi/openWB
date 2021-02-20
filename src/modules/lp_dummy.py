@@ -8,7 +8,6 @@ class DUMMYLP(Ladepunkt):
 
    def setup(self, config):
       super().setup(config)
-      self.A  = 0
       self.kwh = 0
       self.minI = config.get('minimalstromstaerke')
       self.maxI = config.get('maximalstromstaerke')
@@ -26,7 +25,7 @@ class DUMMYLP(Ladepunkt):
 
    def set(self, power: int) -> None:
       self.setP = power
-      self.send({'A': power2amp(power, self.phasen)})
+      self.send({'Areq': power2amp(power, self.phasen)})
 
    def powerproperties(self):
       return PowerProperties(minP=self.phasen*230*self.minI,

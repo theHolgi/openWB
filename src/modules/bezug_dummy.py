@@ -8,6 +8,7 @@ class DUMMYEVU(EVUModul):
       self.P  = 0
       self.kwhOut = 0
       self.kwhIn = 0
+      self.offsetPV = config.get('offsetpv')
       # Weitere Attribute:
       # A1..A3
       # V1..V3
@@ -21,6 +22,9 @@ class DUMMYEVU(EVUModul):
       data.update((att, getattr(self, att)) for att in ['A1', 'A2', 'A3', 'V1', 'V2', 'V3'] if hasattr(self, att))
       self.send(data)
 
+   @property
+   def pvuberschuss(self):
+      return  - self.P - self.offsetPV
 
 def getClass():
    return DUMMYEVU

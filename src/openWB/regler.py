@@ -1,6 +1,7 @@
 import enum
 from openWB import DataPackage
 from openWB.Modul import amp2power
+from openWB.Scheduling import Scheduler
 from openWB.openWBlib import OpenWBconfig, openWBValues
 from typing import Set, Optional
 from itertools import groupby
@@ -145,7 +146,7 @@ class Regler:
       self.logger.info("WB %i requested %iW" % (self.wallbox.id, power))
       if power < 100:
          self.offcount += 1
-         if self.offcount >= self.config.get('abschaltverzoegerung'):
+         if self.offcount >= self.config.get('abschaltverzoegerung', 20):
             self.state = 'idle'
             self.offcount = 0
             self.request = self.req_idle
@@ -170,7 +171,7 @@ class Regelgruppe():
       self.config = OpenWBconfig()
       self.hysterese = self.config.get('hysterese')
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
-
+      Scheduler().registerData(['global/uberschuss'], self)  # TODO: Thread, nicht öfter als alle x s
       if self.mode == 'pv':
          """
             PV-Modus: Limit darf nicht unterschritten werden.
@@ -236,11 +237,15 @@ class Regelgruppe():
          self.get_increment = get_delta
          self.get_decrement = get_delta
 
+   def destroy(self) -> None:
+      Scheduler().unregisterData(self)
+      del self
+
    def add(self, ladepunkt: "Ladepunkt") -> None:
       """Füge Ladepunkt hinzu"""
       self.regler[ladepunkt.id] = Regler(ladepunkt)
 
-   def pop(self, id: int):
+   def pop(self, id: int) -> "Ladepunkt":
       """Lösche Ladepunkt mit der ID <id>"""
       # TODO: Beibehaltung aktiver Lademodus
       print("%i in %s??" % (id, self.regler))
@@ -331,6 +336,7 @@ class Regelgruppe():
 
       for ID, inc in arbitriert.items():
          self.regler[ID].request(inc)
+
 
 def unroll(d) -> dict:
    """Unroll a grouped iterator, which is not ver useable as it is returned from itertools."""

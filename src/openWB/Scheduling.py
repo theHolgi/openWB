@@ -25,7 +25,7 @@ def add2key(d: Mapping[T, List[V]], key: T, value: V) -> None:
 
 class Scheduler(Singleton):
    def __init__(self, simulated: bool = False):
-      if "dataListener" not in vars(self):
+      if not hasattr(self, "dataListener"):
          self.dataListener = {}   # Listeners are a mapping of pattern: [listeners]
          self.timeTable = {}      # Timetable is a mapping of  listener: time
          self.eventListener = {}  # Event listeners are a mapping of Event: [listeners]
@@ -46,6 +46,15 @@ class Scheduler(Singleton):
       """
       for pattern in patterns:
          add2key(self.dataListener, pattern, listener)
+
+   def unregisterData(self, listener) -> None:
+      """Unregister from Data update events"""
+      for pattern, listeners in self.dataListener.items():
+         if listener in listeners:
+            listeners.remove(listener)
+            if len(listeners) == 0:
+               del self.dataListener[pattern]
+
 
    def registerTimer(self, time: int, listener: Callable[[], None]) -> None:
       """

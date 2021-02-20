@@ -3,7 +3,7 @@ from openWB.Modul import Ladepunkt, for_all_modules
 from openWB.openWBlib import openWBValues, OpenWBconfig
 
 mapping = {
-   'A': 'AConfigured',
+   'Areq': 'AConfigured',
    'V1': 'VPhase1',
    'V2': 'VPhase2',
    'V3': 'VPhase3',

@@ -20,14 +20,15 @@ for logger in infologgers:
 class OpenWBCore(Singleton):
    """openWB core and scheduler"""
    def __init__(self):
-      self.modules = {}
-      self.logger = logging.getLogger(self.__class__.__name__)
-      self.pvmodule = 0
-      self.regelkreise = dict()
-      self.today = datetime.today()
-      self.publishers = []
+      if not hasattr(self, "modules"):
+         self.modules = {}
+         self.logger = logging.getLogger(self.__class__.__name__)
+         self.pvmodule = 0
+         self.regelkreise = dict()
+         self.today = datetime.today()
+         self.publishers = []
 
-   def setup(self) -> None:
+   def setup(self) -> "OpenWBCore":
       self.config = OpenWBconfig()
       self.data = openWBValues()
       self.modules['EVU'] = EVUModule()
@@ -43,8 +44,8 @@ class OpenWBCore(Singleton):
             from openWB.regler import Regelgruppe
             self.regelkreise[lpmode] = Regelgruppe(lpmode)
          self.regelkreise[lpmode].add(lp)
-      for gruppe in self.regelkreise.values():
-         Scheduler().registerData(['global/uberschuss'], gruppe)   # TODO: Thread, nicht öfter als alle x s
+      Scheduler().registerEvent(EventType.configupdate, self.event)
+      return self
 
    def run(self, loops: int = 0) -> None:
       """Run the given number of loops (0=infinite)"""
@@ -106,19 +107,11 @@ class OpenWBCore(Singleton):
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
       self.logger.info("Config updated %s = %s" % (key, value))
-      self.triggerEvent(OpenWBEvent(EventType.configupdate, key, value))
+      Scheduler().signalEvent(OpenWBEvent(EventType.configupdate, key, value))
 
-   def triggerEvent(self, event: OpenWBEvent):
-      self.logger.info("triggerEvent")
-      for module in self.modules:
-         self.logger.info("... to %s" % module)
-         module.event(event)
-      self.event(event)
-
-   def event(self, event: OpenWBEvent):
+   def event(self, event: OpenWBEvent) -> None:
       self.logger.info("Event: %s = %s" % (event.info, event.payload))
-      try:
-       if event.type == EventType.configupdate:
+      if event.type == EventType.configupdate:
          m = re.match('lpmodul(\\d)_mode', event.info)
          if m:
             id = int(m.group(1))
@@ -131,14 +124,12 @@ class OpenWBCore(Singleton):
                if lp is not None:
                   # In neuem Regelkreis hinzufügen
                   if new_mode not in self.regelkreise:
+                     from openWB.regler import Regelgruppe
                      self.regelkreise[new_mode] = Regelgruppe(new_mode)
                   self.regelkreise[new_mode].add(lp)
                   # Entferne leere Regelgruppe
                   if self.regelkreise[mode].isempty:
-                     del self.regelkreise[mode]
+                     self.regelkreise[mode].destroy()
                   self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                   break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
-
-      except Exception as e:
-         print("BAM!!! %s" % e)

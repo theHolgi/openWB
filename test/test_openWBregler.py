@@ -10,6 +10,19 @@ from fakes import FakeRamdisk
 
 mypath = os.path.dirname(os.path.realpath(__file__)) + '/'
 
+def renew_config(path: str):
+   if '_inst' in vars(OpenWBconfig):
+      del OpenWBconfig._inst
+   OpenWBconfig(path)
+
+def make_all_fresh():
+   if '_inst' in vars(Scheduler):
+      del Scheduler._inst
+   if '_inst' in vars(openWBValues):
+      del openWBValues._inst
+   Scheduler(simulated=True)
+   RamdiskValues._inst = FakeRamdisk()
+
 
 class StubLP(Ladepunkt):
    actP = 0
@@ -126,18 +139,15 @@ class Test_Regler(unittest.TestCase):
 
 class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
-   def setUp(self):
-      if '_inst' in vars(OpenWBconfig):
-         del OpenWBconfig._inst
-      if '_inst' in vars(Scheduler):
-         del Scheduler._inst
-
-      OpenWBconfig("resources/test_1PV.conf")
-      Scheduler(simulated=True)
-      RamdiskValues._inst = FakeRamdisk()
+   def setUpClass():
+      renew_config("resources/test_1PV.conf")
+      OpenWBconfig()["lpmodul1_mode"] = "pv"
       OpenWBconfig()['lpmodul1_alwayson'] = False
-      core = OpenWBCore()
-      core.setup()
+
+   def setUp(self):
+      make_all_fresh()
+      core = OpenWBCore().setup()
+
       self.PV = core.modules['PV'].modules[0]
       self.LP = core.modules['LP'].modules[0]
       self.EVU = core.modules['EVU'].modul
@@ -173,13 +183,14 @@ class TEST_LP1(unittest.TestCase):
          OpenWBconfig()['lpmodul1_alwayson'] = True
          Scheduler().test_callAll(2)
          self.assertEqual(self.LP.minP, self.LP.setP, "Leistungsanforderung auf Min")
+      OpenWBconfig()['lpmodul1_alwayson'] = False
 
    def test_supply_tooshort(self):
       """Überschuss, Ladestart abgebrochen"""
       self.PV.P = 2300
       self.EVU.P = -2000
       Scheduler().test_callAll(5)
-      self.assertEqual(2000, self.core.data.get('global/uberschuss'), "Überschuss")
+      self.assertEqual(2000, openWBValues().get('global/uberschuss'), "Überschuss")
       self.assertEqual(self.PV.P + self.EVU.P, openWBValues().get('global/WHouseConsumption'), "Ruheverbrauch")
       self.assertNotEqual(0, self.LPregler.oncount, "Ladestart")
       self.EVU.P = -1000
@@ -244,7 +255,7 @@ class TEST_LP1(unittest.TestCase):
          Scheduler().test_callAll()
          self.assertEqual(last_setP + self.EVU.pvuberschuss, self.LP.setP, "Anforderung")
          last_setP = self.LP.setP
-         self.EVU.P = -self.core.config.offsetpv - 100
+         self.EVU.P = -OpenWBconfig().get('offsetpv') - 100
          Scheduler().test_callAll()
          self.assertEqual(last_setP, self.LP.setP, "Keine neue Anforderung")
 
@@ -272,34 +283,32 @@ class TEST_LP1(unittest.TestCase):
 
 class TEST_LP1_PEAK(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt im Peak-mode"""
-   def setUp(self):
-      OpenWBconfig("resources/test_1PV.conf")
-      if '_inst' in vars(OpenWBCore):
-         del OpenWBCore._inst
-
-      self.core = OpenWBCore()
-
+   def setUpClass():
+      renew_config("resources/test_1PV.conf")
       OpenWBconfig()["lpmodul1_mode"] = "peak"
-      OpenWBconfig()["lpmodul1_alwayson"] = False
-      self.core.setup()
+      OpenWBconfig()['lpmodul1_alwayson'] = False
 
-      self.PV = self.core.modules['PV'].modules[0]
-      self.LP = self.core.modules['LP'].modules[0]
-      self.EVU = self.core.modules['EVU'].modul
+   def setUp(self):
+      make_all_fresh()
+      core = OpenWBCore().setup()
+      self.PV = core.modules['PV'].modules[0]
+      self.LP = core.modules['LP'].modules[0]
+      self.EVU = core.modules['EVU'].modul
+
       self.PV.P = 0
       self.LP.actP = 0
       self.EVU.P = 0
 
       # Zur leichteren Verfügbarkeit
-      self.LPregler = self.core.regelkreise['peak'].regler[1]
+      self.LPregler = core.regelkreise['peak'].regler[1]
 
    def test_supply_toolow(self):
       """Zu wenig Überschuss"""
       self.PV.P = 9000
       self.EVU.P = -6400
       Scheduler().test_callAll(5)
-      self.assertEqual(6400, self.core.data.get('global/uberschuss'), "Überschuss")
-      self.assertEqual(2600, self.core.data.get('global/WHouseConsumption'), "Ruheverbrauch")
+      self.assertEqual(6400, openWBValues().get('global/uberschuss'), "Überschuss")
+      self.assertEqual(2600, openWBValues().get('global/WHouseConsumption'), "Ruheverbrauch")
       self.assertEqual(0, self.LP.setP, "Keine Leistungsanforderung")
       self.assertEqual(0, self.LPregler.oncount, "Kein Ladestart")
 
@@ -313,7 +322,7 @@ class TEST_LP1_PEAK(unittest.TestCase):
    def test_supply_stop(self):
       """Überschuss, Ein- u. Abschaltung eines LPs"""
       self.PV.P = 9000
-      self.EVU.P = -self.core.config.offsetpvpeak - 100
+      self.EVU.P = -OpenWBconfig().get('offsetpvpeak') - 100
       self.LP.actP = 2000
 
       with self.subTest('Ladestart'):
@@ -323,7 +332,7 @@ class TEST_LP1_PEAK(unittest.TestCase):
       with self.subTest('EVU stabilisiert'):
          last_setP = self.LP.setP
          self.LP.actP = self.LP.setP - 100
-         self.EVU.P = -self.core.config.offsetpvpeak + 100
+         self.EVU.P = -OpenWBconfig().get('offsetpvpeak') + 100
          Scheduler().test_callAll()
          self.assertEqual(last_setP, self.LP.setP, "Keine neue Anforderung")
 
@@ -333,13 +342,13 @@ class TEST_LP1_PEAK(unittest.TestCase):
          self.assertEqual(last_setP-300, self.LP.setP, "Reduzierung um delta")
 
       with self.subTest('LP auf min'):
-         self.EVU.P = -self.core.config.offsetpvpeak + 1500
+         self.EVU.P = -OpenWBconfig().get('offsetpvpeak') + 1500
          Scheduler().test_callAll()
          self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
 
       with self.subTest('LP off'):
          self.LP.setP = self.LP.minP+20
-         self.EVU.P = -self.core.config.offsetpvpeak + 1800
+         self.EVU.P = -OpenWBconfig().get('offsetpvpeak') + 1800
          Scheduler().test_callAll()
          self.assertEqual(self.LP.minP, self.LP.setP, "Anforderung auf Min")
          self.assertEqual(0, self.LPregler.offcount, "keine Abchaltung")
@@ -352,19 +361,18 @@ class TEST_LP1_PEAK(unittest.TestCase):
 
 class TEST_LP2(unittest.TestCase):
    """System mit 1 PV und 2 Ladepunkte im PV-mode"""
+   def setUpClass():
+      renew_config("resources/test_2PV.conf")
+      OpenWBconfig()["lpmodul1_mode"] = "pv"
+      OpenWBconfig()["lpmodul2_mode"] = "pv"
+
    def setUp(self):
-      self.core = OpenWBCore(mypath + "/test.conf")
-      self.core.config["lpmodul1_mode"] = "pv"
-      self.core.config["lpmodul2_mode"] = "pv"
-      self.core.config["lpmodul1_alwayson"] = False
-      self.PV = StubPV(1)
-      self.LP1 = StubLP(1)
-      self.LP2 = StubLP(2)
-      self.EVU = StubEVU(1)
-      self.core.add_module(self.PV, 'wrmodul1')
-      self.core.add_module(self.LP1, 'lpmodul1')
-      self.core.add_module(self.LP2, 'lpmodul2')
-      self.core.add_module(self.EVU, 'bezugmodul1')
+      make_all_fresh()
+      core = OpenWBCore().setup()
+      self.PV = core.modules['PV'].modules[0]
+      self.LP1 = core.modules['LP'].modules[0]
+      self.LP2 = core.modules['LP'].modules[1]
+      self.EVU = core.modules['EVU'].modul
 
       self.PV.P = 0
       self.LP1.actP = 0
@@ -372,15 +380,15 @@ class TEST_LP2(unittest.TestCase):
       self.EVU.P = 0
 
       # Zur leichteren Verfügbarkeit
-      self.LPregler1 = self.core.regelkreise['pv'].regler[1]
-      self.LPregler2 = self.core.regelkreise['pv'].regler[2]
+      self.LPregler1 = core.regelkreise['pv'].regler[1]
+      self.LPregler2 = core.regelkreise['pv'].regler[2]
 
    def test_supply_start1(self):
       """Überschuss, Ladestart erfolgreich"""
       self.PV.P = 2300
       self.EVU.P = -2000
       Scheduler().test_callAll(5)
-      self.assertEqual(2000, self.core.data.get('global/uberschuss'), "Überschuss")
+      self.assertEqual(2000, openWBValues().get('global/uberschuss'), "Überschuss")
       self.assertNotEqual(0, self.LPregler1.oncount, "Ladestart LP1")
       self.assertEqual(0, self.LPregler2.oncount, "kein Ladestart LP2")
 
@@ -393,7 +401,7 @@ class TEST_LP2(unittest.TestCase):
       self.PV.P = 4000
       self.EVU.P = -3800
       Scheduler().test_callAll(5)
-      self.assertEqual(3800, self.core.data.get('global/uberschuss'), "Überschuss")
+      self.assertEqual(3800, openWBValues().get('global/uberschuss'), "Überschuss")
       self.assertNotEqual(0, self.LPregler1.oncount, "Ladestart LP1")
       self.assertNotEqual(0, self.LPregler2.oncount, "Ladestart LP2")
 
@@ -431,29 +439,33 @@ class TEST_LP2(unittest.TestCase):
 
 class TEST_LP1_SOFORT(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt im Sofort-mode"""
-   def setUp(self):
-      self.core = OpenWBCore(mypath + "/test.conf")
-      self.core.config["lpmodul1_mode"] = "sofort"
-      self.LP = StubLP(1)
-      self.core.add_module(self.LP, 'lpmodul1')
 
+   def setUpClass():
+      renew_config("resources/test_1PV.conf")
+      OpenWBconfig()["lpmodul1_mode"] = "sofort"
+
+   def setUp(self):
+      make_all_fresh()
+      core = OpenWBCore().setup()
+
+      self.LP = core.modules['LP'].modules[0]
       self.LP.actP = 0
 
       # Zur leichteren Verfügbarkeit
-      self.LPregler = self.core.regelkreise['sofort'].regler[1]
+      self.LPregler = core.regelkreise['sofort'].regler[1]
 
    def test_startup(self):
       """Initialisierung"""
-      self.core.config["lpmodul1_sofortll"] = 10
+      OpenWBconfig()["lpmodul1_sofortll"] = 10
       Scheduler().test_callAll()
       self.assertEqual(2300, self.LP.setP, "Anforderung eingestellter Strom")
 
-      self.core.config["lpmodul1_sofortll"] = 20
+      OpenWBconfig()["lpmodul1_sofortll"] = 20
       Scheduler().test_callAll()
       self.assertEqual(4600, self.LP.setP, "Anforderung veränderter Strom")
 
       with self.subTest("Wechsel zu STOP-Modus"):
-         self.core.setconfig("lpmodul1_mode", "stop")
+         OpenWBCore().setconfig("lpmodul1_mode", "stop")
          Scheduler().test_callAll()
          self.assertEqual(0, self.LP.setP, "Anforderung auf 0")
 
