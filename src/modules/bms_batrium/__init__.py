@@ -8,6 +8,7 @@ class BATRIUM(DataProvider):
 
    def setup(self, config):
       super().setup(config)
+      self.timeout = 0
 
    def run(self):
       BCASTPORT = 18542
@@ -29,7 +30,7 @@ class BATRIUM(DataProvider):
                'speicher_tmin': parts['Tmin']
             }
             self.core.sendData(DataPackage(self, data))
-
+            self.timeout = 0
 
 def getClass():
    return BATRIUM

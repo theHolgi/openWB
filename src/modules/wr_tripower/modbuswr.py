@@ -3,6 +3,7 @@ import sys
 import struct
 from typing import List
 from pymodbus.client.sync import ModbusTcpClient
+import logging
 
 class ModbusWR:
     """
@@ -11,7 +12,8 @@ class ModbusWR:
     """
     def __init__(self, ip):
         self.host = ip
-        self.client = ModbusTcpClient(self.host, port=502, timeout=10)
+        self.client = ModbusTcpClient(self.host, port=502, timeout=20)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def _readregister(self, reg: int, count=2) -> List[int]:
         return self.client.read_holding_registers(reg, count, unit=3).registers
@@ -30,7 +32,7 @@ class ModbusWR:
        return int(format(value[0], '04x') + format(value[1], '04x'), 16)
 
     def read(self):
-        try:
+#        try:
             #pv watt
             power = self.decode_s32(self._readregister(30775, 2)) # Wirkleistung alle Außenleiter, S32 W
             if power < 0:
@@ -45,11 +47,11 @@ class ModbusWR:
             dca = self.decode_s32(resp[0:2]) / 1000
             dcu = self.decode_s32(resp[2:4]) / 100
             dcp = self.decode_s32(resp[4:6])
-            self.logging.info(f"DCA: {dca} DCU: {dcu} DCP: {dcp}")
+            self.logger.info(f"DCA: {dca} DCU: {dcu} DCP: {dcp}")
 
             return {'pvwatt': power, 'pvkwh': generation}
-        except:
-            raise ConnectionError
+#        except:
+#            raise ConnectionError
 
 
 if __name__ == '__main__':

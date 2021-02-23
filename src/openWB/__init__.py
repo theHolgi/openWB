@@ -201,7 +201,7 @@ class Speichermodul(DataProvider):
       self.core.sendData(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
-      if event.type == Event.resetDaily:
+      if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'in')
       elif event.type == EventType.resetNoon:
          self.reset_offset('daily', 'out')
