@@ -41,7 +41,7 @@ class I2CDISPLAY(Displaymodul):
       Scheduler().registerData(mapping.keys(), self)
       Scheduler().registerTimer(10, self.leds)
 
-   def blink(self, port):
+   def blink(self, port: int) -> None:
       t = threading.currentThread()
       t.do_run = True
       state = ON
@@ -54,7 +54,7 @@ class I2CDISPLAY(Displaymodul):
          state = ON - state
 
    @staticmethod
-   def scale(channel, val) -> int:
+   def scale(channel: int, val: int) -> int:
       t = table[channel]
       last_x = None
       for x, y in t.items():
@@ -74,7 +74,7 @@ class I2CDISPLAY(Displaymodul):
                channel, name = values
                value = updated[key]
                if abs(value - self.last[name]) > 100:
-                  dc = self.scape(table[name], value)
+                  dc = self.scale(table[name], value)
                   self.last[name] = value
                   self.pwm.set_pwm(channel, 0, dc)
       except OSError:
@@ -92,17 +92,17 @@ class I2CDISPLAY(Displaymodul):
 
       try:
          if self.last['red'] != red:
-         if self.last['red'] == "blink":
-            self.last['red_blink'].do_run = False
-         if red == "blink":
-            self.last['red_blink'] = threading.Thread(target=self.blink, args=(ch_red,))
-            self.last['red_blink'].start()
-         else:
-            self.pwm.set_pwm(ch_red, 0, ON if red else OFF)
-         self.last['red'] = red
+            if isinstance(self.last['red'], threading.Thread):
+               self.last['red_blink'].do_run = False
+            if red == "blink":
+               self.last['red_blink'] = threading.Thread(target=self.blink, args=(ch_red,))
+               self.last['red_blink'].start()
+            else:
+               self.pwm.set_pwm(ch_red, 0, ON if red else OFF)
+            self.last['red'] = red
 
          if self.last['green'] != green:
-            if self.last['green'] == "blink":
+            if isinstance(self.last['green'], threading.Thread):
                self.last['green_blink'].do_run = False
             if green == "blink":
                self.last['green_blink'] = threading.Thread(target=self.blink, args=(ch_green,))

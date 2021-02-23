@@ -48,15 +48,17 @@ class LP_FHEMSWITCH(Ladepunkt):
                              inc=0)
 
    def set(self, power: int) -> None:
-      charging = power > self.power/2
+      charging = power >= self.power
       ampere = power2amp(power, self.phasen)
-      self.core.sendData(DataPackage(self, {'llsoll': ampere, 'ladestatus': charging}))
+      update = {}
       self.core.logger.info("FHEM send %i W" % power)
       if charging and not self.is_charging and not self.is_blocked:
          if self.on_delay == 0:
             cmd = "set %s on" % self.swname
             self.core.logger.info("FHEM cmd " + cmd)
             fhem_send(self.ip, cmd)
+            update['ChargeStatus'] = 1
+            update['Areq'] = ampere
          if self.on_delay < ON_DELAY:
             self.on_delay += 1
          else:
@@ -65,12 +67,16 @@ class LP_FHEMSWITCH(Ladepunkt):
             cmd = "set %s off" % self.swname
             self.core.logger.info("FHEM cmd " + cmd)
             fhem_send(self.ip, cmd)
+            update['ChargeStatus'] = 0
+            update['Areq'] = 0
       self.setP = power
       # Blockierung wird bei Abschaltung aufgehoben
       if not charging:
          self.blockcnt = 0
          self.on_delay = 0
          self.actP = 0
+      if update:
+         self.send(update)
 
 
 def getClass():

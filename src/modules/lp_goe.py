@@ -1,24 +1,43 @@
-from openWB import DataPackage
+from time import sleep
+
 from urllib import request
 import json
 
-from threading import Thread
-from openWB.Modul import *
+from threading import Thread, Event
+from openWB.Modul import Ladepunkt, PowerProperties, power2amp
 
 
 class GO_E_SET(Thread):
    """Threaded parameter setting on a GO-E charger"""
-   def __init__(self, url, timeout):
+   def __init__(self, url: str, timeout: int, master: Ladepunkt):
       super().__init__()
       self.url = url
+      self.master = master
       self.timeout = timeout
+      self.lock = Event()
+      self.requests = {}
+      self.last = {}
 
-   def run(self):
-      try:
-         with request.urlopen(self.url, timeout=self.timeout) as req:
-            pass
-      except:
-         pass
+   def request(self, key: str, value: int) -> None:
+      self.requests[key] = value
+      self.lock.set()
+
+   def run(self) -> None:
+      while True:
+         self.lock.wait()
+         while self.requests:
+            key, value = self.requests.popitem()
+            try:
+               if self.last.get(key) != value:
+                  with request.urlopen(self.url + "?payload=%s=%s" % (key, value), timeout=self.timeout) as req:
+                     self.last[key] = value
+                     if key == 'alw':
+                        self.master.send({'ChargeStatus': value})
+                     elif key == 'amp':
+                        self.master.send({'Areq': value})
+            except:
+               pass
+         sleep(5)
 
 
 class GO_E(Ladepunkt):
@@ -27,6 +46,7 @@ class GO_E(Ladepunkt):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
+      self.setter = GO_E_SET('http://%s/mqtt' % self.ip, self.timeout, self)
       super().setup(config)
 
    def loop(self):
@@ -69,11 +89,8 @@ class GO_E(Ladepunkt):
       ampere = power2amp(power, self.phasen)
       self.core.logger.info(f"GO-E request {power}W ({ampere}A)")
       aktiv = 1 if ampere > 0 else 0
-      self.core.sendData(DataPackage(self, {'Areq': ampere, 'ChargeStatus': aktiv}))
-      if self.laststate['alw'] != str(aktiv):  # Allow
-         GO_E_SET('http://%s/mqtt?payload=alw=%s' % (self.ip, aktiv), self.timeout).start()
-      if self.laststate['amp'] != str(ampere):  # Power
-         GO_E_SET('http://%s/mqtt?payload=amp=%s' % (self.ip, ampere), self.timeout).start()
+      self.setter.request('alw', aktiv)
+      self.setter.request('amp', ampere)
 
 
 def getClass():

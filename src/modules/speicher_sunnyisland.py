@@ -48,6 +48,8 @@ class SUNNYISLAND(Speichermodul):
          self.send({})
       except ConnectionException:
          self.send({'speicherleistung': 0})
+      except Exception as e:
+         self.logger.exception("Exceptional exception occurred:", )
 
 
 def getClass():
