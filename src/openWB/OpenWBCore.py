@@ -46,49 +46,10 @@ class OpenWBCore(Singleton):
       Scheduler().registerEvent(EventType.configupdate, self.event)
       return self
 
-   def run(self, loops: int = 0) -> None:
-      """Run the given number of loops (0=infinite)"""
-      if loops == 0:
-         condition = lambda: True
-         for publisher in self.publishers:
-            publisher.setup()
-      else:
-         done = (i < loops for i in range(loops+1))
-         condition = lambda: next(done)
-      while condition():
-         for module in self.modules:
-            module.finished.clear()
-            module.trigger.set()   # Set the event trigger
-         # Now, wait until all backtriggers are set
-         for module in self.modules:
-            if not module.finished.wait(timeout=10.0):
-               self.logger.warn("Timeout waiting for " + module.name)
-
-         ####### Now, all modules have run.
-         self.data.derive_values()
-         self.logger.debug("Values: " + str(self.data))
-         for module in self.outputmodules:
-            module.trigger.set()
-         for gruppe in self.regelkreise.values():
-            gruppe.controlcycle(self.data)
-         self.logdebug()
-         if self.config.get('testmode') is None:
-            for publisher in self.publishers:
-               publisher.publish()
-            time.sleep(10)
-            today = datetime.today()
-            if self.today.day != today.day:
-               self.triggerEvent(OpenWBEvent(EventType.resetDaily))
-               if today.day == 1:
-                  self.triggerEvent(OpenWBEvent(EventType.resetMonthly))
-            elif self.today.hour != 12 and today.hour == 12:
-               self.triggerEvent(OpenWBEvent(EventType.resetNoon))
-            self.today = today
-
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
-      debug += "Batt: %iW (%i%%)" % (self.data.get("speicherleistung"), self.data.get("speichersoc"))
-      debug += "Laden: %iW" % self.data.get("llaktuell")
+      debug += "Batt: %iW (%i%%) " % (self.data.get("speicherleistung"), self.data.get("speichersoc"))
+      debug += "Laden: %iW " % self.data.get("llaktuell")
       for kreis in self.regelkreise.values():
          for lp in kreis.regler.values():
             id = lp.wallbox.id
@@ -99,7 +60,7 @@ class OpenWBCore(Singleton):
             if lp.offcount > 0:
                debug += f" -{lp.offcount}"
             debug += ")"
-      debug += " Haus: %iW" % self.data.get("hausverbrauch")
+      debug += "Haus: %iW " % self.data.get("hausverbrauch")
       self.logger.info(datetime.now().strftime("%H:%M:%S") + ':' + debug)
 
    def setconfig(self, key:str, value) -> None:
@@ -110,7 +71,8 @@ class OpenWBCore(Singleton):
 
    def event(self, event: OpenWBEvent) -> None:
       self.logger.info("Event: %s = %s" % (event.info, event.payload))
-      if event.type == EventType.configupdate:
+      try:
+       if event.type == EventType.configupdate:
          m = re.match('lpmodul(\\d)_mode', event.info)
          if m:
             id = int(m.group(1))
@@ -132,3 +94,8 @@ class OpenWBCore(Singleton):
                   self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                   break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
+         elif re.match('speichermodul1', event.info):
+            self.ramdisk['speichervorhanden'] = 1 if event.payload != "none" else 0
+             
+      except Exception as e:
+         print("BAM!!! %s" % e)
