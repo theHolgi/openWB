@@ -5,6 +5,7 @@ from openWB import Speichermodul
 import struct
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.exceptions import ConnectionException
+import sys
 
 
 class SUNNYISLAND(Speichermodul):
@@ -62,6 +63,9 @@ class SUNNYISLAND(Speichermodul):
          self.send({})
       except ConnectionException:
          self.send({'speicherleistung': 0})
+      except Exception as e:
+         self.logger.exception("O-o, something really wrong!")
+         sys.exit(1)
 
 
 def getClass():

@@ -9,7 +9,7 @@ import logging
 import time
 import re
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s', filename="/var/log/openWB.log")
 
 infologgers = ['Adafruit_I2C.Device.Bus.1.Address.0X40', 'pymodbus']
 for logger in infologgers:
@@ -96,8 +96,8 @@ class OpenWBCore:
 
    def logdebug(self):
       debug = "PV: %iW EVU: %iW " % (-self.data.get("pvwatt"), -self.data.get("wattbezug"))
-      debug += "Batt: %iW (%i%%)" % (self.data.get("speicherleistung"), self.data.get("speichersoc"))
-      debug += "Laden: %iW" % self.data.get("llaktuell")
+      debug += "Batt: %iW (%i%%) " % (self.data.get("speicherleistung"), self.data.get("speichersoc"))
+      debug += "Laden: %iW " % self.data.get("llaktuell")
       for kreis in self.regelkreise.values():
          for lp in kreis.regler.values():
             id = lp.wallbox.id
@@ -108,7 +108,7 @@ class OpenWBCore:
             if lp.offcount > 0:
                debug += f" -{lp.offcount}"
             debug += ")"
-      debug += " Haus: %iW" % self.data.get("hausverbrauch")
+      debug += "Haus: %iW " % self.data.get("hausverbrauch")
       self.logger.info(datetime.now().strftime("%H:%M:%S") + ':' + debug)
 
    def sendData(self, package: DataPackage) -> None:
