@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s', fil
 
 infologgers = ['Adafruit_I2C.Device.Bus.1.Address.0X40', 'pymodbus']
 for logger in infologgers:
-   logging.getLogger(logger).setLevel(logging.INFO)
+   logging.getLogger(logger).setLevel(logging.DEBUG)
 
 class OpenWBCore(Singleton):
    """openWB core and scheduler"""
