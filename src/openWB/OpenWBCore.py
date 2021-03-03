@@ -94,8 +94,6 @@ class OpenWBCore(Singleton):
                   self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                   break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
-         elif re.match('speichermodul1', event.info):
-            self.ramdisk['speichervorhanden'] = 1 if event.payload != "none" else 0
-             
+
       except Exception as e:
          print("BAM!!! %s" % e)

@@ -1,5 +1,6 @@
+from openWB.Scheduling import Scheduler
 from typing import Iterator
-
+from openWB.openWBlib import RamdiskValues
 
 class RamdiskPublisher(object):
    datamapping = {
@@ -35,10 +36,10 @@ class RamdiskPublisher(object):
       'speichersoc': 'speichersoc',
 
       # PV
-      'pvallwatt': 'pvwatt',
+      'pv/W': 'pvallwatt',
       'pvwatt1': 'pvwatt1',
       # 'pvcounter'
-      'pvkwh': 'pvkwh',
+      'pv/kwh': 'pvkwh',
       'daily_pvkwhk': 'daily_pvkwh',
       'monthly_pvkwhk': 'monthly_pvkwh'
       # 'yearly_pvkwhk'
@@ -49,11 +50,12 @@ class RamdiskPublisher(object):
    }
    """Mirrors selected data to the ramdisk. Required for legacy PHP status"""
    def __init__(self, core):
-      self.ramdisk = core.ramdisk
+      self.ramdisk = RamdiskValues()
       self.data = core.data
 
    def setup(self):
-      pass
+      scheduler = Scheduler()
+      scheduler.registerData(['pv/*'], self)
 
    @staticmethod
    def _loop(key: str, key2: str = None) -> Iterator[str]:
@@ -67,7 +69,7 @@ class RamdiskPublisher(object):
       else:
          yield key, key2
 
-   def publish(self):
-      for k, v in self.datamapping.items():
-        for key, datakey in self._loop(k, v):
-           self.ramdisk[key] = self.data.get(datakey)
+   def newdata(self, data):
+      for k, v in data.items():
+         if k in self.datamapping:
+           self.ramdisk[self.datamapping[k]] = v
