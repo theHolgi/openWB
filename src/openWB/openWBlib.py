@@ -36,7 +36,7 @@ class OpenWBconfig(Singleton):
    Represents openwb.conf
    behaves like a dictionary (non-existent settings return None)
    """
-   def __init__(self, configfile: str = basepath + 'openwb.conf'):
+   def __init__(self, configfile: str = basepath + 'pyconfig.conf'):
       if not hasattr(self, 'settings'):
          self.settings = {}
          self.configfile = configfile
