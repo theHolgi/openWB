@@ -30,6 +30,7 @@ class Scheduler(Singleton):
          self.timeTable = {}      # Timetable is a mapping of  listener: time
          self.eventListener = {}  # Event listeners are a mapping of Event: [listeners]
          self.dataQueue = queue.Queue()
+         self.timerQueue = queue.Queue()
          if not simulated:
             self.dataRunner = Thread(target=self._dataQueue, daemon=True)
             self.dataRunner.start()
@@ -55,7 +56,6 @@ class Scheduler(Singleton):
             if len(listeners) == 0:
                del self.dataListener[pattern]
 
-
    def registerTimer(self, time: int, listener: Callable[[], None]) -> None:
       """
       Registers a callback for regular scheduling.
@@ -64,6 +64,13 @@ class Scheduler(Singleton):
       :return:
       """
       self.timeTable[listener] = time
+      self.timerQueue.put(listener)
+
+   def unregisterTimer(self, listener: Callable[[], None]) -> None:
+      """
+      Unregister listener from Timer events
+      """
+      del self.timeTable[listener]
 
    def registerEvent(self, event: EventType, listener: Callable[[OpenWBEvent], None]) -> None:
       """
@@ -109,17 +116,22 @@ class Scheduler(Singleton):
             queuedata.update(self.dataQueue.get(block=True))
 #         sleep(1)
 
-
    def run(self, simulated: bool = False) -> None:
       """
       run scheduled tasks regularly
       """
       delaysort = lambda delay: delay[0]
-      timetable = list(sorted(((delay, task) for task, delay in self.timeTable.items()), key=delaysort))
+      timetable = []
       while True:
+         while not self.timerQueue.empty():  # Check for new elements
+            listener = self.timerQueue.get()
+            timetable.append((self.timeTable[listener], listener))
+         timetable.sort(key=delaysort)
          delay, next_task = timetable.pop(0)
          if delay > 0 and not simulated:
             sleep(delay)
+         if next_task not in self.timeTable:    # check if the task has not been removed from the timetable meanwhile
+            continue
          next_task()
          if len(timetable) == 0:
             break
@@ -127,15 +139,16 @@ class Scheduler(Singleton):
          if delay > 0:
             timetable = [(d-delay, task) for d, task in timetable]
          # re-schedule the task
-         reschedule = self.timeTable[next_task]
+         reschedule = self.timeTable.get(next_task)
+         if reschedule is None:  # Might have been removed meanwhile
+            continue
          if simulated:  # In simulation, do not reschedule beyond the end of list. This makes the loop stop after the slowest task has been run once.
             last = timetable[-1][0]
             if last < reschedule:
                continue
          timetable.append((reschedule, next_task))
-         timetable.sort(key=delaysort)
 
-   def test_callAll(self, n:int = 1) -> None:
+   def test_callAll(self, n: int = 1) -> None:
       """
       Call all scheduled tasks (for testing)
       """

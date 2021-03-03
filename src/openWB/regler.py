@@ -165,13 +165,14 @@ class Regelgruppe():
    - "sofort" - Sofortladen
    """
    priority = 500   # Regelung hat eine mittlere Priorität
+
    def __init__(self, mode:str):
       self.mode = mode
       self.regler = dict()
       self.config = OpenWBconfig()
       self.hysterese = self.config.get('hysterese')
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
-      Scheduler().registerData(['global/uberschuss'], self)  # TODO: Thread, nicht öfter als alle x s
+      Scheduler().registerTimer(5, self.loop)  # TODO: Thread, nicht öfter als alle x s
       if self.mode == 'pv':
          """
             PV-Modus: Limit darf nicht unterschritten werden.
@@ -238,7 +239,7 @@ class Regelgruppe():
          self.get_decrement = get_delta
 
    def destroy(self) -> None:
-      Scheduler().unregisterData(self)
+      Scheduler().unregisterTimer(self.loop)
       del self
 
    def add(self, ladepunkt: "Ladepunkt") -> None:
@@ -260,13 +261,13 @@ class Regelgruppe():
       """
       return len(self.regler) == 0
 
-   def newdata(self, newdata: dict) -> None:
+   def loop(self) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
       self.logger.debug(f"LP Props: {properties!r}")
-      uberschuss = newdata.get('global/uberschuss')
+      data = openWBValues()
+      uberschuss = data.get('global/uberschuss')
       if self.mode == 'sofort':
-         data = openWBValues()
          for id, regler in self.regler.items():
             prefix = 'lp/%i/' % id
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)

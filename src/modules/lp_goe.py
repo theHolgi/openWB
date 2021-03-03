@@ -1,9 +1,10 @@
 from time import sleep
 
+import queue
 from urllib import request
 import json
 
-from threading import Thread, Event
+from threading import Thread
 from openWB.Modul import Ladepunkt, PowerProperties, power2amp
 
 
@@ -14,30 +15,25 @@ class GO_E_SET(Thread):
       self.url = url
       self.master = master
       self.timeout = timeout
-      self.lock = Event()
-      self.requests = {}
+      self.requests = queue.Queue()
       self.last = {}
 
    def request(self, key: str, value: int) -> None:
-      self.requests[key] = value
-      self.lock.set()
+      self.requests.put((key, value))
 
    def run(self) -> None:
       while True:
-         self.lock.wait()
-         while self.requests:
-            key, value = self.requests.popitem()
-            try:
-               if self.last.get(key) != value:
-                  with request.urlopen(self.url + "?payload=%s=%s" % (key, value), timeout=self.timeout) as req:
-                     self.last[key] = value
-                     if key == 'alw':
-                        self.master.send({'ChargeStatus': value})
-                     elif key == 'amp':
-                        self.master.send({'Areq': value})
-            except:
-               pass
-         sleep(5)
+         key, value = self.requests.get()
+         try:
+            if self.last.get(key) != value:
+               with request.urlopen(self.url + "?payload=%s=%s" % (key, value), timeout=self.timeout) as req:
+                  self.last[key] = value
+                  if key == 'alw':
+                     self.master.send({'ChargeStatus': value})
+                  elif key == 'amp':
+                     self.master.send({'Areq': value})
+         except:
+            pass
 
 
 class GO_E(Ladepunkt):
@@ -53,7 +49,7 @@ class GO_E(Ladepunkt):
       try:
          with request.urlopen('http://%s/status' % self.ip, timeout=self.timeout) as req:
             if req.getcode() != 200:
-               self.core.logger.info('HTTP error on %s' % self.ip)
+               self.logger.info('HTTP error on %s' % self.ip)
                return
             goe = json.loads(req.read().decode())
             self.laststate = goe
@@ -87,7 +83,7 @@ class GO_E(Ladepunkt):
    def set(self, power: int) -> None:
       self.setP = power
       ampere = power2amp(power, self.phasen)
-      self.core.logger.info(f"GO-E request {power}W ({ampere}A)")
+      self.logger.info(f"GO-E request {power}W ({ampere}A)")
       aktiv = 1 if ampere > 0 else 0
       self.setter.request('alw', aktiv)
       self.setter.request('amp', ampere)
