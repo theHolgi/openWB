@@ -25,6 +25,7 @@ class SpeicherModule:
 
    def add(self, module: Speichermodul) -> None:
       module.master = self
+      module.configprefix = "speichermodul" + str(module.id)
       self.modules.append(module)
       module.setup(OpenWBconfig())
       self.data.update({"housebattery/boolHouseBatteryConfigured": 1})

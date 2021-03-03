@@ -14,6 +14,7 @@ class PVModule:
 
    def add(self, module: PVModul) -> None:
       module.master = self
+      module.configprefix = "wrmodul" + str(module.id)
       self.modules.append(module)
       module.setup(OpenWBconfig())
 

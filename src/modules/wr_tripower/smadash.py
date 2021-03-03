@@ -40,7 +40,7 @@ class SMADASH:
                   generation = getVal(unitResult, '6400_00260100')/1000  # Total yield in Wh
       except:
          pass
-      return {'pvwatt': power, 'pvkwh': generation}
+      return power, generation
 
 
 if __name__ == '__main__':

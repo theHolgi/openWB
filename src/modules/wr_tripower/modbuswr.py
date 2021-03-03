@@ -49,7 +49,7 @@ class ModbusWR:
             dcp = self.decode_s32(resp[4:6])
             self.logger.info(f"DCA: {dca} DCU: {dcu} DCP: {dcp}")
 
-            return {'W': power, 'kwh': generation}
+            return power, generation
 #        except:
 #            raise ConnectionError
 

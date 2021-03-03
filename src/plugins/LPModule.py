@@ -26,6 +26,7 @@ class LPModule:
 
    def add(self, module: Ladepunkt) -> None:
       module.master = self
+      module.configprefix = "lpmodul" + str(module.id)
       self.modules.append(module)
       module.setup(OpenWBconfig())
       self.data.update({
