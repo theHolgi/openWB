@@ -2,6 +2,7 @@ from openWB.Modul import EVUModul
 from .speedwiredecoder import decode_speedwire
 import socket
 import struct
+import threading
 
 
 class SMASHM(EVUModul):
@@ -10,6 +11,8 @@ class SMASHM(EVUModul):
    def setup(self, config) -> None:
       self.serial = config.get(self.configprefix + '_serial')
       super().setup(config)
+      self.runner = threading.Thread(target=self.loop)
+      self.runner.start()
 
    def loop(self):
       ipbind = '0.0.0.0'
@@ -28,11 +31,12 @@ class SMASHM(EVUModul):
          mreq = struct.pack("4s4s", socket.inet_aton(MCAST_GRP), socket.inet_aton(ipbind))
          sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
       except BaseException:
-         self.core.logging.warn('could not connect to mulicast group or bind to given interface')
+         self.logger.warn('could not connect to mulicast group or bind to given interface')
          return
       # processing received messages
       while True:
          emparts = decode_speedwire(sock.recv(608))
+         self.logger.debug("*ping*")
          # Output...
          # don't know what P,Q and S means:
          # http://en.wikipedia.org/wiki/AC_power or http://de.wikipedia.org/wiki/Scheinleistung
@@ -66,7 +70,6 @@ class SMASHM(EVUModul):
                if empartskey in emparts:
                   data[datakey] = emparts[empartskey]
             self.send(data)
-            break
 
 
 def getClass():

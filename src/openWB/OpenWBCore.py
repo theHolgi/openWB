@@ -1,4 +1,3 @@
-from openWB import DataPackage
 from openWB.Event import OpenWBEvent, EventType
 from .openWBlib import *
 from .mqttpub import Mqttpublisher
@@ -7,7 +6,6 @@ from plugins import *
 from datetime import datetime
 
 import logging
-import time
 import re
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(message)s', filename="/var/log/openWB.log")
@@ -34,6 +32,7 @@ class OpenWBCore(Singleton):
       self.modules['PV'] = PVModule()
       self.modules['LP'] = LPModule()
       self.modules['SPEICHER'] = SpeicherModule()
+      self.modules['DISPLAY'] = DisplayModule()
       self.modules['HELPER'] = [DependentData()]
       if self.config.get('testmode') is None:
          self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]

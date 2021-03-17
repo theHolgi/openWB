@@ -19,9 +19,9 @@ ch_red = 6
 ON = 4095
 OFF = 0
 
-table = {'pv':   {0: 0, 500: 840, 1000: 1750, 2000: 2600, 4000: 3450, 7000: 4095},
-         'grid': {-2000: 0, -1000: 850, 0: 1730, 1000: 2600, 2000: 3400, 3600: 4095},
-         'batt': {-1000: 0, -500: 800, 0: 1700, 500: 2570, 1000: 3450, 1600: 4095}
+table = {'pv':   {    0: 0,      500: 840,   1000: 1750,2000: 2600, 4000: 3450, 7000: 4095},
+         'grid': {-3600: 4095, -2000: 3400, -1000: 2600,   0: 1730, 1000:  850, 2000: 0},
+         'batt': {-1000: 0,     -500: 800,      0: 1700, 500: 2570, 1000: 3450, 1600: 4095}
          }
 
 mapping = {
@@ -54,8 +54,7 @@ class I2CDISPLAY(Displaymodul):
          state = ON - state
 
    @staticmethod
-   def scale(channel: int, val: int) -> int:
-      t = table[channel]
+   def scale(t: dict, val: int) -> int:
       last_x = None
       for x, y in t.items():
          if x > val:
@@ -82,17 +81,17 @@ class I2CDISPLAY(Displaymodul):
 
    def leds(self):
       data = openWBValues()
-      red = data.get('evu/W') > 6400
-      if data.get('evu/W') < -50 and data.get('pv/W') > 1000:
+      red = data.get('evu/W') < -6400
+      if data.get('evu/W') > 50 and data.get('pv/W') > 1000:
          red = "blink"
 
-      green = data.get('ladestatus') != 0
-      if green and data.get('llaktuell') == 0:
+      green = data.get('lp/ChargeStat') != 0
+      if green and data.get('global/WAllChargePoints') == 0:
          green = "blink"
 
       try:
          if self.last['red'] != red:
-            if isinstance(self.last['red'], threading.Thread):
+            if self.last['red'] == "blink":
                self.last['red_blink'].do_run = False
             if red == "blink":
                self.last['red_blink'] = threading.Thread(target=self.blink, args=(ch_red,))
@@ -102,7 +101,7 @@ class I2CDISPLAY(Displaymodul):
             self.last['red'] = red
 
          if self.last['green'] != green:
-            if isinstance(self.last['green'], threading.Thread):
+            if self.last['green'] == "blink":
                self.last['green_blink'].do_run = False
             if green == "blink":
                self.last['green_blink'] = threading.Thread(target=self.blink, args=(ch_green,))

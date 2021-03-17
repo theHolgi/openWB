@@ -2,6 +2,7 @@
 from typing import List
 
 from openWB.Modul import Speichermodul
+from openWB.Scheduling import Scheduler
 import struct
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.exceptions import ConnectionException
@@ -22,7 +23,8 @@ class SUNNYISLAND(Speichermodul):
          self.bms.start()
       else:
          self.bms = None
-      super().setup()
+      super().setup(config)
+      Scheduler().registerTimer(10, self.loop)
 
    @staticmethod
    def decode_s32(value: List[int]) -> int:
@@ -49,12 +51,12 @@ class SUNNYISLAND(Speichermodul):
          # 455 - Warnung
          resp = self._readregister(30595, 4)
          data = {
-           'speicherikwh': self.decode_u32(resp[0:2]) / 1000,    # Aufgenommen [Wh]
-           'speicherekwh': self.decode_u32(resp[2:4]) / 1000     # Abgegeben   [Wh]
+           'kwhIn': self.decode_u32(resp[0:2]) / 1000,    # Aufgenommen [Wh]
+           'kwhOut': self.decode_u32(resp[2:4]) / 1000     # Abgegeben   [Wh]
          }
          if self.bms is None or self.bms.timeout >= 10:
-            data['speichersoc'] = self.decode_u32(self._readregister(30845))        # SOC [%],
-            data['speicherleistung'] = -self.decode_s32(self._readregister(30775))  # Leistung [W] (>0: Laden)
+            data['soc'] = self.decode_u32(self._readregister(30845))        # SOC [%],
+            data['W'] = -self.decode_s32(self._readregister(30775))  # Leistung [W] (>0: Laden)
          else:
             self.bms.timeout += 1
          self.send(data)
@@ -62,7 +64,7 @@ class SUNNYISLAND(Speichermodul):
          # modbus client seems to return (!) an ModbusIOExcption which is then tried to examine (resp.registers[])
          self.send({})
       except ConnectionException:
-         self.send({'speicherleistung': 0})
+         self.send({'W': 0})
       except Exception as e:
          self.logger.exception("O-o, something really wrong!")
          sys.exit(1)   # TODO: Remove when it's running stable

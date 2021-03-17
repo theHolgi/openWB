@@ -1,5 +1,5 @@
 from openWB import DataPackage
-from openWB.Modul import for_module, EVUModul
+from openWB.Modul import for_all_modules, EVUModul
 from openWB.openWBlib import OpenWBconfig, openWBValues
 
 datamapping = {
@@ -33,11 +33,12 @@ class EVUModule:
    def __init__(self):
       self.modul = None
       self.data = openWBValues()
-      for_module("bezug", self.add)
+      for_all_modules("bezug", self.add)
 
    def add(self, module: EVUModul) -> None:
       self.modul = module
       module.master = self
+      module.configprefix = "bezugmodul1"
       module.setup(OpenWBconfig())
 
    def send(self, data: DataPackage) -> None:

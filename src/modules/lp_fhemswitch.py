@@ -1,5 +1,8 @@
 from openWB.Modul import *
 from openWB.OpenWBCore import OpenWBCore
+from openWB.Scheduling import Scheduler
+
+
 import socket
 
 
@@ -22,6 +25,7 @@ class LP_FHEMSWITCH(Ladepunkt):
       self.blockcnt = 0
       self.on_delay = 0
       self.setP = 0
+      Scheduler().registerTimer(10, self.loop)
       super().setup(config)
 
    @property
@@ -30,7 +34,8 @@ class LP_FHEMSWITCH(Ladepunkt):
 
    def loop(self):
       # Da wir den Verbrauch selber nicht messen können, erkenne wenigstens unplausiblen Hausverbrauch
-      if self.core.data.get('hausverbrauch') < 0:
+      data = openWBValues()
+      if data.get('global/WHouseConsumption') < 0:
          self.blockcnt += 1
          if self.is_blocked:
             self.actP = 0
@@ -38,9 +43,7 @@ class LP_FHEMSWITCH(Ladepunkt):
          if self.blockcnt > 0:
             self.blockcnt -= 1
          
-      self.send({
-         'llaktuell': self.actP,
-         'lpphasen': 1})
+      self.send({'W': self.actP})
 
    def powerproperties(self) -> PowerProperties:
       return PowerProperties(minP=self.power,
@@ -51,13 +54,13 @@ class LP_FHEMSWITCH(Ladepunkt):
       charging = power >= self.power
       ampere = power2amp(power, self.phasen)
       update = {}
-      self.core.logger.info("FHEM send %i W" % power)
+      self.logger.info("FHEM send %i W" % power)
       if charging and not self.is_charging and not self.is_blocked:
          if self.on_delay == 0:
             cmd = "set %s on" % self.swname
-            self.core.logger.info("FHEM cmd " + cmd)
+            self.logger.info("FHEM cmd " + cmd)
             fhem_send(self.ip, cmd)
-            update['ChargeStatus'] = 1
+            update['boolChargeStat'] = 1
             update['Areq'] = ampere
          if self.on_delay < ON_DELAY:
             self.on_delay += 1
@@ -65,9 +68,9 @@ class LP_FHEMSWITCH(Ladepunkt):
             self.actP = power
       elif not charging and self.setP > 0:
             cmd = "set %s off" % self.swname
-            self.core.logger.info("FHEM cmd " + cmd)
+            self.logger.info("FHEM cmd " + cmd)
             fhem_send(self.ip, cmd)
-            update['ChargeStatus'] = 0
+            update['boolChargeStat'] = 0
             update['Areq'] = 0
       self.setP = power
       # Blockierung wird bei Abschaltung aufgehoben

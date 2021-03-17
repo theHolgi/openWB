@@ -37,7 +37,6 @@ class ModbusWR:
             power = self.decode_s32(self._readregister(30775, 2)) # Wirkleistung alle Außenleiter, S32 W
             if power < 0:
                 power = 0
-            power = -power
 
             #pv Wh
             generation = self.decode_u32(self._readregister(30529, 2)) / 1000  # Total AC power, U32 [Wh]

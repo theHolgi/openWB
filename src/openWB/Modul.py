@@ -74,7 +74,7 @@ class Modul(Thread):
          ramdisk = RamdiskValues()
          today = datetime.today()
          ramdisk[f'{self.name}_{offsetname}'] = self.offsets[name]
-         ramdisk[f'{today.strftime("%D")}.{self.name}_{offsetname}'] = self.offsets[name]
+         # ramdisk[f'{today.strftime("%D")}.{self.name}_{offsetname}'] = self.offsets[name]
          self.logger.info(f'Setting {prefix} offset {name} to {self.offsets[name]}')
 
    def offsetted(self, prefix, name, value) -> Optional[Number]:
@@ -136,7 +136,7 @@ class Speichermodul(DataProvider):
    Abstrakte Klasse eines Speichers.
    """
    multiinstance = True
-   def setup(self) -> None:
+   def setup(self, config) -> None:
       pass
 
    def send(self, data: dict) -> None:
@@ -323,7 +323,9 @@ def for_all_modules(prefix, callback: Callable[[Modul], None]):
       if modulename is None:
          break
       module = importlib.import_module(f'modules.{prefix}_{modulename}')
-      callback(module.getClass()(instance))
+      o = module.getClass()(instance)
+      callback(o)
+      print("Created module: " + o.name)
       instance += 1
 
 def for_module(prefix, callback: Callable[[Modul], None]):

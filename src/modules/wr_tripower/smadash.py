@@ -35,8 +35,6 @@ class SMADASH:
                   power    = getVal(unitResult, '6100_40263F00')  # PV generation in W
                   if power is None:
                      power = 0
-                  else:
-                     power = -int(power) # generated power is negative
                   generation = getVal(unitResult, '6400_00260100')/1000  # Total yield in Wh
       except:
          pass

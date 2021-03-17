@@ -7,18 +7,18 @@ class RamdiskPublisher(object):
    datamapping = {
       # ramdisk file: data name
       # EVU
-      'evuv%p': 'evuv%p',
-      'evupf%p': 'evupf%p',
-      'bezuga%p': 'evua%p',
-      'bezugw%p': 'bezugw%p',
-      'schieflast': 'schieflast',
-      'evuhz': 'evuhz',
-      'wattbezug': 'wattbezug',
-      'einspeisungkwh': 'einspeisungkwh',
-      'bezugkwh': 'bezugkwh',
+      'evu/VPhase%p': 'evuv%p',
+      'evu/PfPhase%p': 'evupf%p',
+      'evu/APhase%p': 'evua%p',
+      'evu/WPhase%p': 'bezugw%p',
+      'evu/ASchieflast': 'schieflast',
+      'evu/Hz': 'evuhz',
+      'evu/W': 'wattbezug',
+      'evu/WhExported': 'einspeisungkwh',
+      'evu/WhInported': 'bezugkwh',
 
       # Ladepunkt
-      'llkombiniert': 'llaktuell',
+      'lp/W': 'llaktuell',
       # 'llsoll'
       # 'llsolls1'
       # 'llas1%p'
@@ -32,13 +32,13 @@ class RamdiskPublisher(object):
       'llkwhges': 'llkwh',
 
       # Speicher
-      'speicherikwh': 'speicherikwh',
-      'speicherekwh': 'speicherekwh',
-      'speichersoc': 'speichersoc',
+      'housebattery/WhInported': 'speicherikwh',
+      'housebattery/WhExported': 'speicherekwh',
+      'housebattery/%Soc': 'speichersoc',
 
       # PV
       'pv/W': 'pvallwatt',
-      'pvwatt1': 'pvwatt1',
+      'pv/1/W': 'pvwatt1',
       # 'pvcounter'
       'pv/kwh': 'pvkwh',
       'daily_pvkwhk': 'daily_pvkwh',

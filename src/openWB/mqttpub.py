@@ -132,7 +132,7 @@ class Mqttpublisher(object):
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
-            self.client.publish("openWB/graph/%ialllivevalues" % index+1,
+            self.client.publish("openWB/graph/%ialllivevalues" % (index+1),
                                 payload="\n".join(self.all_live[n:n+50]), retain=self.retain)
          else:
             pl = "-\n"
@@ -156,8 +156,8 @@ class Mqttpublisher(object):
       ramdisk('pv-live.graph', self.core.data.get("pv/W"), 'a')
       ramdisk('evu-live.graph', self.core.data.get("evu/W"), 'a')
       ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
-      ramdisk('speicher-live.graph', self.core.data.get('speicherleistung'), 'a')
-      ramdisk('speichersoc-live.graph', self.core.data.get('speichersoc'), 'a')
+      ramdisk('speicher-live.graph', self.core.data.get('housebattery/W'), 'a')
+      ramdisk('speichersoc-live.graph', self.core.data.get('housebattery/%Soc'), 'a')
 
    def publish_config(self):
       """Sende Config als MQTT"""

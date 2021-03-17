@@ -6,6 +6,7 @@ import json
 
 from threading import Thread
 from openWB.Modul import Ladepunkt, PowerProperties, power2amp
+from openWB.Scheduling import Scheduler
 
 
 class GO_E_SET(Thread):
@@ -43,6 +44,8 @@ class GO_E(Ladepunkt):
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
       self.setter = GO_E_SET('http://%s/mqtt' % self.ip, self.timeout, self)
+      self.setter.start()
+      Scheduler().registerTimer(5, self.loop)
       super().setup(config)
 
    def loop(self):

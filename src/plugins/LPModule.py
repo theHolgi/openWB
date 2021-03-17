@@ -59,4 +59,5 @@ class LPModule:
       package['global/WAllChargePoints'] = self.data.sum('lp/%i/W')
       package['lp/WhCounter'] = self.data.sum('lp/%i/kwh')
       package['lp/DailyYieldKwh'] = self.data.sum('lp/%i/DailyKwh')
+      package['lp/ChargeStat'] = self.data.sum('lp/%i/boolChargeStat')
       self.data.update(package)
