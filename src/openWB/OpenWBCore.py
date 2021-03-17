@@ -10,7 +10,7 @@ import logging
 import time
 import re
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s', filename="/var/log/openWB.log")
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(message)s', filename="/var/log/openWB.log")
 
 infologgers = ['Adafruit_I2C.Device.Bus.1.Address.0X40', 'pymodbus']
 for logger in infologgers:

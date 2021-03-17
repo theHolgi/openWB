@@ -109,6 +109,7 @@ class Scheduler(Singleton):
             # now, execute the first element
          elif notifylist:
             recipient, data = notifylist.pop(next(notifylist.keys().__iter__()))
+            self.logger.debug(f"Data trigger: {recipient} with {data}")
             recipient.newdata(data)
          elif self.simulated:   # During simulation, quit when no activity any more.
             return
@@ -132,6 +133,7 @@ class Scheduler(Singleton):
             sleep(delay)
          if next_task not in self.timeTable:    # check if the task has not been removed from the timetable meanwhile
             continue
+         self.logger.debug(f"Calling: {next_task}")
          next_task()
          if len(timetable) == 0:
             break

@@ -107,6 +107,7 @@ class Mqttpublisher(object):
 
    def newdata(self, data: dict):
       for key, value in data.items():
+         self.logger.debug(f"Publish: openWB/{key} = {value}")
          self.client.publish("openWB/" + key, payload=value)
 
    def publishLiveData(self):
