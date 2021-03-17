@@ -60,9 +60,9 @@ class Mqttpublisher(object):
       "global/DailyYieldAllChargePointsKwh": "daily_llkwh",  # Lademenge daily
    }
    # Fields for live chart
-   all_live_fields = ("-evu/W", "ladeleistung", "pv/W", #3
-                      "llaktuell1", "llaktuell2", "llaktuell", #6
-                      "housebattery/W", "housebattery/%Soc", "soc", "soc1", "hausverbrauch", #11
+   all_live_fields = ("-evu/W", "global/WAllChargePoints", "pv/W", #3
+                      "lp/1/W", "lp/2/W", "llaktuell", #6
+                      "housebattery/W", "housebattery/%Soc", "lp/1/soc", "lp/2/soc", "global/WHouseConsumption", #11
                       "verbraucher1_watt", "verbraucher2_watt", #13
                       "llaktuell3", "llaktuell4", "llaktuell5", #16
                       "llaktuell6", "llaktuell7", "llaktuell8", # 19
@@ -72,9 +72,9 @@ class Mqttpublisher(object):
 
    # Fields for long-time graph
 
-   all_fields = ("-evu/W", "ladeleistung", "pv/W",  #3
-                 "llaktuell1", "llaktuell2", "llaktuell3", "llaktuell4", "llaktuell5", "evu/WPhase1", "evu/WPhase2", "evu/WPhase3",  #11
-                 "housebattery/W", "housebattery/%Soc", "soc", "soc1", "hausverbrauch",  #16
+   all_fields = ("-evu/W", "global/WAllChargePoints", "pv/W",  #3
+                 "lp/1/W", "lp/2/W", "lp/3/W", "lp/5/W", "lp/5/W", "evu/WPhase1", "evu/WPhase2", "evu/WPhase3",  #11
+                 "housebattery/W", "housebattery/%Soc", "lp/1/soc", "lp/2/soc", "global/WHouseConsumption",  #16
                  "verbraucher1_watt", "verbraucher2_watt"
                 )
    retain = True
@@ -95,6 +95,8 @@ class Mqttpublisher(object):
       self.client.loop_start()
       self.publish_config()
       self.graphtimer = 0
+      self.all_live = []
+      self.all_data = []
       self.setup()
 
    def setup(self):
@@ -130,7 +132,7 @@ class Mqttpublisher(object):
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
-            self.client.publish("openWB/graph/%ialllivevalues" % index,
+            self.client.publish("openWB/graph/%ialllivevalues" % index+1,
                                 payload="\n".join(self.all_live[n:n+50]), retain=self.retain)
          else:
             pl = "-\n"
@@ -151,8 +153,8 @@ class Mqttpublisher(object):
 
       # Graphen aus der Ramdisk
       ramdisk('all-live.graph', "\n".join(self.all_live))
-      ramdisk('pv-live.graph', self.core.data.get("pvwatt"), 'a')
-      ramdisk('evu-live.graph', self.core.data.get("uberschuss"), 'a')
+      ramdisk('pv-live.graph', self.core.data.get("pv/W"), 'a')
+      ramdisk('evu-live.graph', self.core.data.get("evu/W"), 'a')
       ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
       ramdisk('speicher-live.graph', self.core.data.get('speicherleistung'), 'a')
       ramdisk('speichersoc-live.graph', self.core.data.get('speichersoc'), 'a')

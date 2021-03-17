@@ -3,6 +3,7 @@ from typing import Iterator
 from openWB.openWBlib import RamdiskValues
 
 class RamdiskPublisher(object):
+   priority = 999
    datamapping = {
       # ramdisk file: data name
       # EVU
