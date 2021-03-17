@@ -85,7 +85,7 @@ class Modul(Thread):
          return value - self.offsets[offsetname]
       else:
          ramdisk = RamdiskValues()
-         offset = ramdisk.get(f'{self.name}_{offsetname}')
+         offset = ramdisk[f'{self.name}_{offsetname}']
          if offset is not None:
             self.offsets[offsetname] = offset
          else:

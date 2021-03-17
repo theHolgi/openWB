@@ -95,6 +95,7 @@ class Mqttpublisher(object):
       self.client.loop_start()
       self.publish_config()
       self.graphtimer = 0
+      self.setup()
 
    def setup(self):
       """Subscribe to set topics"""
@@ -180,6 +181,10 @@ class Mqttpublisher(object):
             if val is not None and -300000 <= val <= 300000:
                republish = True
                self.core.setconfig('offsetpv', val)
+         elif msg.topic == "openWB/config/set/pv/priorityModeEVBattery":    # Priorität Batt/EV
+            if val is not None and 0 <= val <= 1:
+               republish = True
+               self.core.setconfig('speicherpveinbeziehen', val)
          elif msg.topic == "openWB/config/set/pv/nurpv70dynw":
             republish = True
             self.core.setconfig('offsetpvpeak', val)

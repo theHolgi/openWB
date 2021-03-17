@@ -46,6 +46,15 @@ class TestScheduling(unittest.TestCase):
          '/another/path/c': 4
       }, self.listener1.data[0], "Listener shall have received the registered data branches")
 
+   def test_dataUpdate_global(self):
+      """Listener can announce catch-all wildcard"""
+      testdata = { '/some/path': 1, '/another/path/x': 2 }
+      Scheduler().registerData(['*'], self.listener1)
+      Scheduler.simulated = True
+      Scheduler().dataUpdate(DataPackage(Listener, testdata))
+      Scheduler().dataRunner.join()
+      self.assertDictEqual(testdata, self.listener1.data[0])
+
    def test_dataUpdate_2listeners(self):
       Scheduler().registerData(['/some/path/*'], self.listener1)
       Scheduler().registerData(['/another/path/*'], self.listener1)

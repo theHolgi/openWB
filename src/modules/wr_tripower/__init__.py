@@ -23,7 +23,7 @@ class TRIPOWER(PVModul):
    def loop(self):
       try:
          power, generation = self.instance.read()
-         self.send({'pv/%i/W': power, 'pv/%i/WhCounter': generation})
+         self.send({'W': power, 'kwh': generation})
       except ConnectionError:
          self.send({})
 

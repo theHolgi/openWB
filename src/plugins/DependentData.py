@@ -1,6 +1,6 @@
 from openWB import DataPackage
 from openWB.Scheduling import Scheduler
-from openWB.openWBlib import openWBValues
+from openWB.openWBlib import openWBValues, OpenWBconfig
 
 
 class DependentData:
@@ -12,7 +12,10 @@ class DependentData:
    def newdata(self, updated: dict) -> None:
       data = openWBValues()
       packet = DataPackage(self, {
-         'global/uberschuss': data.get('housebattery/W') - data.get('evu/W'),
+         'global/uberschuss': -data.get('evu/W'),
          'global/WHouseConsumption': data.get('evu/W') + data.get('pv/W') - data.get('global/WAllChargePoints') - data.get('housebattery/W')
       })
+      # Wenn EV-Vorrang, oder Batterie entlädt -> Ladeleistung ist nicht Überschuss
+      if OpenWBconfig().get('speicherpveinbeziehen') or data.get('housebattery/W') < 0:
+         packet['global/uberschuss'] += data.get('housebattery/W')
       data.update(packet)
