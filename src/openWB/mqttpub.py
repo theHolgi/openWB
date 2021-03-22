@@ -136,7 +136,7 @@ class Mqttpublisher(object):
                                 payload="\n".join(self.all_live[n:n+50]), retain=self.retain)
          else:
             pl = "-\n"
-         self.client.publish("openWB/graph/%ialllivevalues" % index, payload=pl, retain=self.retain)
+         self.client.publish("openWB/graph/%ialllivevalues" % (index+1), payload=pl, retain=self.retain)
 
       # All (long-time chart) values
       self.graphtimer += 1

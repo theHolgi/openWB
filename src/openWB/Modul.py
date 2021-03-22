@@ -207,7 +207,7 @@ class Ladepunkt(DataProvider):
 
    @property
    def is_charging(self) -> bool:
-      """Fehrzeug lädt tatsächlich"""
+      """Fahrzeug lädt tatsächlich"""
       return self.actP > 300
 
    @property
@@ -241,11 +241,11 @@ class Ladepunkt(DataProvider):
          plugged = data['boolPlugStat']
          charging = data['boolChargeStat']
          chargedkwh = data['kwh']
-         data['kWhChargedSincePlugged'] = self.offsetted('plugin', 'kwh', chargedkwh) if plugged else 0
+         data['kWhChargedSincePlugged'] = self.offsetted('plugged', 'kwh', chargedkwh) if plugged else 0
          data['kWhActualCharged'] = self.offsetted('charge', 'kwh', chargedkwh)
          if plugged and not self.plugged:
             self.reset_offset('plugged', 'kwh')
-            self.logger.info('Plugged in at %i kwh' % chargedkwh)
+            self.logger.info(f'LP{self.id} plugged in at {chargedkwh} kwh')
          if charging and not self.charging:
             self.reset_offset('charge', 'kwh')
             self.logger.info('Start charging at %i kwh' % chargedkwh)

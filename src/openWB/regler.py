@@ -276,10 +276,12 @@ class Regelgruppe():
             limitierung = self.config.get('msmoduslp%i' % id)
             self.logger.debug(f"Limitierung LP{id}: {limitierung}")
             if limitierung == 1 and data.get(prefix + 'W') != 0:  # Limitierung: kWh
-               print(f"Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')}")
-               restzeit = (self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000 / (60 * data.get('lp/%i/W' % id))
-               print(f"Restzeit: {restzeit}")
+               restzeit = (self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000*60 / data.get('lp/%i/W' % id)
+               self.logger.info(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')} Restzeit: {restzeit}")
                data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
+               if self.config.get('lademkwh%i' % id) >= data.get(prefix + 'kWhActualCharged'):
+                  from openWB.OpenWBCore import OpenWBCore
+                  OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
             elif limitierung == 2:  # Limitierung: SOC
                pass
 
