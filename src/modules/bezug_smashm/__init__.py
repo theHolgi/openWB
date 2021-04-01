@@ -36,7 +36,6 @@ class SMASHM(EVUModul):
       # processing received messages
       while True:
          emparts = decode_speedwire(sock.recv(608))
-         self.logger.debug("*ping*")
          # Output...
          # don't know what P,Q and S means:
          # http://en.wikipedia.org/wiki/AC_power or http://de.wikipedia.org/wiki/Scheinleistung

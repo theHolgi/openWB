@@ -107,11 +107,19 @@ class Mqttpublisher(object):
       scheduler = Scheduler()
       scheduler.registerData(["*"], self)
       scheduler.registerTimer(10, self.publishLiveData)   # TODO: React on Chargepoint  end-of-loop event
+      scheduler.registerEvent(EventType.configupdate, self.newconfig)
 
    def newdata(self, data: dict):
       for key, value in data.items():
          self.logger.debug(f"Publish: openWB/{key} = {value}")
          self.client.publish("openWB/" + key, payload=value)
+
+   def newconfig(self, event: OpenWBEvent):
+      if event.type == EventType.configupdate:
+         m = re.match("lp(\\d)_mode", event.info) # Chargepoint mode
+         if m:
+            self.client.publish("openWBlp/%i/ChargeMode" % m.group(1), event.payload)
+            return
 
    def publishLiveData(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
@@ -229,7 +237,6 @@ class Mqttpublisher(object):
                mode = ['sofort', 'peak', 'pv', 'stop', 'standby'][val]
                self.logger.info(f'ChargeMode lp{device} = {mode}')
                if 1 <= device <= 8:
-                  republish = True
                   self.core.setconfig('lpmodul%i_mode' % device, mode)
             elif re.search("/alwaysOn", msg.topic):
                self.logger.info(f'AlwaysOn lp{device} = {msg.payload}')

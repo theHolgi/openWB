@@ -263,7 +263,7 @@ class Regelgruppe():
    def loop(self) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
-      self.logger.debug(f"LP Props: {properties!r}")
+      self.logger.debug(f"Reglergruppe {self.mode} LP Props: {properties!r}")
       data = openWBValues()
       uberschuss = data.get('global/uberschuss')
       if self.mode == 'sofort':
@@ -275,10 +275,14 @@ class Regelgruppe():
             limitierung = self.config.get('msmoduslp%i' % id)
             self.logger.debug(f"Limitierung LP{id}: {limitierung}")
             if limitierung == 1 and data.get(prefix + 'W') != 0:  # Limitierung: kWh
-               restzeit = (self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000*60 / data.get('lp/%i/W' % id)
+               if data.get('lp/%i/W' % id) == 0:
+                  restzeit = "---"
+               else:
+                  restzeit = int((self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000*60 / data.get('lp/%i/W' % id))
                print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')} Restzeit: {restzeit}")
                data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
-               if self.config.get('lademkwh%i' % id) >= data.get(prefix + 'kWhActualCharged'):
+               if self.config.get('lademkwh%i' % id) <= data.get(prefix + 'kWhActualCharged'):
+                  self.logging.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
                   from openWB.OpenWBCore import OpenWBCore
                   OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
             elif limitierung == 2:  # Limitierung: SOC
