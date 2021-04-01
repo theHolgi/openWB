@@ -4,6 +4,7 @@ from .mqttpub import Mqttpublisher
 from .ramdiskpublisher import RamdiskPublisher
 from plugins import *
 from datetime import datetime
+from threading import Lock, Thread
 
 import logging
 import re
@@ -24,6 +25,7 @@ class OpenWBCore(Singleton):
          self.regelkreise = dict()
          self.today = datetime.today()
          self.publishers = []
+         self.kreiselock = Lock()
 
    def setup(self) -> "OpenWBCore":
       self.config = OpenWBconfig()
@@ -36,13 +38,15 @@ class OpenWBCore(Singleton):
       self.modules['HELPER'] = [DependentData()]
       if self.config.get('testmode') is None:
          self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
-      for lp in self.modules['LP'].modules:
-         lpmode = self.config.get(lp.configprefix + '_mode')
-         if lpmode not in self.regelkreise:
-            from openWB.regler import Regelgruppe
-            self.regelkreise[lpmode] = Regelgruppe(lpmode)
-         self.regelkreise[lpmode].add(lp)
+      with self.kreiselock:
+         for lp in self.modules['LP'].modules:
+            lpmode = self.config.get(lp.configprefix + '_mode')
+            if lpmode not in self.regelkreise:
+               from openWB.regler import Regelgruppe
+               self.regelkreise[lpmode] = Regelgruppe(lpmode)
+            self.regelkreise[lpmode].add(lp)
       Scheduler().registerEvent(EventType.configupdate, self.event)
+      Scheduler().registerTimer(5, self.loop)  # TODO: Thread, nicht öfter als alle x s
       return self
 
    def logdebug(self):
@@ -66,7 +70,8 @@ class OpenWBCore(Singleton):
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
       self.logger.info("Config updated %s = %s" % (key, value))
-      Scheduler().signalEvent(OpenWBEvent(EventType.configupdate, key, value))
+      # Start a new thread, so it is non-blocking.
+      Thread(target=Scheduler().signalEvent, args=(OpenWBEvent(EventType.configupdate, key, value),)).start()
 
    def event(self, event: OpenWBEvent) -> None:
       self.logger.info("Event: %s = %s" % (event.info, event.payload))
@@ -76,23 +81,30 @@ class OpenWBCore(Singleton):
          if m:
             id = int(m.group(1))
             new_mode = event.payload
-            for mode, regelkreis in self.regelkreise.items():
-               if mode == new_mode:   # Wenn neu = alt, dann keine Aktion
-                  continue
-               # Aus altem Regelkreis entfernen
-               lp = self.regelkreise[mode].pop(id)
-               if lp is not None:
-                  # In neuem Regelkreis hinzufügen
-                  if new_mode not in self.regelkreise:
-                     from openWB.regler import Regelgruppe
-                     self.regelkreise[new_mode] = Regelgruppe(new_mode)
-                  self.regelkreise[new_mode].add(lp)
-                  # Entferne leere Regelgruppe
-                  if self.regelkreise[mode].isempty:
-                     self.regelkreise[mode].destroy()
-                  self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
-                  break
+            with self.kreiselock:
+               for mode, regelkreis in self.regelkreise.items():
+                  if mode == new_mode:   # Wenn neu = alt, dann keine Aktion
+                     continue
+                  # Aus altem Regelkreis entfernen
+                  lp = self.regelkreise[mode].pop(id)
+                  if lp is not None:
+                     # In neuem Regelkreis hinzufügen
+                     if new_mode not in self.regelkreise:
+                        from openWB.regler import Regelgruppe
+                        self.regelkreise[new_mode] = Regelgruppe(new_mode)
+                     self.regelkreise[new_mode].add(lp)
+                     # Entferne leere Regelgruppe
+                     if self.regelkreise[mode].isempty:
+                        self.regelkreise[mode].destroy()
+                     self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
+                     break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
 
       except Exception as e:
-         print("BAM!!! %s" % e)
+         self.logger.critical("BAM!!!", exc_info = e)
+
+   def loop(self) -> None:
+      with self.kreiselock:
+         for kreis in self.regelkreise.values():
+            kreis.loop()
+

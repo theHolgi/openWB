@@ -172,7 +172,6 @@ class Regelgruppe():
       self.config = OpenWBconfig()
       self.hysterese = self.config.get('hysterese')
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
-      Scheduler().registerTimer(5, self.loop)  # TODO: Thread, nicht öfter als alle x s
       if self.mode == 'pv':
          """
             PV-Modus: Limit darf nicht unterschritten werden.
@@ -277,13 +276,13 @@ class Regelgruppe():
             self.logger.debug(f"Limitierung LP{id}: {limitierung}")
             if limitierung == 1 and data.get(prefix + 'W') != 0:  # Limitierung: kWh
                restzeit = (self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000*60 / data.get('lp/%i/W' % id)
-               self.logger.info(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')} Restzeit: {restzeit}")
+               print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')} Restzeit: {restzeit}")
                data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
                if self.config.get('lademkwh%i' % id) >= data.get(prefix + 'kWhActualCharged'):
                   from openWB.OpenWBCore import OpenWBCore
                   OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
             elif limitierung == 2:  # Limitierung: SOC
-               pass
+               pass  # TODO
 
       elif self.mode in ['stop', 'standby']:
          for regler in self.regler.values():

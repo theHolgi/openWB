@@ -16,7 +16,10 @@ class ModbusWR:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def _readregister(self, reg: int, count=2) -> List[int]:
-        return self.client.read_holding_registers(reg, count, unit=3).registers
+        try:
+           return self.client.read_holding_registers(reg, count, unit=3).registers
+        except:
+           raise ConnectionError
 
     @staticmethod
     def decode_s32(value: List[int]) -> int:
