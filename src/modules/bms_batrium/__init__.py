@@ -1,15 +1,13 @@
 import socket
 
-from openWB.Modul import DataProvider, DataPackage
+from openWB.Modul import DataProvider, DataPackage, Speichermodul
 from .batriumdecoder import decode_batrium
 
 class BATRIUM(DataProvider):
    """Batrium monitoring"""
 
-   def setup(self, config):
-      super().setup(config)
-      self.timeout = 0
-
+   def setup(self, master: Speichermodul):
+      self.master = master
    def run(self):
       BCASTPORT = 18542
 
@@ -23,13 +21,13 @@ class BATRIUM(DataProvider):
          parts = decode_batrium(packet, ':2W,')
          if parts:
             data = {
-               'speicherleistung': parts['Ubat'] * parts['Ibat'],
-               'speichersoc': parts['soc'],
-               'speicher_umin': parts['Umin'],
-               'speicher_umax': parts['Umax'],
-               'speicher_tmin': parts['Tmin']
+               'W': parts['Ubat'] * parts['Ibat'],
+               'soc': parts['soc'],
+               'Umin': parts['Umin'],
+               'Umax': parts['Umax'],
+               'Tmin': parts['Tmin']
             }
-            self.core.sendData(DataPackage(self, data))
+            self.master.send(data)
             self.timeout = 0
 
 def getClass():

@@ -58,7 +58,9 @@ def decode_batrium(datagram: bytes, limit: str = None) -> dict:
                     2: 'charging',
                     3: 'discharging',
                     4: 'full',
-                    5: 'empty'
+                    5: 'empty',
+                    8: 'dunno',
+                    10: 'strange'
                     }[datagram[pos]]
          if scale is not None:
             val = val * scale

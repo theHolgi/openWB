@@ -116,9 +116,11 @@ class Mqttpublisher(object):
 
    def newconfig(self, event: OpenWBEvent):
       if event.type == EventType.configupdate:
-         m = re.match("lp(\\d)_mode", event.info) # Chargepoint mode
+         self.logger.info(f'MQTT config update: {event.info} = {event.payload}') 
+         m = re.match("lpmodul(\\d)_mode", event.info) # Chargepoint mode
          if m:
-            self.client.publish("openWBlp/%i/ChargeMode" % m.group(1), event.payload)
+            mode = ['sofort', 'peak', 'pv', 'stop', 'standby'].index(event.payload)
+            self.client.publish("openWB/config/get/lp/%s/ChargeMode" % m.group(1), mode)
             return
 
    def publishLiveData(self):

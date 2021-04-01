@@ -19,7 +19,7 @@ class SUNNYISLAND(Speichermodul):
       if config.get(self.configprefix + '_bms') == "batrium":
          from .bms_batrium import BATRIUM
          self.bms = BATRIUM(1)
-         self.bms.setup(config)
+         self.bms.setup(self)
          self.bms.start()
       else:
          self.bms = None
