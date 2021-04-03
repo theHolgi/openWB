@@ -30,5 +30,6 @@ class BATRIUM(DataProvider):
             self.master.send(data)
             self.timeout = 0
 
+
 def getClass():
    return BATRIUM

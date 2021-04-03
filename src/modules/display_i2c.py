@@ -19,6 +19,8 @@ ch_red = 6
 ON = 4095
 OFF = 0
 
+PMAX = 8000  # Maximale Wirkleistung für rote LED
+
 table = {'pv':   {    0: 0,      500: 840,   1000: 1750,2000: 2600, 4000: 3450, 7000: 4095},
          'grid': {-3600: 4095, -2000: 3400, -1000: 2600,   0: 1730, 1000:  850, 2000: 0},
          'batt': {-1000: 0,     -500: 800,      0: 1700, 500: 2570, 1000: 3450, 1600: 4095}
@@ -81,7 +83,7 @@ class I2CDISPLAY(Displaymodul):
 
    def leds(self):
       data = openWBValues()
-      red = data.get('evu/W') < -6400
+      red = data.get('evu/W') < -PMAX
       if data.get('evu/W') > 50 and data.get('pv/W') > 1000:
          red = "blink"
 

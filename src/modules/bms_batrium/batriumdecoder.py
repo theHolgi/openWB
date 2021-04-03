@@ -8,6 +8,8 @@ decoder = {
    ':2W,': [  # 5732 System Discovery Information
       ('Status',24, 'status', None, None),
       ('ok',    26, 'bool',   None, None),
+      ('chargerate', 27, 'uint8', 1, None),
+      ('dischargerate', 28, 'uint8', 1, None),
       ('Umin',  31, 'uint16', 0.001, None),
       ('Umax',  33, 'uint16', 0.001, None),
       ('Uavg',  35, 'uint16', 0.001, None),
@@ -33,7 +35,8 @@ decoder = {
       ('Tmax', 18, 'uint8', 1, -40),
       ('soc',  32, 'uint8', 0.5, -5),
       ('Tshunt',33, 'uint8', 1, -40),
-      ('Usupp', 25, 'uint16', 0.01, None)
+      ('Usupp', 25, 'uint16', 0.01, None),
+      ('Status',23, 'status', None, None)
    ]
 }
 
@@ -59,8 +62,11 @@ def decode_batrium(datagram: bytes, limit: str = None) -> dict:
                     3: 'discharging',
                     4: 'full',
                     5: 'empty',
-                    8: 'dunno',
-                    10: 'strange'
+                    6: 'simulator',
+                    7: 'criticalPending',
+                    8: 'criticalOffline',
+                    9: 'qqttOffline',
+                    10: 'authsetup'
                     }[datagram[pos]]
          if scale is not None:
             val = val * scale

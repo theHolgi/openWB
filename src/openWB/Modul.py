@@ -185,6 +185,7 @@ class Ladepunkt(DataProvider):
    def setup(self, config) -> None:
       self.plugged = False
       self.charging = False
+      self.offsets['chargedW'] = 0   # Kumulative Lademenge
       self.configprefix = f"lpmodul{self.id}"
 
    def powerproperties(self) -> PowerProperties:
@@ -241,13 +242,16 @@ class Ladepunkt(DataProvider):
          plugged = data['boolPlugStat']
          charging = data['boolChargeStat']
          chargedkwh = data['kwh']
+         self.offsets['chargedW'] += data['W']
          data['kWhChargedSincePlugged'] = self.offsetted('plugged', 'kwh', chargedkwh) if plugged else 0
-         data['kWhActualCharged'] = self.offsetted('charge', 'kwh', chargedkwh)
+         data['kWhActualCharged'] = self.offsets['chargedW'] / 720000  # Einheit: W*Zykluszeit => /(3600/t)/1000
+         #  self.offsetted('charge', 'kwh', chargedkwh)
          if plugged and not self.plugged:
             self.reset_offset('plugged', 'kwh')
             self.logger.info(f'LP{self.id} plugged in at {chargedkwh} kwh')
          if charging and not self.charging:
             self.reset_offset('charge', 'kwh')
+            self.offsets['chargeW'] = 0
             self.logger.info('Start charging at %i kwh' % chargedkwh)
             #  self.setP = self.actP  # Initialisiere setP falls externer Start
          self.plugged = plugged
