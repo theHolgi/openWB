@@ -44,4 +44,3 @@ class SMADASH:
 if __name__ == '__main__':
    power, generation = SMADASH(sys.argv[1]).read()
    print("Current power: %sW; Total generation: %.2fkWh" % (power, generation/1000.0))
-

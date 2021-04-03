@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+from enum import Enum
 
 import paho.mqtt.client as mqtt
 
@@ -35,6 +36,14 @@ def _loop(key1: str, key2: str) -> Iterator[Tuple[str, str]]:
          yield key1.replace('%p', str(phase)), key2.replace('%p', str(phase))
    else:
       yield key1, key2
+
+
+class Chargemap(Enum):
+   sofort = 0
+   peak = 1
+   pv = 2
+   stop = 3
+   standby = 4
 
 
 class Mqttpublisher(object):
@@ -117,10 +126,10 @@ class Mqttpublisher(object):
    def newconfig(self, event: OpenWBEvent):
       if event.type == EventType.configupdate:
          self.logger.info(f'MQTT config update: {event.info} = {event.payload}') 
-         m = re.match("lpmodul(\\d)_mode", event.info) # Chargepoint mode
+         m = re.match("lpmodul(\\d)_mode", event.info)  # Chargepoint mode
          if m:
-            mode = ['sofort', 'peak', 'pv', 'stop', 'standby'].index(event.payload)
-            self.client.publish("openWB/config/get/lp/%s/ChargeMode" % m.group(1), mode)
+            mode = Chargemap[event.payload]
+            self.client.publish("openWB/config/get/lp/%s/ChargeMode" % m.group(1), mode.value)
             return
 
    def publishLiveData(self):
@@ -236,10 +245,10 @@ class Mqttpublisher(object):
             self.logger.info("LP message")
             device = int(re.search('/lp/(\\d)', msg.topic).group(1))
             if re.search("/ChargeMode", msg.topic):     # Chargemode
-               mode = ['sofort', 'peak', 'pv', 'stop', 'standby'][val]
+               mode = Chargemap(val)
                self.logger.info(f'ChargeMode lp{device} = {mode}')
                if 1 <= device <= 8:
-                  self.core.setconfig('lpmodul%i_mode' % device, mode)
+                  self.core.setconfig('lpmodul%i_mode' % device, mode.name)
             elif re.search("/alwaysOn", msg.topic):
                self.logger.info(f'AlwaysOn lp{device} = {msg.payload}')
                if 1 <= device <= 8:

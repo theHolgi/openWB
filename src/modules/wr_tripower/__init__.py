@@ -26,6 +26,8 @@ class TRIPOWER(PVModul):
          self.send({'W': power, 'kwh': generation})
       except ConnectionError:
          self.send({})
+      except Exception as e:
+         self.logger.exception("O-o, something really wrong!", exc_info=e)
 
 
 def getClass():
