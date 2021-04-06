@@ -263,7 +263,8 @@ class Ladepunkt(DataProvider):
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetEnergy and event.info == self.id:
          # Reset invoked from UI
-         self.reset_offset('charge', 'kwh')
+         # self.reset_offset('charge', 'kwh')
+         self.offsets['chargedW'] = 0
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'kwh')
 

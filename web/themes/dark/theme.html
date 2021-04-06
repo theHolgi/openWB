@@ -144,7 +144,7 @@
 
 		<div class="row justify-content-center regularTextSize font-weight-bold text-center text-black">
 			<div class="col-sm bg-lightgreen">
-				<span class="smallTextSize">PV: <span id="pvleistung">lade Daten</span></span><span class="verySmallTextSize" id="pvdailyyield"></span>
+				<span class="smallTextSize">PV: <span id="pvleistung">lade Daten</span>	(<span id="pvleistung1"></span> + <span	id="pvleistung2"></span>)</span> <span class="verySmallTextSize" id="pvdailyyield"></span>
 			</div>
 			<div id="evudiv" class="col-sm bg-rose">
 				<span class="smallTextSize">Netz<span id="bezug">: lade Daten</span></span><span class="verySmallTextSize" id="evuidailyyield"></span><span class="verySmallTextSize" id="evuedailyyield"></span>
@@ -598,7 +598,6 @@
 
 		<!-- depending on charge mode show options -->
 		<form id="sofortladenEinstellungen" class="hide">
-
 			<hr color="white">
 			<div class="row justify-content-center">
 				<h3 class="font-weight-bold text-center text-lightgrey">Sofortladen Stromstärke <span class="nameLp"></span></h3>
@@ -705,7 +704,8 @@
 					<label for="MaxPriceForCharging" class="col-3 col-form-label valueLabel" suffix="Cent/kWh"></label>
 				</div>
 			</div>  <!--/ awattar -->
-
+  		</form>
+		<form id="chargeLimitationEinstellungen" class="show">
 			<div class="chargeLimitation" data-lp="1">
 				<hr color="white">
 				<div class="row justify-content-center">
@@ -727,7 +727,9 @@
 				<div class="form-row form-group mb-1 vaRow regularTextSize" data-option="1">
 					<label for="lp/1/energyToCharge" class="col-3 col-form-label text-right">Energie:</label>
 					<div class="col">
-						<input type="range" class="form-control-range rangeInput" id="lp/1/energyToCharge" min="2" max="100" step="2" value="2" data-topicprefix="openWB/config/get/sofort/">
+						<input type="range" class="form-control-range rangeInput" id="lp/1/energyToCharge"
+						min="1" max="50" step="1"
+						value="1" data-topicprefix="openWB/config/get/sofort/">
 					</div>
 					<label for="lp/1/energyToCharge" class="col-3 col-form-label valueLabel" suffix="kWh"></label>
 				</div>
@@ -772,7 +774,8 @@
 				<div class="form-row form-group mb-1 vaRow regularTextSize" data-option="1">
 					<label for="lp/2/energyToCharge" class="col-3 col-form-label text-right">Energie:</label>
 					<div class="col">
-						<input type="range" class="form-control-range rangeInput" id="lp/2/energyToCharge" min="2" max="100" step="2" value="2" data-topicprefix="openWB/config/get/sofort/">
+						<input type="range" class="form-control-range rangeInput" id="lp/2/energyToCharge"
+						min="1" max="50" step="1" value="2" data-topicprefix="openWB/config/get/sofort/">
 					</div>
 					<label for="lp/2/energyToCharge" class="col-3 col-form-label valueLabel" suffix="kWh"></label>
 				</div>

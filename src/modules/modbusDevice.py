@@ -7,9 +7,12 @@ from pymodbus.client.sync import ModbusTcpClient
 
 class SMAREGISTERS(Enum):
    #                      Name                         Datentyp   Unit     Gerätetyp
-   DCA = 30769          # DC Ampere                    [S32] FIX3 A        Inverter
-   DCV = 30771          # DC Volt                      [S32] FIX2 V        Inverter
-   DCW = 30773          # DC Power                     [S32] FIX0 W        Inverter
+   DCA1 = 30769         # DC Kreis1 Ampere             [S32] FIX3 A        Inverter
+   DCV1 = 30771         # DC Volt                      [S32] FIX2 V        Inverter
+   DCW1 = 30773         # DC Power                     [S32] FIX0 W        Inverter
+   DCA2 = 30957
+   DCV2 = 30959
+   DCW2 = 30961
    TotWhOut = 30529     # Gesamtertrag                 [U32] FIX0 Wh       Inverter
    WhIn = 30595         # Aufgenommene Energie         [U32] FIX0 Wh       Batt
    WhOut = 30597        # Abgegebene Energie            [U32] FIX0 Wh      Batt

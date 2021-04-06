@@ -117,7 +117,7 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 		}
 		if (mqttpayload == "0") {
 			element = $('#sofortladenEinstellungen');
-			element.show();
+			// element.show();
 			element.children('[data-lp="' + index + '"]').show()
 		} else {
 			element = $('#sofortladenEinstellungen');
@@ -545,9 +545,7 @@ function processPvMessages(mqttmsg, mqttpayload) {
 		if ( isNaN(pvwatt) ) {
 			pvwatt = 0;
 		}
-		if ( pvwatt <= 0){
-			// production is negative for calculations so adjust for display
-			pvwatt *= -1;
+		if ( pvwatt >= 0){
 			// adjust and add unit
 			if (pvwatt > 999) {
 				pvwatt = (pvwatt / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kW';
@@ -556,6 +554,21 @@ function processPvMessages(mqttmsg, mqttpayload) {
 			}
 		}
 		$('#pvleistung').text(pvwatt);
+	}
+	else if ( mqttmsg.match( /^openwb\/pv\/[1-9]\/w$/i)) {
+		var index = getIndex(mqttmsg);
+		var pvwatt = parseInt(mqttpayload, 10);
+		if ( isNaN(pvwatt))  {
+		   pvwatt = 0;
+		}
+		if (pvwatt >= 0) {
+		    if (pvwatt > 999)  {
+		        pvwatt = (pvwatt / 1000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kW';
+		    } else {
+		        pvwatt += ' W';
+		    }
+		}
+		$('#pvleistung' + index).text(pvwatt);
 	}
 	else if ( mqttmsg == 'openWB/pv/DailyYieldKwh') {
 		var pvDailyYield = parseFloat(mqttpayload);
@@ -620,7 +633,7 @@ function processLpMessages(mqttmsg, mqttpayload) {
 		if ( isNaN(energyCharged) ) {
 			energyCharged = 0;
 		}
-		element.text(energyCharged.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + ' kWh');
+		element.text(energyCharged.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh');
 		var kmChargedLp = parent.find('.kmChargedLp');  // now get parents kmChargedLp child element
 		var consumption = parseFloat($(kmChargedLp).data('consumption'));
 		var kmCharged = '';
@@ -643,8 +656,8 @@ function processLpMessages(mqttmsg, mqttpayload) {
 		element.data('actualCharged', mqttpayload);  // store value received
 		var limitElementId = 'lp/' + index + '/energyToCharge';
 		var limit = $('#' + $.escapeSelector(limitElementId)).val();  // slider value
-		if ( isNaN(limit) || limit < 2 ) {
-			limit = 2;  // minimum value
+		if ( isNaN(limit) || limit < 1 ) {
+			limit = 1;  // minimum value
 		}
 		var progress = (mqttpayload / limit * 100).toFixed(0);
 		element.width(progress+"%");

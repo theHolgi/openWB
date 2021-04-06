@@ -100,6 +100,9 @@ var topicsToSubscribe = [
 	// pv topics
 	["openWB/pv/W", 1],
 	["openWB/pv/DailyYieldKwh", 1],
+	["openWB/pv/1/W", 1],
+	["openWB/pv/2/W", 1],
+	["openWB/pv/3/W", 1],
 	// evu topics
 	["openWB/evu/W", 1],
 	// lp topics
