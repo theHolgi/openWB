@@ -3,25 +3,33 @@
 #Min Ladung + PV Uberschussregelung lademodus 1
 minundpvlademodus(){
 
-
+	if [[ $schieflastaktiv == "1" ]]; then
+		if [[ $u1p3paktiv == "1" ]]; then
+			u1p3pstat=$(<ramdisk/u1p3pstat)
+			if [[ $u1p3pstat == "1" ]]; then
+				if (( schieflastmax < maximalstromstaerke )); then
+					maximalstromstaerke=$schieflastmaxa
+					openwbDebugLog "PV" 0 "Maximalstromstärke begrenzt auf $schieflastmaxa da Schieflastbegrenzung konfiguriert"
+				fi
+			fi
+		fi
+	fi
 	if (( stopchargeafterdisclp1 == 0 )); then
 		if [[ $stopchargepvatpercentlp1 == "1" ]]; then
 			if (( soc > stopchargepvpercentagelp1 )); then
 				if [[ $lp1enabled == "1" ]]; then
 					mosquitto_pub -r -t "openWB/set/lp/1/ChargePointEnabled" -m "0"
-					echo "$date LP1, Lademodus NurPV. Schalte Ladepunkt auf gesperrt da $soc % SoC erreicht, Ziel $stopchargepvpercentagelp1 %" >> ramdisk/ladestatus.log
-					echo "$date LP1, Lademodus NurPV. Schalte Ladepunkt auf gesperrt da $soc % SoC erreicht, Ziel $stopchargepvpercentagelp1 %" >> ramdisk/nurpv.log
+					openwbDebugLog "CHARGESTAT" 0 "LP1, Lademodus MinundPV. Schalte Ladepunkt auf gesperrt da $soc % SoC erreicht, Ziel $stopchargepvpercentagelp1 %"
+					openwbDebugLog "PV" 0 "LP1, Lademodus MinundPV. Schalte Ladepunkt auf gesperrt da $soc % SoC erreicht, Ziel $stopchargepvpercentagelp1 %"
 					echo "SoC PV Begrenzung (Limit: $stopchargepvpercentagelp1%) LP1 aktiv, LP gesperrt" > ramdisk/lastregelungaktiv
-
 				fi
 			fi
 			if (( soc < stopchargepvpercentagelp1 )); then
 				if [[ $lp1enabled == "0" ]]; then
 					mosquitto_pub -r -t "openWB/set/lp/1/ChargePointEnabled" -m "1"
-					echo "$date LP1, Lademodus NurPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp1 %" >> ramdisk/ladestatus.log
-					echo "$date LP1, Lademodus NurPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp1 %" >> ramdisk/nurpv.log
+					openwbDebugLog "CHARGESTAT" 0 "LP1, Lademodus MinundPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp1 %"
+					openwbDebugLog "PV" 0 "LP1, Lademodus MinundPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp1 %"
 					echo "SoC PV Begrenzung LP1 (Limit: $stopchargepvpercentagelp1%) unterschritten, LP entsperrt" > ramdisk/lastregelungaktiv
-
 				fi
 			fi
 		fi
@@ -31,19 +39,17 @@ minundpvlademodus(){
 			if (( soc1 > stopchargepvpercentagelp2 )); then
 				if [[ $lp2enabled == "1" ]]; then
 					mosquitto_pub -r -t "openWB/set/lp/2/ChargePointEnabled" -m "0"
-					echo "$date LP2, Lademodus NurPV. Schalte Ladepunkt auf gesperrt da $soc1 % SoC erreicht, Ziel $stopchargepvpercentagelp2 %" >> ramdisk/ladestatus.log
-					echo "$date LP2, Lademodus NurPV. Schalte Ladepunkt auf gesperrt da $soc1 % SoC erreicht, Ziel $stopchargepvpercentagelp2 %" >> ramdisk/nurpv.log
+					openwbDebugLog "CHARGESTAT" 0 "LP2, Lademodus MinundPV. Schalte Ladepunkt auf gesperrt da $soc1 % SoC erreicht, Ziel $stopchargepvpercentagelp2 %"
+					openwbDebugLog "PV" 0 "LP2, Lademodus MinundPV. Schalte Ladepunkt auf gesperrt da $soc1 % SoC erreicht, Ziel $stopchargepvpercentagelp2 %"
 					echo "SoC PV Begrenzung LP2 (Limit: $stopchargepvpercentagelp2%) aktiv, LP gesperrt" > ramdisk/lastregelungaktiv
-
 				fi
 			fi
 			if (( soc1 < stopchargepvpercentagelp2 )); then
 				if [[ $lp2enabled == "0" ]]; then
 					mosquitto_pub -r -t "openWB/set/lp/2/ChargePointEnabled" -m "1"
-					echo "$date LP2, Lademodus NurPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp2 %" >> ramdisk/ladestatus.log
-					echo "$date LP2, Lademodus NurPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp2 %" >> ramdisk/nurpv.log
+					openwbDebugLog "CHARGESTAT" 0 "LP2, Lademodus MinundPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp2 %"
+					openwbDebugLog "PV" 0 "LP2, Lademodus MinundPV. Schalte Ladepunkt frei da $soc % SoC noch nicht erreicht, Ziel $stopchargepvpercentagelp2 %"
 					echo "SoC PV Begrenzung LP2 (Limit: $stopchargepvpercentagelp2%) unterschritten, LP entsperrt" > ramdisk/lastregelungaktiv
-
 				fi
 			fi
 		fi
@@ -75,12 +81,10 @@ minundpvlademodus(){
 		if (( ladestatus == 0 )); then
 			if (( speichersoc >= speichersocminpv )); then
 				runs/set-current.sh $minimalampv all
-				echo "$date setzte Soctimer hoch zum Abfragen des aktuellen SoC" >> ramdisk/nurpv.log
+				openwbDebugLog "PV" 0 "setzte Soctimer hoch zum Abfragen des aktuellen SoC"
 				echo 20000 > /var/www/html/openWB/ramdisk/soctimer
-				echo "$date alle Ladepunkte, Lademodus Min und PV. Starte Ladung mit $minimalampv Ampere" >> ramdisk/ladestatus.log
-				if [[ $debug == "1" ]]; then
-					echo "starte min + pv ladung mit $minimalampv"
-				fi
+				openwbDebugLog "CHARGESTAT" 0 "alle Ladepunkte, Lademodus Min und PV. Starte Ladung mit $minimalampv Ampere"
+				openwbDebugLog "MAIN" 1 "starte min + pv ladung mit $minimalampv"
 			fi
 		else
 			if (( ladeleistung < 500 )); then
@@ -88,12 +92,9 @@ minundpvlademodus(){
 				#runs/set-current.sh $llneu all 
 			else
 				if (( uberschuss < pvregelungm )); then
-				    # Herunterregeln
 					if (( llalt > minimalampv )); then
 						#llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
 						llneu=$(( llalt - 1 + ( (uberschuss - pvregelungm) / 230 / anzahlphasen)))
-
-
 						#runs/set-current.sh $llneu all
 					else
 						llneu=$minimalampv
@@ -103,7 +104,6 @@ minundpvlademodus(){
 					llneu=$llalt
 				fi
 				if (( uberschuss > schaltschwelle )); then
-				    # Hochregeln
 					if [[ $pvbezugeinspeisung == "0" ]]; then
 						llneu=$(( llalt + ( uberschuss / 230 / anzahlphasen)))
 
@@ -129,14 +129,12 @@ minundpvlademodus(){
 			if (( llneu > maximalstromstaerke )); then
 				llneu=$maximalstromstaerke
 			fi
+			runs/set-current.sh $llneu all
 			if (( llalt != llneu )); then
-				echo "$date alle Ladepunkte, Lademodus Min und PV. Ändere Ladeleistung auf $llneu Ampere" >> ramdisk/ladestatus.log
-				runs/set-current.sh $llneu all
+				openwbDebugLog "CHARGESTAT" 0 "alle Ladepunkte, Lademodus Min und PV. Ändere Ladeleistung auf $llneu Ampere"
 			fi
 		fi
 	else
 		runs/set-current.sh 0 all
 	fi
-
 }
-
