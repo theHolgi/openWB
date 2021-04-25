@@ -70,7 +70,10 @@ class Scheduler(Singleton):
       """
       Unregister listener from Timer events
       """
-      del self.timeTable[listener]
+      if listener in self.timeTable:
+         self.timeTable[listener] = dummy
+      else:
+         self.logger.error(f"{listener} is not in self.timeTable: {self.timeTable}")
 
    def registerEvent(self, event: EventType, listener: Callable[[OpenWBEvent], None]) -> None:
       """

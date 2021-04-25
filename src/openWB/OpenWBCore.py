@@ -96,12 +96,9 @@ class OpenWBCore(Singleton):
                         from openWB.regler import Regelgruppe
                         self.regelkreise[new_mode] = Regelgruppe(new_mode)
                      self.regelkreise[new_mode].add(lp)
-                     # Entferne leere Regelgruppe
-                     if self.regelkreise[mode].isempty:
-                        self.regelkreise[mode].destroy()
                      self.logger.info(f"LP {id}: {mode} -> {new_mode} ")
                      break
-            self.logger.info("Nach Reconfigure: " + str(self.regelkreise.keys()))
+            self.logger.info("Nach Reconfigure: " + str(self.regelkreise))
 
       except Exception as e:
          self.logger.critical("BAM!!!", exc_info = e)

@@ -241,10 +241,6 @@ class Regelgruppe:
          self.get_increment = get_delta
          self.get_decrement = get_delta
 
-   def destroy(self) -> None:
-      Scheduler().unregisterTimer(self.loop)
-      del self
-
    def add(self, ladepunkt: "Ladepunkt") -> None:
       """Füge Ladepunkt hinzu"""
       self.regler[ladepunkt.id] = Regler(ladepunkt)
@@ -254,6 +250,9 @@ class Regelgruppe:
       # TODO: Beibehaltung aktiver Lademodus
       if id in self.regler:
          return self.regler.pop(id).wallbox
+
+   def __repr__(self):
+      return "<Regelgruppe " + str(list(self.regler.keys())) + ">"
 
    @property
    def isempty(self) -> bool:
@@ -273,18 +272,18 @@ class Regelgruppe:
          prefix = 'lp/%i/' % id
          limitierung = self.config.get('msmoduslp%i' % id)
          self.logger.debug(f"Limitierung LP{id}: {limitierung}")
-         if limitierung == 1:  # Limitierung: kWh
+         if limitierung == 1 and self.config.get('lademkwh%i' % id) is not None:  # Limitierung: kWh
             if data.get(prefix + 'W') == 0:
                restzeit = "---"
             else:
-               restzeit = int((self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged'))*1000*60 / data.get('lp/%i/W' % id))
+               restzeit = int((self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged', 0))*1000*60 / data.get('lp/%i/W' % id))
             print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')} Restzeit: {restzeit}")
             data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
             if self.config.get('lademkwh%i' % id) <= data.get(prefix + 'kWhActualCharged'):
                self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
                from openWB.OpenWBCore import OpenWBCore
                OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
-               Scheduling().signalEvent(OpenWBEvent(EventType.resetEnergy, id))
+               Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, id))
          elif limitierung == 2:  # Limitierung: SOC
             pass  # TODO
       if self.mode == 'sofort':
