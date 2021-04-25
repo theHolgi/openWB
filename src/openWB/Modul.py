@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from datetime import datetime
 
 import importlib
@@ -47,9 +49,10 @@ class Modul(Thread):
       self.configprefix = None  # Provided during setup
       self.offsets = {}   # Place for storing offsets for daily data
 
+   @abstractmethod
    def setup(self, config):
       """Setup the module (another possibility than overriding the constructor)"""
-      pass
+      ...
 
    def run(self):
       """Thread Main function. Wartet auf das Trigger-Event und führt jeweils eine Loop aus."""
@@ -58,13 +61,15 @@ class Modul(Thread):
          self.trigger.clear()
          self.loop()
 
+   @abstractmethod
    def loop(self):
       """Modul Main function. Führt das Modul 1x aus."""
       ...
 
+   @abstractmethod
    def event(self, event: OpenWBEvent):
       """Process an event"""
-      pass
+      ...
 
    def reset_offset(self, prefix: str, name: str) -> None:
       """Resets the offset data"""
@@ -98,6 +103,7 @@ class DataProvider(Modul):
    Abstrakte Klasse eines Daten sendenden Moduls.
    """
 
+   @abstractmethod
    def loop(self):
       """
       Trigger Datenerfassung. Als Bestätigung muss(!) ein Aufruf von OpenWBCore().sendData erfolgen.
@@ -188,10 +194,12 @@ class Ladepunkt(DataProvider):
       self.offsets['chargedW'] = 0   # Kumulative Lademenge
       self.configprefix = f"lpmodul{self.id}"
 
+   @abstractmethod
    def powerproperties(self) -> PowerProperties:
       """Liefert Möglichkeiten/Wünsche der Leistungsanpassung"""
       ...
 
+   @abstractmethod
    def set(self, power: int) -> None:
       """Setze zugewiesene Leistung"""
       self.setP = power
