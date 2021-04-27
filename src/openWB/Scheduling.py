@@ -31,11 +31,11 @@ class Scheduler(Singleton):
          self.eventListener = {}  # Event listeners are a mapping of Event: [listeners]
          self.dataQueue = queue.Queue()
          self.timerQueue = queue.Queue()
+         self.simulated = simulated           # Token for testing
+         self.logger = logging.getLogger()
          if not simulated:
             self.dataRunner = Thread(target=self._dataQueue, daemon=True)
             self.dataRunner.start()
-         self.logger = logging.getLogger()
-         Scheduler.simulated = simulated           # Token for testing
 
    def registerData(self, patterns: Iterable[str], listener: object) -> None:
       """
@@ -94,7 +94,7 @@ class Scheduler(Singleton):
       # {'path/1': val, 'path/2': val2 }
       # -> [ (class1, 'path11', val1), ( class2, 'path2', val2)
       notifylist = OrderedDict()
-      queuedata = dict(self.dataQueue.get(block=True))  # Wait until an element becomes available.
+      queuedata = dict()  # Wait until an element becomes available.
       while True:
          while not self.dataQueue.empty():  # empty the queue
             queuedata.update(self.dataQueue.get())
@@ -159,9 +159,10 @@ class Scheduler(Singleton):
       """
       assert self.simulated, "call is only allowed in simulation mode."
       for i in range(n):
+         self._dataQueue()
          for task in self.timeTable.keys():
             task()
-         self._dataQueue()
+            self._dataQueue()
 
    def signalEvent(self, event: OpenWBEvent) -> None:
       """signals an event"""

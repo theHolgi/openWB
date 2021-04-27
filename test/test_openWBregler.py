@@ -1,9 +1,7 @@
 import unittest
 import os
-from openWB import DataPackage
 from openWB.Modul import *
 from openWB.OpenWBCore import OpenWBCore
-from openWB.Scheduling import Scheduler
 from openWB.regler import *
 from fakes import FakeRamdisk
 
@@ -139,7 +137,8 @@ class Test_Regler(unittest.TestCase):
 
 class TEST_LP1(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt"""
-   def setUpClass():
+   @classmethod
+   def setUpClass(cls):
       renew_config("resources/test_1PV.conf")
       OpenWBconfig()["lpmodul1_mode"] = "pv"
       OpenWBconfig()['lpmodul1_alwayson'] = False
@@ -283,7 +282,8 @@ class TEST_LP1(unittest.TestCase):
 
 class TEST_LP1_PEAK(unittest.TestCase):
    """System mit 1 PV und 1 Ladepunkt im Peak-mode"""
-   def setUpClass():
+   @classmethod
+   def setUpClass(cls):
       renew_config("resources/test_1PV.conf")
       OpenWBconfig()["lpmodul1_mode"] = "peak"
       OpenWBconfig()['lpmodul1_alwayson'] = False
@@ -468,6 +468,7 @@ class TEST_LP1_SOFORT(unittest.TestCase):
          OpenWBCore().setconfig("lpmodul1_mode", "stop")
          Scheduler().test_callAll()
          self.assertEqual(0, self.LP.setP, "Anforderung auf 0")
+
 
 if __name__ == '__main__':
    unittest.main()

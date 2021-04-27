@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from datetime import datetime
 
 import importlib
@@ -188,6 +190,7 @@ class Ladepunkt(DataProvider):
       self.offsets['chargedW'] = 0   # Kumulative Lademenge
       self.configprefix = f"lpmodul{self.id}"
 
+   @abstractmethod
    def powerproperties(self) -> PowerProperties:
       """Liefert Möglichkeiten/Wünsche der Leistungsanpassung"""
       ...

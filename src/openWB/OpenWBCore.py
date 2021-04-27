@@ -10,13 +10,6 @@ from threading import Lock, Thread
 import logging
 import re
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s', filename="/var/log/openWB.log")
-if os.environ.get("DEBUG") == "1":
-   logging.basicConfig(level=logging.DEBUG)
-
-infologgers = ['Adafruit_I2C.Device.Bus.1.Address.0X40', 'pymodbus']
-for logger in infologgers:
-   logging.getLogger(logger).setLevel(logging.INFO)
 
 class OpenWBCore(Singleton):
    """openWB core and scheduler"""

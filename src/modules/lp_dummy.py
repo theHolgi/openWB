@@ -9,8 +9,8 @@ class DUMMYLP(Ladepunkt):
    def setup(self, config):
       super().setup(config)
       self.kwh = 0
-      self.minI = config.get('minimalstromstaerke')
-      self.maxI = config.get('maximalstromstaerke')
+      self.minI = config['minimalstromstaerke']
+      self.maxI = config['maximalstromstaerke']
       Scheduler().registerTimer(1, self.loop)
 
    def loop(self):

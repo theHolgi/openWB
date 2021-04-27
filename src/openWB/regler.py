@@ -47,7 +47,7 @@ class Request(dict):
       return self
 
    def __repr__(self):
-      return f"<Request>{{{self.id}: " + " ".join(f"{key}={value}" for key, value in self.items()) + f" {self.flags}}}"
+      return f"<Request {{{self.id}: " + " ".join(f"{key}={value}" for key, value in self.items()) + f" {self.flags}}}>"
 
 
 # Arbeitsweise:
@@ -173,6 +173,7 @@ class Regelgruppe:
       self.mode = mode
       self.regler = dict()
       self.config = OpenWBconfig()
+      self.data = openWBValues()
       self.hysterese = self.config.get('hysterese')
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
       if self.mode == 'pv':
@@ -262,24 +263,28 @@ class Regelgruppe:
       """
       return len(self.regler) == 0
 
+   def schieflast_nicht_erreicht(self, wallbox_id: int) -> bool:
+      return self.regler[wallbox_id].wallbox.phasen == 3 or \
+         self.data.get('lp/%i/AConfigured' % wallbox_id) < 20 or \
+         self.data.get('evu/ASchieflast') < self.config.get('schieflastmaxa')
+
    def loop(self) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
       arbitriert = dict([(id, 0) for id in self.regler.keys()])
       self.logger.debug(f"Reglergruppe {self.mode} LP Props: {properties!r}")
-      data = openWBValues()
-      uberschuss = data.get('global/uberschuss')
+      uberschuss = self.data.get('global/uberschuss')
       for id, regler in self.regler.items():
          prefix = 'lp/%i/' % id
          limitierung = self.config.get('msmoduslp%i' % id)
          self.logger.debug(f"Limitierung LP{id}: {limitierung}")
          if limitierung == 1 and self.config.get('lademkwh%i' % id) is not None:  # Limitierung: kWh
-            if data.get(prefix + 'W') == 0:
+            if self.data.get(prefix + 'W') == 0:
                restzeit = "---"
             else:
-               restzeit = int((self.config.get('lademkwh%i' % id) - data.get(prefix + 'kWhActualCharged', 0))*1000*60 / data.get('lp/%i/W' % id))
-            print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {data.get(prefix + 'kWhActualCharged')} Leistung: {data.get(prefix + 'W')} Restzeit: {restzeit}")
-            data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
-            if self.config.get('lademkwh%i' % id) <= data.get(prefix + 'kWhActualCharged'):
+               restzeit = int((self.config.get('lademkwh%i' % id) - self.data.get(prefix + 'kWhActualCharged', 0))*1000*60 / self.data.get('lp/%i/W' % id))
+            print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {self.data.get(prefix + 'kWhActualCharged')} Leistung: {self.data.get(prefix + 'W')} Restzeit: {restzeit}")
+            self.data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
+            if self.config.get('lademkwh%i' % id) <= self.data.get(prefix + 'kWhActualCharged'):
                self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
                from openWB.OpenWBCore import OpenWBCore
                OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
@@ -302,7 +307,8 @@ class Regelgruppe:
          # Erhöhe eingeschaltete LPs
          for r in sorted(filter(lambda r: 'min+P' in r and 'on' in r.flags, properties), key=lambda r: r['min+P'].priority):
             p = self.get_increment(r, deltaP)
-            if p is not None:
+            if p is not None and self.schieflast_nicht_erreicht(r.id):
+               # Erhöhe bei Asymmetrie nur 3-phasen-Boxen
                self.logger.debug(f"LP {r.id} bekommt +{p}W von {deltaP}W")
                arbitriert[r.id] = p
                deltaP -= p
@@ -320,7 +326,7 @@ class Regelgruppe:
             # Zusätzliches Budget kommt vom Regelpotential eingeschalteter LPs gleicher oder niedrigerer Prio
             budget += sum(r['max-P'].value for r in filter(lambda r: 'max-P' in r and 'min' not in r.flags and r['max-P'].priority <= highest_prio, properties))
             for r in candidates:
-               if self.get_increment(r, budget) is not None:
+               if self.get_increment(r, budget) is not None and self.schieflast_nicht_erreicht(r.id):
                   self.logger.info(f"Budget: {budget}; LP {r.id} min+P {r['min+P'].value} passt noch")  
                   arbitriert[r.id] = r['min+P'].value
                   budget -= r['min+P'].value

@@ -34,8 +34,27 @@ basepath = '/var/www/html/openWB/'
 class OpenWBconfig(Singleton):
    """
    Represents openwb.conf
-   behaves like a dictionary (non-existent settings return None)
+   behaves like a dictionary (non-existent settings return default if possible, otherwise None)
    """
+   defaults = {
+      'debug': 0,
+      'minimalstromstaerke': 6,
+      'maximalstromstaerke': 16,
+      'einschaltverzoegerung': 10,
+      'abschaltverzoegerung': 20,
+      'schieflastmaxa': 20,
+      'offsetpv': 200,
+      'offsetpvpeak': 6500,
+      'hysterese': 400,
+
+      'lastmaxap1': 32,
+      'lastmaxap2': 32,
+      'lastmaxap3': 32,
+      'speichermaxwatt': 0,    # Ladeleistung-Reserve des Speichers im Modus PV-Laden
+      'speicherwattnurpv': 0,  # Erlaubte Entladeleistung im PV-Modus; bis min-soc
+      'speichersocnurpv': 100  # minimaler Entlade-SoC
+   }
+
    def __init__(self, configfile: str = basepath + 'pyconfig.conf'):
       if not hasattr(self, 'settings'):
          self.settings = {}
@@ -58,7 +77,7 @@ class OpenWBconfig(Singleton):
             pass
 
    def __getitem__(self, key):
-      return self.settings.get(key)
+      return self.settings.get(key, self.defaults.get(key))
 
    def __setitem__(self, key, value):
       import re
@@ -81,13 +100,7 @@ class OpenWBconfig(Singleton):
          f.write(content)
 
    def get(self, key, default=None):
-      return self.settings.get(key, default)
-
-config = None
-def getConfig() -> OpenWBconfig:
-   if config is None:
-      config = OpenWBconfig()
-   return config
+      return self.settings.get(key, self.defaults.get(key, default))
 
 
 class openWBValues(object):
@@ -169,7 +182,7 @@ class openWBValues(object):
    def __setitem__(self, key, value):
       self.val[key] = value
 
-   def get(self, key, default: Any = 0, id: Optional[int] = None, ) -> Any:
+   def get(self, key, default: Any = 0, id: Optional[int] = None) -> Any:
       """Returns the value or the given default, if not available"""
       if id is not None:
          key = key+str(id)

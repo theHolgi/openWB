@@ -50,7 +50,10 @@ class Mqttpublisher(object):
    priority = 999
    configmapping = {
       "lp/%n/strChargePointName": "lp%nname",
-      "lp/%n/energyConsumptionPer100km": "durchslp%n"
+      "lp/%n/energyConsumptionPer100km": "durchslp%n",
+      "config/get/pv/minBatteryChargePowerAtEvPriority": "speichermaxwatt",
+      "config/get/pv/minBatteryDischargeSocAtBattPriority": "speichersocnurpv",
+      "config/get/pv/batteryDischargePowerAtBattPriority": "speicherwattnurpv"
    }
    datamapping = {   # UNUSED
 
@@ -191,6 +194,7 @@ class Mqttpublisher(object):
    def messagehandler(self, msg):
       """Handle incoming requests"""
       republish = False
+      getter_topic = msg.topic.replace('/set/', '/get/')
       self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
       try:
          val = int(msg.payload)
@@ -254,7 +258,7 @@ class Mqttpublisher(object):
                if 1 <= device <= 8:
                   republish = True
                   self.core.setconfig('lpmodul%i_alwayson' % device, bool(int(msg.payload)))
-         elif (msg.topic == "openWB/set/graph/RequestDayGraph"):
+         elif msg.topic == "openWB/set/graph/RequestDayGraph":
             # Anforderung eines Daily graphs.
             # Format Wert: yyyymmdd
             # Antwort: openWB/system/DayGraphData1<n>, n=1..12 je 25 Zeilen
@@ -268,13 +272,17 @@ class Mqttpublisher(object):
             # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cronnightly.sh"
             # echo $(date +%Y%m%d),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$verbraucher1iwh,$verbraucher1ewh,$verbraucher2iwh,$verbraucher2ewh,$ll4,$ll5,$ll6,$ll7,$ll8,$speicherikwh,$speicherekwh,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10 >> $monthlyfile.csv
             subprocess.Popen(['../../runs/sendmonthgraphdata.sh', msg.payload])
+         elif getter_topic in self.configmapping:
+            if val is not None and 0 <= val <= 10000:
+               republish = True
+               self.core.setconfig(self.configmapping[getter_topic], val)
          else:
             self.logger.info("Nix gefunden.")
       except Exception as e:
          self.logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
       if republish:
          self.logger.info("Re-publish: %s = %s" % (msg.topic.replace('/src/', '/get/'), msg.payload))
-         self.client.publish(msg.topic.replace('/set/', '/get/'), msg.payload, qos=self.configqos, retain=True)
+         self.client.publish(getter_topic, msg.payload, qos=self.configqos, retain=True)
 
 """
 openWB/set/ChargeMode/lp/1

@@ -7,7 +7,7 @@ class DependentData:
    priority = 1     # Dependent data has highest data dependency priority
 
    def __init__(self):
-      Scheduler().registerData(['evu/W', 'housebattery/W', 'pv/W'], self)
+      Scheduler().registerData(['evu/W', 'pv/W', 'global/WAllChargePoints', 'housebattery/W'], self)
 
    def newdata(self, updated: dict) -> None:
       data = openWBValues()
