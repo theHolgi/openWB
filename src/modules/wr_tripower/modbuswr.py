@@ -30,7 +30,7 @@ class ModbusWR:
             dca = self.device.decode_s32(resp[0:2]) / 1000
             dcu = self.device.decode_s32(resp[2:4]) / 100
             dcp = self.device.decode_s32(resp[4:6])
-            self.logger.info(f"DCA: {dca} DCU: {dcu} DCP: {dcp}")
+            # self.logger.info(f"DCA: {dca} DCU: {dcu} DCP: {dcp}")
 
             return power, generation
         except AttributeError:

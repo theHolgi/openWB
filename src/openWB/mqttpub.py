@@ -105,7 +105,7 @@ class Mqttpublisher(object):
       self.client.on_message = on_message
       self.client.connect(hostname)
       self.client.loop_start()
-      self.publish_config()
+      self.bulk_config()
       self.graphtimer = 0
       self.all_live = []
       self.all_data = []
@@ -124,7 +124,7 @@ class Mqttpublisher(object):
    def newdata(self, data: dict):
       for key, value in data.items():
          self.logger.debug(f"Publish: openWB/{key} = {value}")
-         self.client.publish("openWB/" + key, payload=value)
+         self.publish_data(key, value)
 
    def newconfig(self, event: OpenWBEvent):
       if event.type == EventType.configupdate:
@@ -132,8 +132,16 @@ class Mqttpublisher(object):
          m = re.match("lpmodul(\\d)_mode", event.info)  # Chargepoint mode
          if m:
             mode = Chargemap[event.payload]
-            self.client.publish("openWB/config/get/lp/%s/ChargeMode" % m.group(1), mode.value)
+            self.publish_config("config/get/lp/%s/ChargeMode" % m.group(1), mode.value)
             return
+
+   def publish_data(self, topic: str, payload) -> None:
+      """Publish topic/payload with data quality; topic not including "openWB" prefix"""
+      self.client.publish("openWB/" + topic, payload, qos=2, retain=True)
+
+   def publish_config(self, topic: str, payload) -> None:
+      """Publish topic/payload with config quality; topic not including "openWB" prefix"""
+      self.client.publish(topic, payload, qos=1, retain=True)
 
    def publishLiveData(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
@@ -149,16 +157,14 @@ class Mqttpublisher(object):
       self.logger.debug("Live: %s" % last_live)
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
-      self.client.publish("openWB/graph/lastlivevalues", payload=last_live)
-      self.client.publish("openWB/system/Timestamp", int(time()))
+      self.publish_data("graph/lastlivevalues", last_live)
+      self.publish_data("system/Timestamp", int(time()))
       for index, n in enumerate(range(0, 800, 50)):
          if len(self.all_live) > n:
             pl = "\n".join(self.all_live[n:n+50])
-            self.client.publish("openWB/graph/%ialllivevalues" % (index+1),
-                                payload="\n".join(self.all_live[n:n+50]), retain=self.retain)
          else:
             pl = "-\n"
-         self.client.publish("openWB/graph/%ialllivevalues" % (index+1), payload=pl, retain=self.retain)
+         self.publish_data("graph/%ialllivevalues" % (index+1), payload=pl)
 
       # All (long-time chart) values
       self.graphtimer += 1
@@ -181,7 +187,7 @@ class Mqttpublisher(object):
       ramdisk('speicher-live.graph', self.core.data.get('housebattery/W'), 'a')
       ramdisk('speichersoc-live.graph', self.core.data.get('housebattery/%Soc'), 'a')
 
-   def publish_config(self):
+   def bulk_config(self):
       """Sende Config als MQTT"""
       for k, v in self.configmapping.items():
          for mqttkey, datakey in _loop(k, v):
@@ -189,12 +195,12 @@ class Mqttpublisher(object):
             if isinstance(val, bool):   # Convert booleans into 1/0
                val = 1 if val else 0
             if val is not None:
-               self.client.publish("openWB/" + mqttkey, payload=val, qos=self.configqos, retain=True)
+               self.publish_config(mqttkey, val)
 
    def messagehandler(self, msg):
       """Handle incoming requests"""
       republish = False
-      getter_topic = msg.topic.replace('/set/', '/get/')
+      getter_topic = msg.topic.replace('openWB/', '').replace('/set/', '/get/')
       self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
       try:
          val = int(msg.payload)
@@ -227,8 +233,8 @@ class Mqttpublisher(object):
                elif msg.topic.endswith('chargeLimitation'):  # Limitierung Modus
                   if val is not None and 0 <= val <= 2:
                      self.core.setconfig('msmoduslp%i' % device, val)
-                     self.client.publish("openWB/lp/%i/boolDirectModeChargekWh" % device, 1 if val == 1 else 0)
-                     self.client.publish("openWB/lp/%i/boolDirectChargeModeSoc" % device, 1 if val == 2 else 0)
+                     self.publish_config("lp/%i/boolDirectModeChargekWh" % device, 1 if val == 1 else 0)
+                     self.publish_config("lp/%i/boolDirectChargeModeSoc" % device, 1 if val == 2 else 0)
                elif msg.topic.endswith('energyToCharge'):   # Modus 1: Lademenge [kWh]
                   if val is not None and 0 <= val <= 100:
                      republish = True
@@ -281,8 +287,8 @@ class Mqttpublisher(object):
       except Exception as e:
          self.logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
       if republish:
-         self.logger.info("Re-publish: %s = %s" % (msg.topic.replace('/src/', '/get/'), msg.payload))
-         self.client.publish(getter_topic, msg.payload, qos=self.configqos, retain=True)
+         self.logger.info("Re-publish: %s = %s" % (getter_topic, msg.payload))
+         self.publish_config(getter_topic, msg.payload)
 
 """
 openWB/set/ChargeMode/lp/1
