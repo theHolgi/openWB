@@ -100,7 +100,7 @@ class OpenWBconfig(Singleton):
          f.write(content)
 
    def get(self, key, default=None):
-      return self.settings.get(key, self.defaults.get(key, default))
+      return self.settings.get(key, default or self.defaults.get(key))
 
 
 class openWBValues(object):

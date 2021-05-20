@@ -100,14 +100,6 @@ class DataProvider(Modul):
    Abstrakte Klasse eines Daten sendenden Moduls.
    """
 
-   def loop(self):
-      """
-      Trigger Datenerfassung. Als Bestätigung muss(!) ein Aufruf von OpenWBCore().sendData erfolgen.
-      Üblicherweise durch Aufruf von "send" einer abgeleiteten Klasse.
-      Ein sendData() Aufruf darf auch spontan ohne trigger erfolgen, z.B. als Folge eines IP-Broadcast
-      """
-      ...
-
 
 class EVUModul(DataProvider):
    """
@@ -296,9 +288,6 @@ class Displaymodul(Modul):
    """Superklasse eines Displaymoduls"""
    multiinstance = True
    type = "display"
-
-# Ein Displaymodul ruft nicht "sendData" auf.
-# Displaymodule werden nach dem Einlesen der Eingänge und der Berechnung abgeleiteter Daten aufgerufen.
 
 
 def amp2amp(amp: Union[float, int]) -> int:

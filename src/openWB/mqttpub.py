@@ -141,7 +141,7 @@ class Mqttpublisher(object):
 
    def publish_config(self, topic: str, payload) -> None:
       """Publish topic/payload with config quality; topic not including "openWB" prefix"""
-      self.client.publish(topic, payload, qos=1, retain=True)
+      self.client.publish("openWB/" + topic, payload, qos=1, retain=True)
 
    def publishLiveData(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
@@ -222,7 +222,7 @@ class Mqttpublisher(object):
          elif re.match("openWB/set/lp/(\\d)/ChargePointEnabled", msg.topic):     # Chargepoint en/disable
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             republish = True
-            self.core.sendData(DataPackage(self, {'lpenabled%i' % device: val}))
+            self.core.data.update(DataPackage(self, {'lp/%i/ChargePointEnabled' % device: val}))
          elif msg.topic.startswith("openWB/config/set/sofort/"):  # Sofortladen...
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             if 1 <= device <= 8:

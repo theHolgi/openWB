@@ -1,8 +1,9 @@
 import enum
 from openWB import DataPackage
 from openWB.Modul import amp2power
-from openWB.Scheduling import Scheduler
+from openWB.Scheduling import Scheduler, OpenWBEvent, EventType
 from openWB.openWBlib import OpenWBconfig, openWBValues
+from openWB.Event import OpenWBEvent, EventType
 from typing import Set, Optional
 from itertools import groupby
 from dataclasses import dataclass
@@ -174,7 +175,7 @@ class Regelgruppe:
       self.regler = dict()
       self.config = OpenWBconfig()
       self.data = openWBValues()
-      self.hysterese = self.config.get('hysterese')
+      self.hysterese = int(self.config.get('hysterese'))
       self.logger = logging.getLogger(self.__class__.__name__ + "_" + mode)
       if self.mode == 'pv':
          """
@@ -201,16 +202,14 @@ class Regelgruppe:
 
          self.get_increment = get_increment
          self.get_decrement = get_decrement
-         self.limit = self.config.get('offsetpv')
-         self.hysterese = self.config.get('hysterese')
-
+         self.limit = int(self.config.get('offsetpv'))
       elif self.mode == 'peak':
          """
             Peak-Modus: Limit darf nicht überschritten werden.
             - P > Limit: erhöhe bis < Limit
             - P < Limit: reduziere solange < Limit
          """
-         self.limit = self.config.get('offsetpvpeak')
+         self.limit = int(self.config.get('offsetpvpeak'))
          def get_increment(r: Request, deltaP: int) -> Optional[int]:
             if deltaP <= 0:  # Kein Bedarf
                return None
@@ -266,7 +265,7 @@ class Regelgruppe:
    def schieflast_nicht_erreicht(self, wallbox_id: int) -> bool:
       return self.regler[wallbox_id].wallbox.phasen == 3 or \
          self.data.get('lp/%i/AConfigured' % wallbox_id) < 20 or \
-         self.data.get('evu/ASchieflast') < self.config.get('schieflastmaxa')
+         self.data.get('evu/ASchieflast') < int(self.config.get('schieflastmaxa'))
 
    def loop(self) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
@@ -276,21 +275,21 @@ class Regelgruppe:
       for id, regler in self.regler.items():
          prefix = 'lp/%i/' % id
          limitierung = self.config.get('msmoduslp%i' % id)
-         self.logger.debug(f"Limitierung LP{id}: {limitierung}")
-         if limitierung == 1 and self.config.get('lademkwh%i' % id) is not None:  # Limitierung: kWh
-            if self.data.get(prefix + 'W') == 0:
-               restzeit = "---"
-            else:
-               restzeit = int((self.config.get('lademkwh%i' % id) - self.data.get(prefix + 'kWhActualCharged', 0))*1000*60 / self.data.get('lp/%i/W' % id))
-            print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {self.data.get(prefix + 'kWhActualCharged')} Leistung: {self.data.get(prefix + 'W')} Restzeit: {restzeit}")
-            self.data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
-            if self.config.get('lademkwh%i' % id) <= self.data.get(prefix + 'kWhActualCharged'):
-               self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
-               from openWB.OpenWBCore import OpenWBCore
-               OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
-               Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, id))
-         elif limitierung == 2:  # Limitierung: SOC
-            pass  # TODO
+         if self.mode not in ['standby', 'stop']:
+            if limitierung == 1 and self.config.get('lademkwh%i' % id) is not None:  # Limitierung: kWh
+               if self.data.get(prefix + 'W') == 0:
+                  restzeit = "---"
+               else:
+                  restzeit = int((self.config.get('lademkwh%i' % id) - self.data.get(prefix + 'kWhActualCharged', 0))*1000*60 / self.data.get('lp/%i/W' % id))
+               # print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {self.data.get(prefix + 'kWhActualCharged')} Leistung: {self.data.get(prefix + 'W')} Restzeit: {restzeit}")
+               self.data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
+               if self.config.get('lademkwh%i' % id) <= self.data.get(prefix + 'kWhActualCharged'):
+                  self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
+                  from openWB.OpenWBCore import OpenWBCore
+                  OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
+                  Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, id))
+            elif limitierung == 2:  # Limitierung: SOC
+               pass  # TODO
       if self.mode == 'sofort':
          for id, regler in self.regler.items():
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)

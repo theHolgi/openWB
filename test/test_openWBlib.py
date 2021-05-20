@@ -4,14 +4,16 @@ import unittest
 from openWB.openWBlib import OpenWBconfig, RamdiskValues
 
 
-class TestWBlib(unittest.TestCase):
-   def test_config(self):
-      testfile = '/tmp/openwb.conf'
+class TestConfig(unittest.TestCase):
+   testfile = '/tmp/openwb.conf'
+   def setUp(self):
       try:
-         os.remove(testfile)
+         os.remove(self.testfile)
       except OSError:
          pass
-      config = OpenWBconfig(testfile)
+
+   def test_config(self):
+      config = OpenWBconfig(self.testfile)
       self.assertIsNone(config['test'])
       config['evseids1'] = 1
       config['evselanips1'] = "10.20.0.180"
@@ -20,10 +22,16 @@ class TestWBlib(unittest.TestCase):
       self.assertEqual(config['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
 
       # Read it another time
-      config2 = OpenWBconfig(testfile)
+      config2 = OpenWBconfig(self.testfile)
       self.assertEqual(config2['evseids1'], 1)
       self.assertEqual(config2['evselanips1'], "10.20.0.180", "Getting a non-integer setting")
+   def test_default(self):
+      config = OpenWBconfig(self.testfile)
+      self.assertEqual(config.get("offsetpvpeak"), 6500, "Shall return the default")
+      self.assertEqual(config.get("offsetpvpeak", 200), 200, "Given default has precedence over global default")
 
+
+class TestWBlib(unittest.TestCase):
    def test_values(self):
       values = RamdiskValues('/tmp')
       values['test'] = 'test'
