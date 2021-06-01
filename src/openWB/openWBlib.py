@@ -52,7 +52,8 @@ class OpenWBconfig(Singleton):
       'lastmaxap3': 32,
       'speichermaxwatt': 0,    # Ladeleistung-Reserve des Speichers im Modus PV-Laden
       'speicherwattnurpv': 0,  # Erlaubte Entladeleistung im PV-Modus; bis min-soc
-      'speichersocnurpv': 100  # minimaler Entlade-SoC
+      'speichersocnurpv': 100,  # minimaler Entlade-SoC
+      'livegraph':  30          # Länge live Daten
    }
 
    def __init__(self, configfile: str = basepath + 'pyconfig.conf'):

@@ -10,7 +10,7 @@ from openWB import DataPackage, Singleton
 from openWB.Event import *
 from fnmatch import fnmatch
 from itertools import groupby
-from threading import Thread
+from threading import Thread, Lock
 
 T = TypeVar('T')
 V = TypeVar('V')
@@ -26,6 +26,7 @@ def add2key(d: Mapping[T, List[V]], key: T, value: V) -> None:
 class Scheduler(Singleton):
    def __init__(self, simulated: bool = False):
       if not hasattr(self, "dataListener"):
+         self.lock = Lock()
          self.dataListener = {}   # Listeners are a mapping of pattern: [listeners]
          self.timeTable = {}      # Timetable is a mapping of  listener: time
          self.eventListener = {}  # Event listeners are a mapping of Event: [listeners]
@@ -45,16 +46,18 @@ class Scheduler(Singleton):
       - newdata(data) -> signal new data
       - priority      -> execution priority
       """
-      for pattern in patterns:
-         add2key(self.dataListener, pattern, listener)
+      with self.lock:
+         for pattern in patterns:
+            add2key(self.dataListener, pattern, listener)
 
    def unregisterData(self, listener) -> None:
       """Unregister from Data update events"""
-      for pattern, listeners in self.dataListener.items():
-         if listener in listeners:
-            listeners.remove(listener)
-            if len(listeners) == 0:
-               del self.dataListener[pattern]
+      with self.lock:
+         for pattern, listeners in self.dataListener.items():
+            if listener in listeners:
+               listeners.remove(listener)
+               if len(listeners) == 0:
+                  del self.dataListener[pattern]
 
    def registerTimer(self, time: int, listener: Callable[[], None]) -> None:
       """
@@ -100,7 +103,8 @@ class Scheduler(Singleton):
             queuedata.update(self.dataQueue.get())
          if queuedata:
             self.logger.debug(f"Collected data: {queuedata}")
-            recipients = [(l,k,v) for k, v in queuedata.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
+            with self.lock:
+               recipients = [(l,k,v) for k, v in queuedata.items() for pattern in self.dataListener.keys() for l in self.dataListener[pattern] if fnmatch(k, pattern)]
             for recipient, tuples in groupby(sorted(recipients, key=lambda tuple: tuple[0].priority), key=lambda tuple: tuple[0]):
                data = dict(tuple[1:] for tuple in tuples)
                priority = recipient.priority

@@ -120,6 +120,7 @@ class Mqttpublisher(object):
       scheduler.registerData(["*"], self)
       scheduler.registerTimer(10, self.publishLiveData)   # TODO: React on Chargepoint  end-of-loop event
       scheduler.registerEvent(EventType.configupdate, self.newconfig)
+      scheduler.registerEvent(EventType.resetDaily, self.cut_live)
 
    def newdata(self, data: dict):
       for key, value in data.items():
@@ -134,6 +135,13 @@ class Mqttpublisher(object):
             mode = Chargemap[event.payload]
             self.publish_config("config/get/lp/%s/ChargeMode" % m.group(1), mode.value)
             return
+
+   def cut_live(self):
+      """Reset the live graphes"""
+      for name in ['pv', 'evu', 'ev', 'speicher', 'soc']:
+         filename = name + "-live.graph"
+         content = read_ramdisk(filename).splitlines(keepends=True)
+         ramdisk(filename, ''.join(content[-6 * (self.core.config.get('livegraph')):]))
 
    def publish_data(self, topic: str, payload) -> None:
       """Publish topic/payload with data quality; topic not including "openWB" prefix"""
