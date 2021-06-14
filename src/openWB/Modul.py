@@ -5,6 +5,7 @@ from datetime import datetime
 import importlib
 
 from openWB import DataPackage
+from openWB.Scheduling import Scheduler
 from openWB.openWBlib import RamdiskValues, OpenWBconfig
 from typing import Optional, Union, Callable
 
@@ -244,6 +245,7 @@ class Ladepunkt(DataProvider):
          if plugged and not self.plugged:
             self.reset_offset('plugged', 'kwh')
             self.logger.info(f'LP{self.id} plugged in at {chargedkwh} kwh')
+            Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, self.id))
          if charging and not self.charging:
             self.reset_offset('charge', 'kwh')
             self.offsets['chargeW'] = 0
@@ -258,7 +260,12 @@ class Ladepunkt(DataProvider):
    def event(self, event: OpenWBEvent):
       if event.type == EventType.resetEnergy and event.info == self.id:
          # Reset invoked from UI
-         # self.reset_offset('charge', 'kwh')
+         if self.offsets['chargedW']:
+            from openWB.OpenWBCore import OpenWBCore
+            lademenge = OpenWBconfig().get('lademkwh%i' % self.id) - self.offsets['chargedW']
+            if lademenge < 0:
+               lademenge = 0
+            OpenWBCore().setconfig('lademkwh%i' % self.id, lademenge)
          self.offsets['chargedW'] = 0
       if event.type == EventType.resetDaily:
          self.reset_offset('daily', 'kwh')

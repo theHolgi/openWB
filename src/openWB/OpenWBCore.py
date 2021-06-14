@@ -62,7 +62,7 @@ class OpenWBCore(Singleton):
       debug += "Haus: %iW " % self.data.get("hausverbrauch")
       self.logger.info(datetime.now().strftime("%H:%M:%S") + ':' + debug)
 
-   def setconfig(self, key:str, value) -> None:
+   def setconfig(self, key: str, value) -> None:
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
       self.logger.info("Config updated %s = %s" % (key, value))
@@ -94,7 +94,7 @@ class OpenWBCore(Singleton):
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise))
 
       except Exception as e:
-         self.logger.critical("BAM!!!", exc_info = e)
+         self.logger.exception("BAM!!!", exc_info = e)
 
    def loop(self) -> None:
       with self.kreiselock:

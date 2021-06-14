@@ -8,6 +8,8 @@ class BATRIUM(DataProvider):
 
    def setup(self, master: Speichermodul):
       self.master = master
+      self.timeout = 0
+
    def run(self):
       BCASTPORT = 18542
 
