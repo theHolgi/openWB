@@ -62,7 +62,7 @@ class OpenWBCore(Singleton):
       debug += "Haus: %iW " % self.data.get("hausverbrauch")
       self.logger.info(datetime.now().strftime("%H:%M:%S") + ':' + debug)
 
-   def setconfig(self, key:str, value) -> None:
+   def setconfig(self, key: str, value) -> None:
       """Set the configuration, but also announce this in the system."""
       self.config[key] = value
       self.logger.info("Config updated %s = %s" % (key, value))
@@ -70,7 +70,7 @@ class OpenWBCore(Singleton):
       Thread(target=Scheduler().signalEvent, args=(OpenWBEvent(EventType.configupdate, key, value),)).start()
 
    def event(self, event: OpenWBEvent) -> None:
-      self.logger.info("Event: %s = %s" % (event.info, event.payload))
+      self.logger.info("Event: %i; payload %s (%s)" % (event.type.name, event.info, event.payload))
       try:
        if event.type == EventType.configupdate:
          m = re.match('lpmodul(\\d)_mode', event.info)
@@ -94,7 +94,7 @@ class OpenWBCore(Singleton):
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise))
 
       except Exception as e:
-         self.logger.critical("BAM!!!", exc_info = e)
+         self.logger.exception("BAM!!!", exc_info = e)
 
    def loop(self) -> None:
       with self.kreiselock:

@@ -298,7 +298,7 @@ class Regelgruppe:
 
       elif self.mode in ['stop', 'standby']:
          for regler in self.regler.values():
-            if regler.wallbox.setP != 0:
+            if regler.wallbox.setP != 0 or regler.wallbox.is_charging:
                self.logger.info(f"(LP {regler.wallbox.id}: {regler.wallbox.setP}W -> Reset")
                regler.wallbox.set(0)
       elif uberschuss > self.limit:  # Leistungserhöhung

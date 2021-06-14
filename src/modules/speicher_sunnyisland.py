@@ -28,16 +28,16 @@ class SUNNYISLAND(Speichermodul):
            'kwhIn': self.device.decode_u32(resp[0:2]) / 1000,    # Aufgenommen [Wh]
            'kwhOut': self.device.decode_u32(resp[2:4]) / 1000     # Abgegeben   [Wh]
          }
+         if self.bms is not None:
+            self.bms.timeout += 1
          if self.bms is None or self.bms.timeout >= 10:
             data['soc'] = self.device.decode_u32(self.device.read(SMAREGISTERS.SOC))
             data['W'] = -self.device.decode_s32(self.device.read(SMAREGISTERS.P))
 
-            self.bms.timeout += 1
          self.send(data)
       except (AttributeError, ConnectionException):
          # modbus client seems to return (!) an ModbusIOExcption which is then tried to examine (resp.registers[])
-         raise ConnectionError
-
+         pass
 
 def getClass():
    return SUNNYISLAND

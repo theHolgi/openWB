@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from typing import Callable, Iterable, TypeVar, Mapping, List
+from typing import Callable, Iterable, TypeVar, Mapping, List, Optional
 
 import logging
 import queue
@@ -78,13 +78,13 @@ class Scheduler(Singleton):
       else:
          self.logger.error(f"{listener} is not in self.timeTable: {self.timeTable}")
 
-   def registerEvent(self, event: EventType, listener: Callable[[OpenWBEvent], None]) -> None:
+   def registerEvent(self, eventtype: Optional[EventType], listener: Callable[[OpenWBEvent], None]) -> None:
       """
       Registers a callback for an event.
-      :param event: Event to listen on
+      :param event: Event type to listen on (None for all)
       :param listener: callback function
       """
-      add2key(self.eventListener, event, listener)
+      add2key(self.eventListener, eventtype, listener)
 
    def dataUpdate(self, data: DataPackage) -> None:
       """
@@ -170,6 +170,6 @@ class Scheduler(Singleton):
 
    def signalEvent(self, event: OpenWBEvent) -> None:
       """signals an event"""
-      if event.type in self.eventListener:
-         for callback in self.eventListener[event.type]:
-            callback(event)
+      # Call all handlers registered to the event type, plus all registered to Any event
+      for callback in self.eventListener.get(event.type, []) + self.eventListener.get(None, []):
+         callback(event)

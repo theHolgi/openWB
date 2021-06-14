@@ -117,7 +117,7 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 		}
 		if (mqttpayload == "0") {
 			element = $('#sofortladenEinstellungen');
-			// element.show();
+			element.show();
 			element.children('[data-lp="' + index + '"]').show()
 		} else {
 			element = $('#sofortladenEinstellungen');

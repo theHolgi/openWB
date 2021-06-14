@@ -252,8 +252,8 @@ class Mqttpublisher(object):
                      republish = True
                      self.core.setconfig('sofortsoclp%i' % device, val)
                elif msg.topic.endswith('resetEnergyToCharge'):
-                  if msg.payload == b'Reset':
-                     self.core.event(OpenWBEvent(EventType.resetEnergy, device))
+                  if msg.payload:
+                     Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, device))
 
          elif msg.topic == "openWB/config/set/pv/stopDelay":
             if val is not None and 0 <= val <= 10000:
@@ -293,7 +293,7 @@ class Mqttpublisher(object):
          else:
             self.logger.info("Nix gefunden.")
       except Exception as e:
-         self.logger.error("BAMM: %s: %s" % (sys.exc_info()[0], e))
+         self.logger.exception("BAMM!", exc_info = e)
       if republish:
          self.logger.info("Re-publish: %s = %s" % (getter_topic, msg.payload))
          self.publish_config(getter_topic, msg.payload)
