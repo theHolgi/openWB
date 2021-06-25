@@ -250,7 +250,7 @@ class Ladepunkt(DataProvider):
             Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, self.id))
          if charging and not self.charging:
             self.reset_offset('charge', 'kwh')
-            self.offsets['chargeW'] = 0
+            self.offsets['chargedW'] = 0
             self.logger.info('Start charging at %i kwh' % chargedkwh)
             #  self.setP = self.actP  # Initialisiere setP falls externer Start
          self.plugged = plugged
@@ -260,11 +260,11 @@ class Ladepunkt(DataProvider):
       self.master.send(DataPackage(self, data))
 
    def event(self, event: OpenWBEvent):
-      if event.type == EventType.resetEnergy and event.info == self.id::
-         self.logger.info("Reset Energie LP%i (vorher: %i)" % (self.id, self.offsets['chargedW']))
+      if event.type == EventType.resetEnergy and event.info == self.id:
          # Reset invoked from UI
          if self.offsets['chargedW']:
             from openWB.OpenWBCore import OpenWBCore
+            self.logger.info("Reset Energie LP%i (vorher: %i)" % (self.id, self.offsets['chargedW']))
             lademenge = OpenWBconfig().get('lademkwh%i' % self.id) - self.offsets['chargedW']
             if lademenge < 0:
                lademenge = 0

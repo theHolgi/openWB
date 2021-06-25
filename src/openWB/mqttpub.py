@@ -124,7 +124,7 @@ class Mqttpublisher(object):
 
    def newdata(self, data: dict):
       for key, value in data.items():
-         self.logger.debug(f"Publish: openWB/{key} = {value}")
+#         self.logger.debug(f"Publish: openWB/{key} = {value}")
          self.publish_data(key, value)
 
    def newconfig(self, event: OpenWBEvent):
@@ -165,6 +165,7 @@ class Mqttpublisher(object):
       self.logger.debug("Live: %s" % last_live)
       if len(self.all_live) > 800:
          self.all_live = self.all_live[-800:]
+      self.logger.debug("all_live now %i long." % len(self.all_live))
       self.publish_data("graph/lastlivevalues", last_live)
       self.publish_data("system/Timestamp", int(time()))
       for index, n in enumerate(range(0, 800, 50)):
@@ -173,6 +174,7 @@ class Mqttpublisher(object):
          else:
             pl = "-\n"
          self.publish_data("graph/%ialllivevalues" % (index+1), payload=pl)
+      self.logger.debug("Publish (1)")
 
       # All (long-time chart) values
       self.graphtimer += 1
@@ -187,6 +189,7 @@ class Mqttpublisher(object):
             self.all_data = self.all_data[-2000:]
          ramdisk('all.graph', "\n".join(self.all_data))
 
+      self.logger.debug("Publish (2)")
       # Graphen aus der Ramdisk
       ramdisk('all-live.graph', "\n".join(self.all_live))
       ramdisk('pv-live.graph', self.core.data.get("pv/W"), 'a')
@@ -194,6 +197,7 @@ class Mqttpublisher(object):
       ramdisk('ev-live.graph', self.core.data.get("llaktuell"), 'a')
       ramdisk('speicher-live.graph', self.core.data.get('housebattery/W'), 'a')
       ramdisk('speichersoc-live.graph', self.core.data.get('housebattery/%Soc'), 'a')
+      self.logger.debug("Publish (done)")
 
    def bulk_config(self):
       """Sende Config als MQTT"""
@@ -278,22 +282,24 @@ class Mqttpublisher(object):
             # Antwort: openWB/system/DayGraphData1<n>, n=1..12 je 25 Zeilen
             # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cron5min.sh"
             # echo $(date +%H%M),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$speicheri,$speichere,$verbraucher1,$verbrauchere1,$verbraucher2,$verbrauchere2,$verbraucher3,$ll4,$ll5,$ll6,$ll7,$ll8,$speichersoc,$soc,$soc1,$temp1,$temp2,$temp3,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10,$temp4,$temp5,$temp6 >> $dailyfile.csv
-            subprocess.Popen(['../../runs/senddaygraphdata.sh', msg.payload])
+            if 1 <= val <= 20501231:
+               subprocess.run([basePath + '../../runs/senddaygraphdata.sh', msg.payload])
          elif msg.topic == 'openWB/set/graph/RequestMonthGraph':
             # Anforderung eines Month graphs.
             # Format Wert: yyyymm
             # Antwort: openWB/system/MonthGraphData<n>, n=1..12 je 25 Zeilen
             # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cronnightly.sh"
             # echo $(date +%Y%m%d),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$verbraucher1iwh,$verbraucher1ewh,$verbraucher2iwh,$verbraucher2ewh,$ll4,$ll5,$ll6,$ll7,$ll8,$speicherikwh,$speicherekwh,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10 >> $monthlyfile.csv
-            subprocess.Popen(['../../runs/sendmonthgraphdata.sh', msg.payload])
+            if 1 <= val <= 20501231:
+                subprocess.run([basePath + '../../runs/sendmonthgraphdata.sh', msg.payload])
          elif getter_topic in self.configmapping:
             if val is not None and 0 <= val <= 10000:
                republish = True
                self.core.setconfig(self.configmapping[getter_topic], val)
          else:
             self.logger.info("Nix gefunden.")
-      except Exception as e:
-         self.logger.exception("BAMM!", exc_info = e)
+      except IOError as e:   # Exception
+          self.logger.exception("BAMM!", exc_info=e)
       if republish:
          self.logger.info("Re-publish: %s = %s" % (getter_topic, msg.payload))
          self.publish_config(getter_topic, msg.payload)

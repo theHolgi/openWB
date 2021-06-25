@@ -3,7 +3,7 @@ from typing import Iterator
 from openWB.openWBlib import RamdiskValues
 
 class RamdiskPublisher(object):
-   priority = 999
+   priority = 998
    datamapping = {
       # ramdisk file: data name
       # EVU
@@ -57,7 +57,7 @@ class RamdiskPublisher(object):
 
    def setup(self):
       scheduler = Scheduler()
-      scheduler.registerData(['pv/*'], self)
+      scheduler.registerData(['*'], self)
 
    @staticmethod
    def _loop(key: str, key2: str = None) -> Iterator[str]:

@@ -44,18 +44,18 @@ class SMASHM(EVUModul):
          positive = [1] * 4
          if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
             # Special treatment for positive / negative power
-            watt = int(emparts['pconsume'])       # W
+            watt = int(emparts.get('pconsume',0))       # W
             if watt < 5:
-               watt = -int(emparts['psupply'])
+               watt = -int(emparts.get('psupply', 0))
                positive[0] = -1
             data = {'W': watt,
-                    'kwhOut': emparts['psupplycounter'],  # kWh
-                    'kwhIn':  emparts['pconsumecounter'] # kWh
+                    'kwhOut': emparts.get('psupplycounter', 0),  # kWh
+                    'kwhIn':  emparts.get('pconsumecounter', 0) # kWh
                     }
             for phase in [1, 2, 3]:
-               power = int(emparts['p%iconsume' % phase])
+               power = int(emparts.get('p%iconsume' % phase, 0))
                if power < 5:
-                  power = -int(emparts['p%isupply' % phase])
+                  power = -int(emparts.get('p%isupply' % phase, 0))
                   positive[phase] = -1
                data['W%i' % phase] = power
             for key, pasemap in phasemapping.items():

@@ -70,7 +70,7 @@ class OpenWBCore(Singleton):
       Thread(target=Scheduler().signalEvent, args=(OpenWBEvent(EventType.configupdate, key, value),)).start()
 
    def event(self, event: OpenWBEvent) -> None:
-      self.logger.info("Event: %i; payload %s (%s)" % (event.type.name, event.info, event.payload))
+      self.logger.info("Event: %s; payload %s (%s)" % (event.type.name, event.info, event.payload))
       try:
        if event.type == EventType.configupdate:
          m = re.match('lpmodul(\\d)_mode', event.info)
@@ -93,7 +93,7 @@ class OpenWBCore(Singleton):
                      break
             self.logger.info("Nach Reconfigure: " + str(self.regelkreise))
 
-      except Exception as e:
+      except IOError as e:  # Exception
          self.logger.exception("BAM!!!", exc_info = e)
 
    def loop(self) -> None:

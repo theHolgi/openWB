@@ -117,7 +117,10 @@ class Scheduler(Singleton):
          elif notifylist:
             recipient, data = notifylist.pop(next(notifylist.keys().__iter__()))
             self.logger.debug(f"Data trigger: {recipient} with {data}")
-            recipient.newdata(data)
+            try:
+               recipient.newdata(data)
+            except Exception as e:
+               self.logger.exception(f"{recipient} caused an exception!", exc_info=e)
          elif self.simulated:   # During simulation, quit when no activity any more.
             return
          else:
@@ -141,8 +144,12 @@ class Scheduler(Singleton):
          if next_task not in self.timeTable:    # check if the task has not been removed from the timetable meanwhile
             continue
          self.logger.debug(f"Calling: {next_task}")
-         next_task()
+         try:
+            next_task()
+         except Exception as e:
+            self.logger.exception(f"{next_task} caused an exception!", exc_info=e)
          if len(timetable) == 0:
+            self.logger.info("Timetable is empty.")
             break
          # Advance the timetable
          if delay > 0:
@@ -150,12 +157,14 @@ class Scheduler(Singleton):
          # re-schedule the task
          reschedule = self.timeTable.get(next_task)
          if reschedule is None:  # Might have been removed meanwhile
+            self.logger.debug("Got empty reschedule task")
             continue
          if simulated:  # In simulation, do not reschedule beyond the end of list. This makes the loop stop after the slowest task has been run once.
             last = timetable[-1][0]
             if last < reschedule:
                continue
          timetable.append((reschedule, next_task))
+      print("Scheduling done.")
 
    def test_callAll(self, n: int = 1) -> None:
       """
