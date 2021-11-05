@@ -263,6 +263,7 @@ class Ladepunkt(DataProvider):
       if event.type == EventType.resetEnergy and event.info == self.id:
          # Reset invoked from UI
          if self.offsets['chargedW']:
+            self.logger.info("Reset Energie LP%i (vorher: %i)" % (self.id, self.offsets['chargedW']))
             from openWB.OpenWBCore import OpenWBCore
             self.logger.info("Reset Energie LP%i (vorher: %i)" % (self.id, self.offsets['chargedW']))
             lademenge = OpenWBconfig().get('lademkwh%i' % self.id) - self.offsets['chargedW']

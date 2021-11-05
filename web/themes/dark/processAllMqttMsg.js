@@ -61,14 +61,21 @@ function processPvConfigMessages(mqttmsg, mqttpayload) {
 				// battery priority
 				$('#evPriorityBtn').removeClass('btn-success');
 				$('#batteryPriorityBtn').addClass('btn-success');
-				$('#priorityEvBatteryIcon').removeClass('fa-car').addClass('fa-car-battery')
+				$('#autoPriorityBtn').removeClass('btn-success');
+				$('#priorityEvBatteryIcon').removeClass('fa-car').removeClass('fa-robot').addClass('fa-car-battery')
 				break;
 			case '1':
 				// ev priority
 				$('#evPriorityBtn').addClass('btn-success');
 				$('#batteryPriorityBtn').removeClass('btn-success');
-				$('#priorityEvBatteryIcon').removeClass('fa-car-battery').addClass('fa-car')
-			break;
+				$('#autoPriorityBtn').removeClass('btn-success');
+				$('#priorityEvBatteryIcon').removeClass('fa-car-battery').removeClass('fa-robot').addClass('fa-car')
+         case '2':
+            // auto priority
+				$('#evPriorityBtn').removeClass('btn-success');
+				$('#batteryPriorityBtn').removeClass('btn-success');
+				$('#autoPriorityBtn').addClass('btn-success');
+				$('#priorityEvBatteryIcon').removeClass('fa-car').removeClass('fa-car').addClass('fa-robot')
 		}
 	}
 	else if ( mqttmsg == 'openWB/config/get/pv/nurpv70dynact' ) {

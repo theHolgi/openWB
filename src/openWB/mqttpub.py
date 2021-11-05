@@ -1,13 +1,12 @@
 import os
 import re
 import subprocess
-import sys
 from enum import Enum
 
 import paho.mqtt.client as mqtt
 
 from openWB import DataPackage
-from typing import Iterator, Tuple, overload
+from typing import Iterator, Tuple
 from datetime import datetime
 from time import time
 import logging
@@ -124,7 +123,7 @@ class Mqttpublisher(object):
 
    def newdata(self, data: dict):
       for key, value in data.items():
-#         self.logger.debug(f"Publish: openWB/{key} = {value}")
+         # self.logger.debug(f"Publish: openWB/{key} = {value}")
          self.publish_data(key, value)
 
    def newconfig(self, event: OpenWBEvent):
@@ -143,13 +142,13 @@ class Mqttpublisher(object):
          content = read_ramdisk(filename).splitlines(keepends=True)
          ramdisk(filename, ''.join(content[-6 * (self.core.config.get('livegraph')):]))
 
-   def publish_data(self, topic: str, payload) -> None:
+   def publish_data(self, topic: str, payload, qos=2) -> None:
       """Publish topic/payload with data quality; topic not including "openWB" prefix"""
-      self.client.publish("openWB/" + topic, payload, qos=2, retain=True)
+      self.client.publish("openWB/" + topic, payload, qos=qos, retain=True)
 
-   def publish_config(self, topic: str, payload) -> None:
+   def publish_config(self, topic: str, payload, qos=1) -> None:
       """Publish topic/payload with config quality; topic not including "openWB" prefix"""
-      self.client.publish("openWB/" + topic, payload, qos=1, retain=True)
+      self.client.publish("openWB/" + topic, payload, qos=qos, retain=True)
 
    def publishLiveData(self):
       self.num_lps = sum(1 if self.core.data.get('lpconf', id=n) else 0 for n in range(1, 9))
@@ -225,7 +224,7 @@ class Mqttpublisher(object):
                republish = True
                self.core.setconfig('offsetpv', val)
          elif msg.topic == "openWB/config/set/pv/priorityModeEVBattery":    # Priorität Batt/EV
-            if val is not None and 0 <= val <= 1:
+            if val is not None and 0 <= val <= 2:
                republish = True
                self.core.setconfig('speicherpveinbeziehen', val)
          elif msg.topic == "openWB/config/set/pv/nurpv70dynw":
@@ -291,7 +290,15 @@ class Mqttpublisher(object):
             # Herkunft: web/logging/data/<yyyymm>.csv erzeugt von Cronjob "cronnightly.sh"
             # echo $(date +%Y%m%d),$bezug,$einspeisung,$pv,$ll1,$ll2,$ll3,$llg,$verbraucher1iwh,$verbraucher1ewh,$verbraucher2iwh,$verbraucher2ewh,$ll4,$ll5,$ll6,$ll7,$ll8,$speicherikwh,$speicherekwh,$d1,$d2,$d3,$d4,$d5,$d6,$d7,$d8,$d9,$d10 >> $monthlyfile.csv
             if 1 <= val <= 20501231:
-                subprocess.run([basePath + '../../runs/sendmonthgraphdata.sh', msg.payload])
+               subprocess.run([basePath + '../../runs/sendmonthgraphdata.sh', msg.payload])
+         elif msg.topic == "openWB/set/graph/RequestLiveGraph":
+            if val == 1:
+               subprocess.run(basePath + "../../runs/sendlivegraphdata.sh")
+            else:
+               self.publish_data("system/LiveGraphData", "empty", qos=0)
+         elif msg.topic == "openWB/set/graph/RequestLLiveGraph":
+            if val == 1:
+               subprocess.run(basePath + "../../runs/sendllivegraphdata.sh")
          elif getter_topic in self.configmapping:
             if val is not None and 0 <= val <= 10000:
                republish = True

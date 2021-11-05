@@ -41,8 +41,11 @@ class OpenWBCore(Singleton):
                from openWB.regler import Regelgruppe
                self.regelkreise[lpmode] = Regelgruppe(lpmode)
             self.regelkreise[lpmode].add(lp)
-      Scheduler().registerEvent(EventType.configupdate, self.event)
-      Scheduler().registerTimer(5, self.loop)  # TODO: Thread, nicht öfter als alle x s
+      scheduler = Scheduler()
+      scheduler.registerEvent(EventType.configupdate, self.event)
+      scheduler.registerTimer(5, self.loop)  # TODO: Thread, nicht öfter als alle x s
+      for publisher in self.publishers:
+         scheduler.registerData("*", publisher)
       return self
 
    def logdebug(self):

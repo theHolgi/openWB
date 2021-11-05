@@ -1069,6 +1069,13 @@
 								</button>
 							</div>
 						</div>
+						<div class="row justify-content-center">
+							<div class="col-sm-5 py-1">
+								<button id="autoPriorityBtn" type="button" class="priorityModeBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal" priority="2">
+									Auto <span class="fas fa-robot">&nbsp;</span>
+								</button>
+							</div>
+						</div>
 					</span>
 					<span id='MinModeBtn'>
 						<hr/>
@@ -1271,9 +1278,7 @@
 			$('.priorityModeBtn').click(function(event){
 				// prio: 0 = battery, 1 = ev
 				var priority = $(this).attr('priority');
-				if ( priority == '0' || priority == '1' ) {
-					publish(priority, 'openWB/config/set/pv/priorityModeEVBattery');
-				}
+				publish(priority, 'openWB/config/set/pv/priorityModeEVBattery');
 			});
 
 			$('.MinBtn').click(function(event){
