@@ -91,8 +91,14 @@ def decode_OBIS(obis):
     datatype='version'
   else:
     datatype='unknown'
-    print('unknown datatype: measurement {} datatype {} raw_type {}'.format(measurement,datatype,raw_type))
-  return (measurement,datatype)
+    # SMA-HM 2.7.5.R sendet 0.0 und 29697.171
+    if (raw_type == 0 and measurement == 0) or \
+       (raw_type == 171 and measurement == 29697):
+       pass
+    else:
+       print('unknown datatype: measurement {} datatype {} raw_type {}'.format(measurement,datatype,raw_type))
+  return measurement, datatype
+
 
 def decode_speedwire(datagram):
   emparts={}
