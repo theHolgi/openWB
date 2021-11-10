@@ -1,6 +1,8 @@
 from time import sleep
 
+import logging
 import queue
+from socket import socket
 from urllib import request
 import json
 
@@ -33,8 +35,8 @@ class GO_E_SET(Thread):
                      self.master.send({'ChargeStatus': value})
                   elif key == 'amp':
                      self.master.send({'Areq': value})
-         except:
-            pass
+         except Exception as e:
+            logging.exception("GO-E say Bumm!", exc_info=e)
 
 
 class GO_E(Ladepunkt):
@@ -66,12 +68,15 @@ class GO_E(Ladepunkt):
                'V1': int(goe['nrg'][0]),    'V2': int(goe['nrg'][1]),    'V3': int(goe['nrg'][2]),    # [V]
                'A1': int(goe['nrg'][4])/10, 'A2': int(goe['nrg'][5])/10, 'A3': int(goe['nrg'][6])/10, # [0.1A]
                'Pf1': int(goe['nrg'][12]),  'Pf2': int(goe['nrg'][13]),  'Pf3': int(goe['nrg'][14]),  # %
-               'kwh': int(goe['eto'])/10,  # [0.1kwh]
+               'kwh': int(goe['eto'])/10.0,  # [0.1kwh]
                'boolPlugStat': goe['car'] != '1',
                'boolChargeStat': goe['car'] == '2',
                'W': self.actP})
             # restzeitlp
-      except:  # e.g. socket.timeout
+      except socket.timeout:
+         pass
+      except Exception as e: # e.g. socket.timeout
+         logging.exception("GO-E say Bumm!", exc_info=e)
          self.send({})
 
    def powerproperties(self) -> PowerProperties:

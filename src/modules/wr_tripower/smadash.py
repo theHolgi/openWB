@@ -4,6 +4,8 @@ import sys
 from urllib import request
 import ssl
 import json
+import logging
+
 
 def getVal(result, id):
    if result[id]['1'][0]['val'] is None:
@@ -36,8 +38,8 @@ class SMADASH:
                   if power is None:
                      power = 0
                   generation = getVal(unitResult, '6400_00260100')/1000  # Total yield in Wh
-      except:
-         pass
+      except Exception as e:
+         logging.exception("SMADash says Bumm!", exc_info=e)
       return power, generation
 
 
