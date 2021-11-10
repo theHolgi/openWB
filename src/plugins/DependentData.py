@@ -8,18 +8,29 @@ class DependentData:
 
    def __init__(self):
       Scheduler().registerData(['evu/W', 'pv/W', 'global/WAllChargePoints', 'housebattery/W'], self)
+      self.data = openWBValues()
+      self.config = OpenWBconfig()
+
+   def _speicherreserve(self) -> int:
+      """Passe Überschuss an um die Reserven, die der Speicher zur Verfügung stellt"""
+      Pbatt = self.data.get('housebattery/W')
+      speicherprio = self.config.get('speicherpveinbeziehen')
+      if Pbatt < 0:
+         return Pbatt  # Speicherentnahme ist negativer Überschuss
+      if speicherprio == 0:    # Speicher hat Priorität
+         return 0
+      elif speicherprio == 1:  # EV hat unbedingte Priorität
+         return Pbatt
+      elif speicherprio == 2:  # Auto -> Je leerer der Speicher, desto mehr reservierte Leistung
+         speicher_reserve = int(((100 - self.data.get('housebattery/%Soc')) * self.config.get('speichermaxp', 3000)) / 100)
+         return max(Pbatt - speicher_reserve, 0)
+
+
 
    def newdata(self, updated: dict) -> None:
-      data = openWBValues()
       packet = DataPackage(self, {
-         'global/uberschuss': -data.get('evu/W'),
-         'global/WHouseConsumption': data.get('evu/W') + data.get('pv/W') -
-                                     data.get('global/WAllChargePoints') - data.get('housebattery/W')
+         'global/uberschuss': self._speicherreserve() - self.data.get('evu/W'),
+         'global/WHouseConsumption': self.data.get('evu/W') + self.data.get('pv/W') -
+                                     self.data.get('global/WAllChargePoints') - self.data.get('housebattery/W')
       })
-      # Batterie entlädt, oder EV-Vorrang (1),
-      # oder auto-EV-Vorrang und Speicher SOC > 50% -> Ladeleistung ist nicht Überschuss
-      if data.get('housebattery/W') < 0 or \
-         OpenWBconfig().get('speicherpveinbeziehen') == 1 or \
-         (OpenWBconfig().get('speicherpveinbeziehen') == 2 and data.get('housebattery/%Soc') > 50):
-         packet['global/uberschuss'] += data.get('housebattery/W')
-      data.update(packet)
+      self.data.update(packet)

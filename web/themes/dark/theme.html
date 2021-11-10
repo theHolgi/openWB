@@ -1276,7 +1276,7 @@
 			});
 
 			$('.priorityModeBtn').click(function(event){
-				// prio: 0 = battery, 1 = ev
+				// prio: 0 = battery, 1 = ev, 2 = auto
 				var priority = $(this).attr('priority');
 				publish(priority, 'openWB/config/set/pv/priorityModeEVBattery');
 			});
