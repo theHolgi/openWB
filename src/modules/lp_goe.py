@@ -73,8 +73,8 @@ class GO_E(Ladepunkt):
                'boolChargeStat': goe['car'] == '2',
                'W': self.actP})
             # restzeitlp
-      except socket.timeout:
-         pass
+#      except socket.timeout: Not a BaseException
+#         pass
       except Exception as e: # e.g. socket.timeout
          logging.exception("GO-E say Bumm!", exc_info=e)
          self.send({})

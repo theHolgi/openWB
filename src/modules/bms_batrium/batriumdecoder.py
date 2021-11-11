@@ -42,17 +42,51 @@ decoder = {
 
 
 def decode_batrium(datagram: bytes, limit: str = None) -> dict:
+   def _uint16(pos) -> int:
+      return int.from_bytes(datagram[pos:pos+2], byteorder='little')
+   def _uint8(pos) -> int:
+      return int(datagram[pos])
+
    msg = {}
    id = datagram[0:4].decode()
-   if id in decoder and (limit is None or limit == id):
+   if limit is not None and limit != id:
+      return msg
+   if id == ':ZA,':  # 0X415A - Cell node status
+      cnt = int(datagram[9])
+      offset = 12
+      cells = {}
+      for n in range(cnt):
+         id = int(datagram[offset])
+         cells[id] = {'Umin': _uint16(offset + 2) * 0.001,
+                      'Umax': _uint16(offset + 4) * 0.001,
+                      'Tmax': _uint8(offset + 6) - 40,
+                      'Status':  {
+                          1: 'HighVolt',
+                          2: 'HighTemp',
+                          3: 'OK',
+                          4: 'Timeout',
+                          5: 'LowVolt',
+                          6: 'Disabled',
+                          7: 'InBypass',
+                          8: 'InitialBypass',
+                          9: 'FinalBypass',
+                          10: 'Missingsetup',
+                          11: 'NoConfig',
+                          12: 'CellOutLimits',
+                          255: 'Undefined'
+                          }[datagram[offset + 10]]
+                      }
+         offset += 11
+      msg['cells'] = cells
+   elif id in decoder and (limit is None or limit == id):
       message = decoder[id]
       for key, pos, unit, scale, offset in message:
          if unit == 'bool':
             val = datagram[pos] != b'\x00'
          elif unit == 'uint8':
-            val = int(datagram[pos])
+            val = _uint8(pos)
          elif unit == 'uint16':
-            val = int.from_bytes(datagram[pos:pos+2], byteorder='little')
+            val = _uint16(pos)
          elif unit == 'float':
             val = struct.unpack('<f', datagram[pos:pos+4])[0]
          elif unit == 'status':

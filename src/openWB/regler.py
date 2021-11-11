@@ -276,7 +276,7 @@ class Regelgruppe:
          prefix = 'lp/%i/' % id
          limitierung = self.config.get('msmoduslp%i' % id)
          if self.mode not in ['standby', 'stop']:
-            if limitierung == 1 and self.config.get('lademkwh%i' % id) is not None:  # Limitierung: kWh
+            if limitierung == 1 and self.config.get('lademkwh%i' % id):  # Limitierung: kWh
                if self.data.get(prefix + 'W') == 0:
                   restzeit = "---"
                else:
