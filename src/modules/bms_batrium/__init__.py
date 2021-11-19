@@ -2,8 +2,10 @@ import socket
 
 from openWB.Modul import DataProvider, DataPackage, Speichermodul
 from openWB.openWBlib import openWBValues
+from pathlib import Path
 from .batriumdecoder import decode_batrium
 from datetime import datetime
+from utils import CsvLog
 
 datalogging = True
 
@@ -15,8 +17,7 @@ class BATRIUM(DataProvider):
       self.master = master
       self.timeout = 0
       if datalogging:
-         self.data = open('/tmp/batrium.csv', 'a')
-         self.logged_chargestates = {}
+         self.data = CsvLog(Path('/tmp/batrium.csv'), (1, 2))
 
    def run(self):
       BCASTPORT = 18542
@@ -45,12 +46,12 @@ class BATRIUM(DataProvider):
                data = openWBValues()
                p = int(round(data.get('housebattery/W'), -2))
                chargestate = int(data.get('housebattery/%Soc'))
-               key = chargestate, p
-               if key not in self.logged_chargestates:  # not yet logged this combination P/%soc
-                  self.logged_chargestates[key] = True
+               if not self.data.has(p, chargestate):
                   for id, values in parts['cells'].items():
-                     self.data.write(','.join(map(str, [datetime.now().strftime("%y-%m-%d %X"), p, chargestate,
-                                                        id, values['Umin'], values['Umax'], values['Tmax'], values['Status']])) + '\n')
+                     self.data.write([datetime.now().strftime("%d.%m.%y %X"), p, chargestate, id,
+                                      round(values['Umin'], 3), round(values['Umax'], 3),
+                                      values['Tmax'],
+                                      values['Status']])
 
 
 def getClass():
