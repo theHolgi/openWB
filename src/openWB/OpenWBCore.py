@@ -26,14 +26,16 @@ class OpenWBCore(Singleton):
    def setup(self) -> "OpenWBCore":
       self.config = OpenWBconfig()
       self.data = openWBValues()
+      if self.config.get('testmode') is None:
+         self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
+      for publisher in self.publishers:
+         publisher.setup()
       self.modules['EVU'] = EVUModule()
       self.modules['PV'] = PVModule()
       self.modules['LP'] = LPModule()
       self.modules['SPEICHER'] = SpeicherModule()
       self.modules['DISPLAY'] = DisplayModule()
       self.modules['HELPER'] = [DependentData()]
-      if self.config.get('testmode') is None:
-         self.publishers = [Mqttpublisher(self), RamdiskPublisher(self)]
       with self.kreiselock:
          for lp in self.modules['LP'].modules:
             lpmode = self.config.get(lp.configprefix + '_mode')

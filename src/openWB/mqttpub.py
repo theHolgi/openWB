@@ -104,14 +104,13 @@ class Mqttpublisher(object):
       self.client.on_message = on_message
       self.client.connect(hostname)
       self.client.loop_start()
-      self.bulk_config()
       self.graphtimer = 0
       self.all_live = []
       self.all_data = []
-      self.setup()
 
    def setup(self):
       """Subscribe to set topics"""
+      self.bulk_config()
       self.logger.debug('Subscribing.')
       self.client.subscribe("openWB/set/#", 2)
       self.client.subscribe("openWB/config/set/#", 2)

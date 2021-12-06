@@ -53,7 +53,6 @@ class RamdiskPublisher(object):
    def __init__(self, core):
       self.ramdisk = RamdiskValues()
       self.data = core.data
-      self.setup()
 
    def setup(self):
       scheduler = Scheduler()

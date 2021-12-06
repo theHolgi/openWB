@@ -8,6 +8,7 @@ sys.path.append(mypath + 'src')
 
 from openWB import OpenWBCore, api
 from openWB.Scheduling import Scheduler
+from openWB.startup import init_system
 
 if 'http_proxy' in os.environ:
    os.environ.pop('http_proxy')
@@ -21,6 +22,7 @@ infologgers = ['Adafruit_I2C.Device.Bus.1.Address.0X40', 'pymodbus']
 for logger in infologgers:
    logging.getLogger(logger).setLevel(logging.INFO)
 
+init_system()
 core = OpenWBCore.OpenWBCore().setup()
 
 # Start the API
