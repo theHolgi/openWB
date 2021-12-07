@@ -5,7 +5,10 @@ from .mqttpub import Mqttpublisher
 
 def init_system(host: str = "localhost"):
    initial_mqtt = {
-    "lp/%i/boolChargePointConfigured": 0
+      "lp/%i/boolChargePointConfigured": 0,
+      "config/get/SmartHome/Devices/%i/device_configured": 0,
+      "hook/%i/boolHookConfigured": 0,
+      "housebattery/boolHouseBatteryConfigured": 0
    }
    mqtt = Mqttpublisher(None, host)
    for topic, value in initial_mqtt.items():
