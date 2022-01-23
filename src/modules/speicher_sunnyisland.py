@@ -19,7 +19,7 @@ class SUNNYISLAND(Speichermodul):
       else:
          self.bms = None
       super().setup(config)
-      Scheduler().registerTimer(10, self.loop)
+      Scheduler().registerTimer(20, self.loop)
 
    def loop(self):
       try:

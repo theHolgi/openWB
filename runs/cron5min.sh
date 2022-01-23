@@ -160,18 +160,18 @@ echo "$(tail -500 /var/www/html/openWB/ramdisk/mqtt.log)" > /var/www/html/openWB
 echo "$(tail -500 /var/www/html/openWB/ramdisk/nurpv.log)" > /var/www/html/openWB/ramdisk/nurpv.log
 
 
-if ps ax |grep -v grep |grep "python3 /var/www/html/openWB/runs/mqttsub.py" > /dev/null
-then
-	echo "test" > /dev/null
-else
-	python3 /var/www/html/openWB/runs/mqttsub.py &
-fi
-if ps ax |grep -v grep |grep "python3 /var/www/html/openWB/runs/smarthomehandler.py" > /dev/null
-then
-	echo "test" > /dev/null
-else
-	python3 /var/www/html/openWB/runs/smarthomehandler.py &
-fi
+# if ps ax |grep -v grep |grep "python3 /var/www/html/openWB/runs/mqttsub.py" > /dev/null
+# then
+# 	echo "test" > /dev/null
+# else
+#	python3 /var/www/html/openWB/runs/mqttsub.py &
+# fi
+# if ps ax |grep -v grep |grep "python3 /var/www/html/openWB/runs/smarthomehandler.py" > /dev/null
+# then
+# 	echo "test" > /dev/null
+# else
+# 	python3 /var/www/html/openWB/runs/smarthomehandler.py &
+# fi
 
 ethstate=$(</sys/class/net/eth0/carrier)
 if (( ethstate == 1 )); then

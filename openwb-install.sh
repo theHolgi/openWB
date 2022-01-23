@@ -147,8 +147,10 @@ else
 fi
 sudo /bin/su -c "echo 'upload_max_filesize = 30M' > /etc/php/7.0/apache2/conf.d/20-uploadlimit.ini"
 sudo apt-get -qq install -y python-pip
-sudo pip install  -U pymodbus
+sudo pip3 install  -U pymodbus adafruit-circuitpython-pca9685
 echo "www-data ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/010_pi-nopasswd
+
+mkdir -p /var/www/html/openWB/web/logging/data/ladelog
 
 chmod 777 /var/www/html/openWB/openwb.conf
 chmod +x /var/www/html/openWB/modules/*                     

@@ -21,6 +21,7 @@ client.on_message = on_message
 client.connect(mqtt_broker_ip, 1883)
 
 client.subscribe("openWB/config/#", 2)
+client.subscribe("openWB/set/#", 2)
 print("Subscribed.")
 
 client.loop_forever()

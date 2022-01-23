@@ -15,7 +15,7 @@ class SMASHM(EVUModul):
       self.runner.start()
 
    def loop(self):
-      ipbind = '0.0.0.0'
+      ipbind = '192.168.7.74'
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522
 
@@ -44,8 +44,10 @@ class SMASHM(EVUModul):
          positive = [1] * 4
          if self.serial is None or self.serial == 'none' or str(emparts['serial']) == self.serial:
             # Special treatment for positive / negative power
-            watt = int(emparts.get('pconsume',0))       # W
-            if watt < 5:
+            if emparts.get('pconsume') is None:         # if not a valid message, skip
+               continue
+            watt = int(emparts.get('pconsume'))         # W
+            if watt == 0:
                watt = -int(emparts.get('psupply', 0))
                positive[0] = -1
             data = {'W': watt,

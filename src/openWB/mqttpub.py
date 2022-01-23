@@ -93,16 +93,13 @@ class Mqttpublisher(object):
    configqos = 2
 
    def __init__(self, core, hostname: str = "localhost"):
-      def on_message(client, userdata, msg):
-         """Handle incoming messages"""
-         self.messagehandler(msg)
-
       self.core = core
       self.name = "MQTT"
       self.logger = logging.getLogger('MQTT')
-      self.client = mqtt.Client("openWB-bulkpublisher-" + str(os.getpid()))
-      self.client.on_message = on_message
-      self.client.connect(hostname)
+      self.client = mqtt.Client("openWB-bulkpublisher-" + str(os.getpid()), transport="websockets", protocol=mqtt.MQTTv311)
+      self.client.on_message = lambda client, userdata, msg: self.messagehandler(msg)
+      self.client.connect(hostname, port=9001, keepalive=120)
+      self.client.reconnect_delay_set(min_delay=60, max_delay=120)
       self.client.loop_start()
       self.graphtimer = 0
       self.all_live = []
@@ -119,6 +116,17 @@ class Mqttpublisher(object):
       scheduler.registerTimer(10, self.publishLiveData)   # TODO: React on Chargepoint  end-of-loop event
       scheduler.registerEvent(EventType.configupdate, self.newconfig)
       scheduler.registerEvent(EventType.resetDaily, self.cut_live)
+
+      def log_proxy(client, userdata, level, buf):
+         if level == mqtt.MQTT_LOG_INFO:
+            method = self.logger.info
+         elif level == mqtt.MQTT_LOG_WARNING:
+            method = self.logger.warning
+         else:
+            method = self.logger.error
+         method(buf)
+      # self.client.on_log = log_proxy
+
 
    def newdata(self, data: dict):
       for key, value in data.items():

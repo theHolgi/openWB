@@ -18,7 +18,7 @@ class TRIPOWER(PVModul):
          self.instance = SMADASH(host)
          assert self.instances == 1, "Dashboard Tripower can only have one instance."
       super().setup(config)
-      Scheduler().registerTimer(10, self.loop)
+      Scheduler().registerTimer(20, self.loop)
 
    def loop(self):
       try:

@@ -3,7 +3,9 @@
 #  Pulse Width Modulation (PWM) demo to cycle brightness of an LED
 
 from openWB.Modul import Displaymodul
-import Adafruit_PCA9685 as Ada
+import board
+import busio
+import adafruit_pca9685 as adafruit
 import threading
 import time
 
@@ -16,15 +18,15 @@ ch_batt = 14
 ch_green = 7
 ch_red = 6
 
-ON = 4095
+ON = 0xffff
 OFF = 0
 
 PMAX = 8000  # Maximale Wirkleistung für rote LED
 
-table = {'pv':   {    0: 0,      500: 840,   1000: 1750,2000: 2600, 4000: 3450, 7000: 4095},
-         'grid': {-3600: 4095, -2000: 3400, -1000: 2600,   0: 1730, 1000:  850, 2000: 0},
-         'batt': {-1000: 0,     -500: 800,      0: 1700, 500: 2570, 1000: 3450, 1600: 4095}
-         }
+table = {'pv':   {    0: 0,       500: 14700, 1000: 29500, 2000: 43000, 4000: 57500, 6000: 0xffff},
+         'grid': {-3600: 0xffff,-2000: 54500,-1000: 42000,    0: 28000, 1000: 14000, 2000: 0},
+         'batt': {-1000: 0,      -500: 12500,    0: 27000,  500: 41000, 1000: 55000, 1800: 0xffff}
+        }
 
 mapping = {
    'pv/W': (ch_pv, 'pv'),
@@ -37,8 +39,9 @@ class I2CDISPLAY(Displaymodul):
    priority = 1000   # Display has lowest data dependency priority
 
    def setup(self, config):
-      self.pwm = Ada.PCA9685(address=config.get(self.configprefix + '_address'))
-      self.pwm.set_pwm_freq(100)
+      i2c = busio.I2C(board.SCL, board.SDA)
+      self.pwm = adafruit.PCA9685(i2c, address=config.get(self.configprefix + '_address'), )
+      self.pwm.frequency = 100
       self.last = {'pv': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
       Scheduler().registerData(mapping.keys(), self)
       Scheduler().registerTimer(10, self.leds)
@@ -49,7 +52,7 @@ class I2CDISPLAY(Displaymodul):
       state = ON
       while t.do_run:
          try:
-            self.pwm.set_pwm(port, 0, state)
+            self.pwm.channels[port].duty_cycle = state
          except OSError:
             pass
          time.sleep(1)
@@ -77,7 +80,7 @@ class I2CDISPLAY(Displaymodul):
                if abs(value - self.last[name]) > 100:
                   dc = self.scale(table[name], value)
                   self.last[name] = value
-                  self.pwm.set_pwm(channel, 0, dc)
+                  self.pwm.channels[channel].duty_cycle = dc
       except OSError:
          pass
 
@@ -99,7 +102,7 @@ class I2CDISPLAY(Displaymodul):
                self.last['red_blink'] = threading.Thread(target=self.blink, args=(ch_red,))
                self.last['red_blink'].start()
             else:
-               self.pwm.set_pwm(ch_red, 0, ON if red else OFF)
+               self.pwm.channels[ch_red].duty_cycle = ON if red else OFF
             self.last['red'] = red
 
          if self.last['green'] != green:
@@ -109,7 +112,7 @@ class I2CDISPLAY(Displaymodul):
                self.last['green_blink'] = threading.Thread(target=self.blink, args=(ch_green,))
                self.last['green_blink'].start()
             else:
-               self.pwm.set_pwm(ch_green, 0, ON if green else OFF)
+               self.pwm.channels[ch_green].duty_cycle = ON if green else OFF
             self.last['green'] = green
       except OSError:
          pass

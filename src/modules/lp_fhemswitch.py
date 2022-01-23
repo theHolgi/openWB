@@ -25,7 +25,7 @@ class LP_FHEMSWITCH(Ladepunkt):
       self.blockcnt = 0
       self.on_delay = 0
       self.setP = 0
-      Scheduler().registerTimer(10, self.loop)
+      Scheduler().registerTimer(30, self.loop)
       super().setup(config)
 
    @property

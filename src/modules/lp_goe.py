@@ -2,7 +2,7 @@ from time import sleep
 
 import logging
 import queue
-from socket import socket
+import urllib.error
 from urllib import request
 import json
 
@@ -47,7 +47,7 @@ class GO_E(Ladepunkt):
       self.laststate = {}
       self.setter = GO_E_SET('http://%s/mqtt' % self.ip, self.timeout, self)
       self.setter.start()
-      Scheduler().registerTimer(5, self.loop)
+      Scheduler().registerTimer(10, self.loop)
       super().setup(config)
 
    def loop(self):
@@ -73,10 +73,12 @@ class GO_E(Ladepunkt):
                'boolChargeStat': goe['car'] == '2',
                'W': self.actP})
             # restzeitlp
+      except urllib.error.URLError:  # also socket timeout
+         logging.warning("GO-E cannot connect")
 #      except socket.timeout: Not a BaseException
 #         pass
       except Exception as e: # e.g. socket.timeout
-         logging.exception("GO-E say Bumm!", exc_info=e)
+         logging.error("GO-E say Bumm!", exc_info=e)
          self.send({})
 
    def powerproperties(self) -> PowerProperties:
