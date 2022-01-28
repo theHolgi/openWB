@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 
 import sys
+
+from typing import Tuple
 from urllib import request
+import urllib
 import ssl
 import json
 import logging
@@ -23,7 +26,7 @@ class SMADASH:
    def __init__(self, ip): 
       self.host = ip
 
-   def read(self):
+   def read(self) -> Tuple[int, int]:
       power, generation = 0, 0
       context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
       context.verify_mode = ssl.CERT_NONE
@@ -38,10 +41,11 @@ class SMADASH:
                   if power is None:
                      power = 0
                   generation = getVal(unitResult, '6400_00260100')/1000  # Total yield in Wh
+      except ConnectionError:
+         pass
       except Exception as e:
          logging.exception("SMADash says Bumm!", exc_info=e)
       return power, generation
-
 
 if __name__ == '__main__':
    power, generation = SMADASH(sys.argv[1]).read()

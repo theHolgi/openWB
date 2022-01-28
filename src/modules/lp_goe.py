@@ -1,5 +1,6 @@
 from time import sleep
 
+import http.client
 import logging
 import queue
 import urllib.error
@@ -35,6 +36,8 @@ class GO_E_SET(Thread):
                      self.master.send({'ChargeStatus': value})
                   elif key == 'amp':
                      self.master.send({'Areq': value})
+         except ConnectionError:
+            pass
          except Exception as e:
             logging.exception("GO-E say Bumm!", exc_info=e)
 
