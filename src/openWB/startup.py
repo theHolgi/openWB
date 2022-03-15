@@ -10,10 +10,11 @@ def init_system(host: str = "localhost"):
       "hook/%i/boolHookConfigured": 0,
       "housebattery/boolHouseBatteryConfigured": 0
    }
-   mqtt = Mqttpublisher(None, host)
+   mqtt = Mqttpublisher(None, host, "openWB-setup")
    for topic, value in initial_mqtt.items():
       if "%i" in topic:
          for id in range(1, 9):
             mqtt.publish_config(topic % id, value)
       else:
          mqtt.publish_config(topic, value)
+   del mqtt
