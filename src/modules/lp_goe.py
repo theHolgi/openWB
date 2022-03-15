@@ -33,7 +33,7 @@ class GO_E_SET(Thread):
                   self.last[key] = value
                   if key == 'alw':
                      self.master.send({'ChargeStatus': value})
-                  elif key == 'amp':
+                  elif key == 'amx':
                      self.master.send({'Areq': value})
          except Exception as e:
             logging.exception("GO-E say Bumm!", exc_info=e)
@@ -94,7 +94,7 @@ class GO_E(Ladepunkt):
       self.logger.info(f"GO-E request {power}W ({ampere}A)")
       aktiv = 1 if ampere > 0 else 0
       self.setter.request('alw', aktiv)
-      self.setter.request('amp', ampere)
+      self.setter.request('amx', ampere)
 
 
 def getClass():
