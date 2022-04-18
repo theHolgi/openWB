@@ -11,8 +11,9 @@ from openWB.Scheduling import Scheduler
 from openWB.openWBlib import openWBValues
 
 ch_grid = 15
-ch_pv = 13
+ch_pv = 12
 ch_batt = 14
+ch_soc = 13
 ch_green = 7
 ch_red = 6
 
@@ -21,7 +22,8 @@ OFF = 0
 
 PMAX = 8000  # Maximale Wirkleistung für rote LED
 
-table = {'pv':   {    0: 0,      500: 840,   1000: 1750,2000: 2600, 4000: 3450, 7000: 4095},
+table = {'pv':   {    0: 0,      500: 920,   1000: 1800,2000: 2600, 4000: 3450, 7000: 4095},
+         'soc':  {    0: 0,       20: 880,     40: 1730,  60: 2600,   80: 3450,   95: 4095},
          'grid': {-3600: 4095, -2000: 3400, -1000: 2600,   0: 1730, 1000:  850, 2000: 0},
          'batt': {-1000: 0,     -500: 800,      0: 1700, 500: 2570, 1000: 3450, 1600: 4095}
          }
@@ -29,6 +31,7 @@ table = {'pv':   {    0: 0,      500: 840,   1000: 1750,2000: 2600, 4000: 3450, 
 mapping = {
    'pv/W': (ch_pv, 'pv'),
    'housebattery/W': (ch_batt, 'batt'),
+   'housebattery/%Soc': (ch_soc, 'soc'),
    'evu/W': (ch_grid, 'grid')
 }
 
@@ -39,7 +42,7 @@ class I2CDISPLAY(Displaymodul):
    def setup(self, config):
       self.pwm = Ada.PCA9685(address=config.get(self.configprefix + '_address'))
       self.pwm.set_pwm_freq(100)
-      self.last = {'pv': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
+      self.last = {'pv': 0, 'soc': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
       Scheduler().registerData(mapping.keys(), self)
       Scheduler().registerTimer(10, self.leds)
 
@@ -74,7 +77,8 @@ class I2CDISPLAY(Displaymodul):
             if key in updated:
                channel, name = values
                value = updated[key]
-               if abs(value - self.last[name]) > 100:
+               threshold = 1 if (name == 'soc') else 100
+               if abs(value - self.last[name]) > threshold:
                   dc = self.scale(table[name], value)
                   self.last[name] = value
                   self.pwm.set_pwm(channel, 0, dc)
