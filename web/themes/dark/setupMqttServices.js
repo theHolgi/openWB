@@ -33,7 +33,6 @@ var topicsToSubscribe = [
 	["openWB/config/get/SmartHome/Devices/6/device_configured", 0],
 	["openWB/config/get/SmartHome/Devices/7/device_configured", 0],
 	["openWB/config/get/SmartHome/Devices/8/device_configured", 0],
-	["openWB/config/get/SmartHome/Devices/9/device_configured", 0],
 	["openWB/config/get/SmartHome/Devices/1/device_name", 1],
 	["openWB/config/get/SmartHome/Devices/2/device_name", 1],
 	["openWB/config/get/SmartHome/Devices/3/device_name", 1],

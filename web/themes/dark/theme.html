@@ -576,24 +576,6 @@
 					<span class="actualRunningTimeDevice">lade Daten</span>
 				</div>
 			</div>
-
-			<!-- SmartHome Device 9 data -->
-			<div class="row no-gutter py-1 py-md-0 smallTextSize text-center bg-lightgrey text-grey" data-dev="9">
-				<div class="col-3 px-0">
-					<span class="cursor-pointer font-weight-bold lpEnabledStyle enableDevice nameDevice">SmartHomeDevice</span>
-				</div>
-				<div class="col-3 px-0">
-					<span class="actualPowerDevice">lade Daten</span><span class="actualDailyYieldDevice"></span>
-				</div>
-				<div class="col-3 px-0">
-					<span class="cursor-pointer actualModeDevice changeSHMode">lade Daten</span>
-				</div>
-				<div class="col-3 px-0">
-					<span class="actualRunningTimeDevice">lade Daten</span>
-				</div>
-			</div>
-
-
 		</div>  <!-- and smarthome -->
 
 		<!-- depending on charge mode show options -->
@@ -1126,6 +1108,7 @@
 					if ( topicsToSubscribe[index][0] == mqttTopic && topicsToSubscribe[index][1] == 0 ) {
 						// topic found in array
 						topicsToSubscribe[index][1] = 1;  // mark topic as received
+						timeOfLastMqttMessage = Date.now();
 					};
 					if ( topicsToSubscribe[index][1] > 0 ) {
 						countTopicsReceived++;
@@ -1147,7 +1130,6 @@
 					});
 
 				}
-				timeOfLastMqttMessage = Date.now();
 				$("#preloaderbar").width(percentageReceived+"%");
 				$("#preloaderbar").text(percentageReceived+" %");
 				if ( percentageReceived == 100 ) {
