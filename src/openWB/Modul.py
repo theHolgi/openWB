@@ -236,7 +236,7 @@ class Ladepunkt(DataProvider):
          if "kwh" not in data:
             data['kwh'] = 0
 
-         # Handle Ladung seit Plug / Ladung seit Chargstart
+         # Handle Ladung seit Plug / Ladung seit Chargestart
          plugged = data['boolPlugStat']
          charging = data['boolChargeStat']
          chargedkwh = data['kwh']

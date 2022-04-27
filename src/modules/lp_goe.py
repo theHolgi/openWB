@@ -66,12 +66,13 @@ class GO_E(Ladepunkt):
             #             4 Ladung beendet, Fahrzeug verbunden
             self.send({
                'V1': int(goe['nrg'][0]),    'V2': int(goe['nrg'][1]),    'V3': int(goe['nrg'][2]),    # [V]
-               'A1': int(goe['nrg'][4])/10, 'A2': int(goe['nrg'][5])/10, 'A3': int(goe['nrg'][6])/10, # [0.1A]
+               'A1': int(goe['nrg'][4])/10.0, 'A2': int(goe['nrg'][5])/10.0, 'A3': int(goe['nrg'][6])/10.0, # [0.1A]
                'Pf1': int(goe['nrg'][12]),  'Pf2': int(goe['nrg'][13]),  'Pf3': int(goe['nrg'][14]),  # %
-               'kwh': int(goe['eto'])/10.0,  # [0.1kwh]
+               'kwh': int(goe['dws'])/360000.0,  # [Deka-Watt-s]
                'boolPlugStat': goe['car'] != '1',
                'boolChargeStat': goe['car'] == '2',
-               'W': self.actP})
+               'W': self.actP,
+               'error': goe['err'] != '0'})
             # restzeitlp
 #      except socket.timeout: Not a BaseException
 #         pass

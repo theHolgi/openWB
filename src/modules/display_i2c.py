@@ -90,6 +90,8 @@ class I2CDISPLAY(Displaymodul):
       red = data.get('evu/W') < -PMAX
       if data.get('evu/W') > 50 and data.get('pv/W') > 1000:
          red = "blink"
+      if data.get('lp/1/Error') or data.get('housebattery/1/Error'):
+         red = "blink"
 
       green = data.get('lp/ChargeStat') != 0
       if green and data.get('global/WAllChargePoints') == 0:

@@ -12,7 +12,8 @@ mapping = {
    'A3': 'APhase3',
    'Pf1': 'PfPhase1',
    'Pf2': 'PfPhase2',
-   'Pf3': 'PfPhase3'
+   'Pf3': 'PfPhase3',
+   'error': 'Error'
 }
 
 class LPModule:
@@ -49,6 +50,7 @@ class LPModule:
         - V1, V2, V3    - Spannung [V]
         - A1, A2, A3    - Strom    [A]
         - Pf1, Pf2, Pf3 - Leistungsfaktor [%]
+        - error         - Fehlerstatus [bool]
       """
       package = DataPackage(data.source,
                             dict(map(lambda item: ('lp/%i/%s' % (data.source.id, mapping.get(item[0], item[0])), item[1]), data.items())))
