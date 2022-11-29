@@ -837,7 +837,7 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			$('#sofortladenLadezielProgressDiv').hide();
 		}
 		if(mqttpayload == 4){
-			// mode standby
+			// mode awattar
 			// set buttons
 			$('.actstat2 .btn').addClass("btn-red");
 			$('.actstat3 .btn').addClass("btn-red");
@@ -849,8 +849,8 @@ function handlevar(mqttmsg, mqttpayload, mqtttopic, htmldiv) {
 			$('.actstat1 .btn').removeClass("btn-green");
 			$('.actstat4 .btn').addClass("btn-green");
 			$('.actstat4 .btn').removeClass("btn-red");
-			// hide Sofortladen Ladeziel Progress
-			$('#sofortladenLadezielProgressDiv').hide();
+			// show Sofortladen Ladeziel Progress
+			$('#sofortladenLadezielProgressDiv').show();
 		}
 		loaddivs();
 	}
