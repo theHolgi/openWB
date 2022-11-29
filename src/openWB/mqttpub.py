@@ -75,7 +75,6 @@ class Mqttpublisher(object):
       "lp/%n/kWhActualCharged": "aktgeladen%n",
       "lp/%n/kWhChargedSincePlugged": "pluggedladungbishergeladen%n",
       "lp/%n/TimeRemaining": "restzeitlp%n",
-      "lp/%n/ChargePointEnabled": "lpenabled%n",  # Nicht enabled ist z.B. nach Ablauf der Lademenge
       "lp/%n/AutolockStatus": "autolockstatuslp%n",
       "lp/%n/AutolockConfigured": "autolockconfiguredlp%n",
       "config/get/sofort/lp/%n/current": "lpsofortll%n",
@@ -252,10 +251,6 @@ class Mqttpublisher(object):
          elif msg.topic == "openWB/config/set/pv/nurpv70dynw":
             republish = True
             self.core.setconfig('offsetpvpeak', val)
-         elif re.match("openWB/set/lp/(\\d)/ChargePointEnabled", msg.topic):  # Chargepoint en/disable
-            device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
-            republish = True
-            self.core.data.update(DataPackage(self, {'lp/%i/ChargePointEnabled' % device: val}))
          elif msg.topic.startswith("openWB/config/set/sofort/"):  # Sofortladen...
             device = int(re.search('/lp/(\\d)/', msg.topic).group(1))
             if 1 <= device <= 8:

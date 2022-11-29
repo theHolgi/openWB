@@ -140,7 +140,6 @@ class openWBValues(object):
       housebattery/MonthlyYieldImportKwh
    LP:
       lp/%i/boolChargePointConfigured
-      lp/%i/ChargePointEnabled
       lp/%i/AConfigured    - sollwert
       lp/%i/VPhase*
       lp/%i/APhase*
