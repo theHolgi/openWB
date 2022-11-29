@@ -275,7 +275,7 @@ class Regelgruppe:
       for id, regler in self.regler.items():
          prefix = 'lp/%i/' % id
          limitierung = self.config.get('msmoduslp%i' % id)
-         if self.mode not in ['standby', 'stop']:
+         if self.mode != 'stop':
             if limitierung == 1 and self.config.get('lademkwh%i' % id):  # Limitierung: kWh
                if self.data.get(prefix + 'W') == 0:
                   restzeit = "---"
@@ -286,7 +286,7 @@ class Regelgruppe:
                if self.config.get('lademkwh%i' % id) <= self.data.get(prefix + 'kWhActualCharged'):
                   self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
                   from openWB.OpenWBCore import OpenWBCore
-                  OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "standby")
+                  OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "stop")
                   Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, id))
             elif limitierung == 2:  # Limitierung: SOC
                pass  # TODO
@@ -296,7 +296,7 @@ class Regelgruppe:
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
 
-      elif self.mode in ['stop', 'standby']:
+      elif self.mode == 'stop':
          for regler in self.regler.values():
             if regler.wallbox.setP != 0 or regler.wallbox.is_charging:
                self.logger.info(f"(LP {regler.wallbox.id}: {regler.wallbox.setP}W -> Reset")

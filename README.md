@@ -154,7 +154,7 @@ Nachfolgend die Werte zur Erklärung durch deren Einheit ersetzt
 	curl -X GET 'http://ipdesraspi/openWB/web/api.php?get=all'
 	{
 	  "date": "2019:02:19-18:10:44", # aktuelles datum
-	  "lademodus": "2", # lademodus (0 Sofort, 1 Min+PV, 2 NurPV, 3 Standby, 4 Stop)
+	  "lademodus": "2", # lademodus (0 Sofort, 1 PV, 2 Peak, 3 Awattar, 4 Stop)
 	  "minimalstromstaerke": "6", # konfigurierte Minimalstromstärke
 	  "maximalstromstaerke": "32", # konfigurierte Maximalstromstärke
 	  "llsoll": "0", # Soll Ladestromvorgabe

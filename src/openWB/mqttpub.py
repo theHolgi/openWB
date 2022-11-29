@@ -44,7 +44,7 @@ class Chargemap(Enum):
    peak = 1
    pv = 2
    stop = 3
-   standby = 4
+   awattar = 4
 
 
 class Mqttpublisher(object):

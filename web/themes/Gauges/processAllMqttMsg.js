@@ -373,10 +373,10 @@ function processGlobalMessages(mqttmsg, mqttpayload) {
 				$('#priorityEvBatteryIcon').hide();
 				break;
 			case '4':
-				// mode standby
-				$('#chargeModeSelectBtnText').text('Standby');
+				// mode Awattar
+				$('#chargeModeSelectBtnText').text('Awattar');
 				$('.chargeModeBtn').removeClass('btn-success');
-				$('#chargeModeStdbyBtn').addClass('btn-success');
+				$('#chargeModeAwattarBtn').addClass('btn-success');
 				$('#targetChargingProgress').hide();
 				$('#sofortladenEinstellungen').hide();
 				$('#priorityEvBatteryIcon').hide();

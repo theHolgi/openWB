@@ -11,8 +11,9 @@
     <content url="file:///usr/local/lib/python3.8">
       <sourceFolder url="file:///usr/local/lib/python3.8/site-packages" isTestSource="false" />
       <sourceFolder url="file:///usr/local/lib/python3.8" isTestSource="false" />
+      <sourceFolder url="file:///usr/local/lib/python3.8/dist-packages" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.8" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.10" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

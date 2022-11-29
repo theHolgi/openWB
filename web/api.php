@@ -25,7 +25,7 @@ if(isset($_GET["lademodus"])) {
 	if($_GET["lademodus"] == "stop") {
 		file_put_contents('/var/www/html/openWB/ramdisk/lademodus', 3);
 	}
-	if($_GET["lademodus"] == "standby") {
+	if($_GET["lademodus"] == "awattar") {
 		file_put_contents('/var/www/html/openWB/ramdisk/lademodus', 4);
 	}
 }

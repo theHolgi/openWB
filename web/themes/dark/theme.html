@@ -1022,7 +1022,7 @@
 					</div>
 					<div class="row justify-content-center">
 						<div class="col-sm-5 py-1">
-							<button id="chargeModeStdbyBtn" type="button" class="chargeModeBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal" chargeMode="4">Standby</button>
+							<button id="chargeModeAwattarBtn" type="button" class="chargeModeBtn btn btn-lg btn-block btn-secondary" data-dismiss="modal" chargeMode="4">Awattar</button>
 						</div>
 					</div>
 					<div class="row justify-content-center">
@@ -1236,7 +1236,7 @@
 			      case 'Peak':    $('#chargeModePeakBtn').addClass('btn-success');   break;
 			      case 'PV':      $('#chargeModePVBtn').addClass('btn-success');     break;
 			      case 'Stop':    $('#chargeModeStopBtn').addClass('btn-success');   break;
-			      case 'Standby': $('#chargeModeStdbyBtn').addClass('btn-success');  break;
+			      case 'Awattar': $('#chargeModeAwattarBtn').addClass('btn-success');  break;
 				}
 				dialog.find('[data-lp]').data('lp', elementId);
 				const name = parent.find('.nameLp').text()
