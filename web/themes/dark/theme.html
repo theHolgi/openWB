@@ -76,8 +76,9 @@
 		}
 	</style>
 	<!-- important scripts to be loaded -->
-	<script src="js/jquery-3.4.1.min.js"></script>
-	<script src="js/bootstrap-4.4.1/bootstrap.bundle.min.js"></script>
+	<script type="text/javascript" src="js/jquery-3.4.1.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap-4.4.1/bootstrap.bundle.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
 	<script>
 		function getCookie(cname) {
 			var name = cname + '=';
@@ -589,10 +590,28 @@
 			<div class="form-row form-group mb-1 vaRow regularTextSize" data-lp="1">
 				<label for="lp/1/current" class="col-3 col-form-label text-right"><span class="nameLp"></span>:</label>
 				<div class="col">
-
 					<input type="range" class="form-control-range rangeInput" id="lp/1/current" min="6" max="32" step="1" value="6" data-initialized="0" data-topicprefix="openWB/config/get/sofort/">
 				</div>
 				<label for="lp/1/current" class="col-3 col-form-label valueLabel" suffix="A"></label>
+				<div class="container">
+				   <div class="row">
+					  <div class='col-sm-6'>
+						 <div class="form-group">
+							<div class='input-group date' id='lp/1/until'>
+							   <input type='text' class="form-control" />
+							   <span class="input-group-addon">
+							   <span class="glyphicon glyphicon-calendar"></span>
+							   </span>
+							</div>
+						 </div>
+					  </div>
+					  <script type="text/javascript">
+						 $(function () {
+							 $('#lp/1/until').datetimepicker();
+						 });
+					  </script>
+				   </div>
+				</div>
 			</div>
 
 

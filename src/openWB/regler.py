@@ -1,4 +1,6 @@
 import enum
+from datetime import datetime
+
 from openWB import DataPackage
 from openWB.Modul import amp2power
 from openWB.Scheduling import Scheduler, OpenWBEvent, EventType
@@ -8,6 +10,8 @@ from typing import Set, Optional
 from itertools import groupby
 from dataclasses import dataclass
 import logging
+
+from plugins.awattar import Awattar
 
 
 class Priority(enum.IntEnum):
@@ -167,10 +171,11 @@ class Regelgruppe:
    - "pv" - Überschuss regler
    - "peak" - Peak shaving
    - "sofort" - Sofortladen
+   - "awattar" - Günstig laden
    """
    priority = 500   # Regelung hat eine mittlere Priorität
 
-   def __init__(self, mode:str):
+   def __init__(self, mode: str):
       self.mode = mode
       self.regler = dict()
       self.config = OpenWBconfig()
@@ -240,6 +245,36 @@ class Regelgruppe:
          self.limit = 1  # dummy
          self.get_increment = get_delta
          self.get_decrement = get_delta
+      elif seld.mode == 'awattar':
+         """
+         Awattar-Lade-Modus:
+         - Besorge Awattar-Preise
+         - Bestimme Anzahl Stunden n, die für die gewünschte kWh-Menge benötigt werden
+         - Bestimme die n Stunden, in denen der Preis am Günstigsten ist
+         - setze Ladestrom auf lpmodul%i_sofortll, sofern aktuell eine dieser Stunden ist
+         """
+         self.limit = 1
+         def get_delta(r: Request, deltaP: int) -> int:
+            return 0
+         self.get_increment = get_delta
+         self.get_decrement = get_delta
+
+      elif self.mode == 'awattar':
+         """
+         Awattar-Lade-Modus:
+         - Besorge Awattar-Preise
+         - Bestimme Anzahl Stunden n, die für die gewünschte kWh-Menge benötigt werden
+         - Bestimme die n Stunden, in denen der Preis am Günstigsten ist
+         - setze Ladestrom auf lpmodul%i_sofortll, sofern aktuell eine dieser Stunden ist
+         """
+         self.limit = 1
+         self.awattarmodul = Awattar()
+         if self.awattarmodul.getprice(datetime.now()) is None:
+            self.awattarmodul.refresh()
+         def get_delta(r: Request, deltaP: int) -> int:
+            return 0
+         self.get_increment = get_delta
+         self.get_decrement = get_delta
 
    def add(self, ladepunkt: "Ladepunkt") -> None:
       """Füge Ladepunkt hinzu"""
@@ -291,6 +326,12 @@ class Regelgruppe:
             elif limitierung == 2:  # Limitierung: SOC
                pass  # TODO
       if self.mode == 'sofort':
+         for id, regler in self.regler.items():
+            power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
+            if regler.wallbox.setP != power:
+               regler.wallbox.set(power)
+      elif self.mode == 'awattar':
+         self.data.update(DataPackage({'global/awattar/ActualPriceForCharging': self.awattarmodul.getprice(datetime.now())}))
          for id, regler in self.regler.items():
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             if regler.wallbox.setP != power:

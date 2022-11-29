@@ -143,11 +143,13 @@ class Mqttpublisher(object):
       scheduler.registerEvent(EventType.resetDaily, self.cut_live)
 
    def newdata(self, data: dict):
+      """Handler for subscribed registerData"""
       for key, value in data.items():
          # self.logger.debug(f"Publish: openWB/{key} = {value}")
          self.publish_data(key, value)
 
    def newconfig(self, event: OpenWBEvent):
+      """Handler for subscribed configupdate Event"""
       if event.type == EventType.configupdate:
          self.logger.info(f'MQTT config update: {event.info} = {event.payload}')
          m = re.match("lpmodul(\\d)_mode", event.info)  # Chargepoint mode

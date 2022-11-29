@@ -120,9 +120,9 @@ function processLpConfigMessages(mqttmsg, mqttpayload) {
 		  case '1': element.text('Peak'); break;
 		  case '2': element.text('PV'); break;
 		  case '3': element.text('Stop'); break;
-		  case '4': element.text('Standby'); break;
+		  case '4': element.text('Awattar'); break;
 		}
-		if (mqttpayload == "0") {
+		if (mqttpayload == "0" || mqttpayload == "4") {
 			element = $('#sofortladenEinstellungen');
 			element.show();
 			element.children('[data-lp="' + index + '"]').show()

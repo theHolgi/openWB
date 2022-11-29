@@ -26,7 +26,6 @@ class Test_LPModule(unittest.TestCase):
       module = LPModule()
       self.assertEqual(1, len(module.modules))
       self.assertEqual(1, data.get('lp/1/boolChargePointConfigured'), 'LP1 configured')
-      self.assertEqual(1, data.get('lp/1/ChargePointEnabled'), 'LP1 enabled')
 
       LP1 = module.modules[0]
       LP1.set(1300)

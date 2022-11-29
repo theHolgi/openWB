@@ -80,15 +80,6 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     print("Message for you! Topic %s payload %s" % (msg.topic, msg.payload.decode()))
 
-    if (( "openWB/set/lp" in msg.topic) and ("ChargePointEnabled" in msg.topic)):
-        devicenumb=re.sub('\D', '', msg.topic)
-        if ( 1 <= int(devicenumb) <= 8 and 0 <= int(msg.payload) <= 1):
-            f = open('/var/www/html/openWB/ramdisk/lp'+str(devicenumb)+'enabled', 'w')
-            f.write(msg.payload.decode("utf-8"))
-            f.close()
-            client.publish("openWB/lp/"+str(devicenumb)+"/ChargePointEnabled", msg.payload.decode("utf-8"), qos=0, retain=True)
-            client.publish("openWB/set/lp/"+str(devicenumb)+"/ChargePointEnabled", "", qos=0, retain=True)
-
     if (( "openWB/config/set/SmartHome/Device" in msg.topic) and ("device_configured" in msg.topic)):
         devicenumb=re.sub('\D', '', msg.topic)
         if ( 1 <= int(devicenumb) <= 10 and 0 <= int(msg.payload) <= 1):
