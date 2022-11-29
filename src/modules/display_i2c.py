@@ -6,9 +6,11 @@ from openWB.Modul import Displaymodul
 import Adafruit_PCA9685 as Ada
 import threading
 import time
+import logging
 
 from openWB.Scheduling import Scheduler
 from openWB.openWBlib import openWBValues
+from typing import Any
 
 ch_grid = 15
 ch_pv = 12
@@ -35,13 +37,22 @@ mapping = {
    'evu/W': (ch_grid, 'grid')
 }
 
+def retry_i2c(callable) -> Any:
+   while True:
+      try:
+         return callable()
+         break
+      except OSError:
+         time.sleep(1)
+         continue
+
 class I2CDISPLAY(Displaymodul):
    """Display-Modul via I2C"""
    priority = 1000   # Display has lowest data dependency priority
 
    def setup(self, config):
-      self.pwm = Ada.PCA9685(address=config.get(self.configprefix + '_address'))
-      self.pwm.set_pwm_freq(100)
+      self.pwm = retry_i2c(lambda : Ada.PCA9685(address=config.get(self.configprefix + '_address')))
+      retry_i2c(lambda : self.pwm.set_pwm_freq(100))
       self.last = {'pv': 0, 'soc': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
       Scheduler().registerData(mapping.keys(), self)
       Scheduler().registerTimer(10, self.leds)
@@ -72,18 +83,19 @@ class I2CDISPLAY(Displaymodul):
       return last_y
 
    def newdata(self, updated: dict):
-      try:
-         for key, values in mapping.items():
-            if key in updated:
-               channel, name = values
-               value = updated[key]
-               threshold = 1 if (name == 'soc') else 100
-               if abs(value - self.last[name]) > threshold:
-                  dc = self.scale(table[name], value)
+      for key, values in mapping.items():
+         if key in updated:
+            channel, name = values
+            value = updated[key]
+            threshold = 1 if (name == 'soc') else 100
+            if abs(value - self.last[name]) > threshold:
+               dc = self.scale(table[name], value)
+               try:
                   self.last[name] = value
                   self.pwm.set_pwm(channel, 0, dc)
-      except OSError:
-         pass
+                  logging.info("Successfully set %s to %i (%i)" % (name, value, dc))
+               except OSError:
+                  pass
 
    def leds(self):
       data = openWBValues()
