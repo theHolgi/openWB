@@ -1,9 +1,10 @@
 import enum
 from datetime import datetime
+from math import ceil
 
 from openWB import DataPackage
 from openWB.Modul import amp2power
-from openWB.Scheduling import Scheduler, OpenWBEvent, EventType
+from openWB.Scheduling import Scheduler
 from openWB.openWBlib import OpenWBconfig, openWBValues
 from openWB.Event import OpenWBEvent, EventType
 from typing import Set, Optional
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 import logging
 
 from plugins.awattar import Awattar
+from utils import tomorrow_at_6
 
 
 class Priority(enum.IntEnum):
@@ -245,19 +247,6 @@ class Regelgruppe:
          self.limit = 1  # dummy
          self.get_increment = get_delta
          self.get_decrement = get_delta
-      elif seld.mode == 'awattar':
-         """
-         Awattar-Lade-Modus:
-         - Besorge Awattar-Preise
-         - Bestimme Anzahl Stunden n, die für die gewünschte kWh-Menge benötigt werden
-         - Bestimme die n Stunden, in denen der Preis am Günstigsten ist
-         - setze Ladestrom auf lpmodul%i_sofortll, sofern aktuell eine dieser Stunden ist
-         """
-         self.limit = 1
-         def get_delta(r: Request, deltaP: int) -> int:
-            return 0
-         self.get_increment = get_delta
-         self.get_decrement = get_delta
 
       elif self.mode == 'awattar':
          """
@@ -279,12 +268,17 @@ class Regelgruppe:
    def add(self, ladepunkt: "Ladepunkt") -> None:
       """Füge Ladepunkt hinzu"""
       self.regler[ladepunkt.id] = Regler(ladepunkt)
+      if self.mode == 'awattar':
+         self.data.update(DataPackage({'global/awattar/boolAwattarEnabled': 1}))
 
    def pop(self, id: int) -> "Ladepunkt":
       """Lösche Ladepunkt mit der ID <id>"""
       # TODO: Beibehaltung aktiver Lademodus
       if id in self.regler:
          return self.regler.pop(id).wallbox
+      if len(self.regler) == 0:  # Leer
+         if self.mode == 'awattar':
+            self.data.update(DataPackage({'global/awattar/boolAwattarEnabled': 0}))
 
    def __repr__(self):
       return "<Regelgruppe " + str(list(self.regler.keys())) + ">"
@@ -332,8 +326,16 @@ class Regelgruppe:
                regler.wallbox.set(power)
       elif self.mode == 'awattar':
          self.data.update(DataPackage({'global/awattar/ActualPriceForCharging': self.awattarmodul.getprice(datetime.now())}))
+         # TODO: openWB/global/awattar/pricelist
          for id, regler in self.regler.items():
+            required = self.config.get('lademkwh%i' % id, 0) - self.data.get('lp/%i/kWhActualCharged' % id, 0)
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
+            # hard-code "Until" for 6:00 next day (if now is after 6:00)
+            until = tomorrow_at_6()
+            hours_to_charge = ceil(required * 1000.0 / power)
+
+            if required <= 0 or not self.awattarmodul.charge_now(hours_to_charge, until):
+               power = 0
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
 

@@ -1,4 +1,4 @@
-import os
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Iterable, Any, List, Tuple
 
@@ -29,3 +29,13 @@ class CsvLog:
 
    def _gen_key(self, values: List[Any]) -> Tuple[str]:
       return tuple(str(values[index]) for index in self.keyfields)
+
+
+def tomorrow_at_6() -> datetime:
+   now = datetime.now()
+   if now.hour < 6:
+      tomorrow = datetime.combine(now.date(), time(hour=6))
+   else:
+      now += timedelta(days=1)
+      tomorrow = datetime.combine(now.date(), time(hour=6))
+   return tomorrow

@@ -1,3 +1,5 @@
+import logging
+from math import ceil
 from datetime import datetime, timedelta
 from json import JSONDecoder
 from typing import Optional, Iterable, List
@@ -34,12 +36,14 @@ class Awattar:
 
    def __init__(self):
       self.prices = []
+      self.cache = {}
 
    def refresh(self) -> None:
       http = PoolManager()
       r = http.request('GET', self.url)
       prices = JSONDecoder().decode(r.data.decode())
-      self.prices = list(map(Priceentry, prices.get("data", [])))
+      self.prices = sorted(list(map(Priceentry, prices.get("data", []))))
+      self.cache = {}
 
    def getprice(self, timestamp: datetime) -> Optional[float]:
       try:
@@ -49,8 +53,14 @@ class Awattar:
          return None
 
    def cheapest_within(self, timestamp: datetime) -> List[Priceentry]:
-      all_within = filter(lambda x: x.start <= timestamp, self.prices)
-      return sorted(all_within)
+      return list(filter(lambda x: x.start <= timestamp, self.prices))
 
-
-
+   def charge_now(self, hours_to_charge: int, until: datetime, now: datetime = datetime.now()) -> bool:
+      """ Tell if we need to charge now, when <required> kwh with <power> charging power is required until <until>"""
+      if (hours_to_charge, until) in self.cache:
+         cheapest_hours = self.cache.get((hours_to_charge, until))
+      else:
+         cheapest_hours = self.cheapest_within(until)[:hours_to_charge]
+         self.cache[(hours_to_charge, until)] = cheapest_hours
+         logging.info(f"AWATTAR: Charging in the intervals {cheapest_hours}")
+      return any(elem.covers(now) for elem in cheapest_hours)
