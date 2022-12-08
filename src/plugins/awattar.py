@@ -9,9 +9,9 @@ from urllib3 import PoolManager
 
 class Priceentry:
    def __init__(self, entry):
-      self.start = datetime.fromtimestamp(entry.get('start_timestamp') / 1000)
-      self.end = datetime.fromtimestamp(entry.get('end_timestamp') / 1000)
-      self.price = entry.get('marketprice')
+      self.start = datetime.fromtimestamp(entry.get('start_timestamp') // 1000)
+      self.end = datetime.fromtimestamp(entry.get('end_timestamp') // 1000)
+      self.price = entry.get('marketprice') / 10
 
    def covers(self, timestamp: datetime) -> bool:
       """Tell if the entry is valid for the given timestamp"""
@@ -42,7 +42,8 @@ class Awattar:
       http = PoolManager()
       r = http.request('GET', self.url)
       prices = JSONDecoder().decode(r.data.decode())
-      self.prices = sorted(list(map(Priceentry, prices.get("data", []))))
+      self.prices = list(map(Priceentry, prices.get("data", [])))
+      self.new_prices = True
       self.cache = {}
 
    def getprice(self, timestamp: datetime) -> Optional[float]:
@@ -53,14 +54,22 @@ class Awattar:
          return None
 
    def cheapest_within(self, timestamp: datetime) -> List[Priceentry]:
-      return list(filter(lambda x: x.start <= timestamp, self.prices))
+      return [price for price in self.prices if price.start <= timestamp]
 
    def charge_now(self, hours_to_charge: int, until: datetime, now: datetime = datetime.now()) -> bool:
       """ Tell if we need to charge now, when <required> kwh with <power> charging power is required until <until>"""
       if (hours_to_charge, until) in self.cache:
          cheapest_hours = self.cache.get((hours_to_charge, until))
       else:
-         cheapest_hours = self.cheapest_within(until)[:hours_to_charge]
+         cheapest_hours = sorted(self.cheapest_within(until))[:hours_to_charge]
          self.cache[(hours_to_charge, until)] = cheapest_hours
          logging.info(f"AWATTAR: Charging in the intervals {cheapest_hours}")
       return any(elem.covers(now) for elem in cheapest_hours)
+
+   def get_pricechart(self) -> Optional[str]:
+      """Get price chart for the frontend"""
+      if self.new_prices:
+         self.new_prices = False
+         return "\n".join(f'{price.start.strftime("%H:%M")},{price.price}' for price in self.prices)
+      else:
+         return None

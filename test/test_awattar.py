@@ -19,22 +19,25 @@ class MyTestCase(unittest.TestCase):
 
    def test_ranging(self):
       awattar = Awattar()
-      awattar.prices = sorted([Priceentry({'start_timestamp': 1670446800000, 'end_timestamp': 1670450400000, 'marketprice': 200.72, 'unit': 'Eur/MWh'}),
+      awattar.prices = [Priceentry({'start_timestamp': 1670446800000, 'end_timestamp': 1670450400000, 'marketprice': 200.72, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670450400000, 'end_timestamp': 1670454000000, 'marketprice': 280.56, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670454000000, 'end_timestamp': 1670457600000, 'marketprice': 286.56, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670457600000, 'end_timestamp': 1670461200000, 'marketprice': 280.78, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670461200000, 'end_timestamp': 1670464800000, 'marketprice': 269.67, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670464800000, 'end_timestamp': 1670468400000, 'marketprice': 369.91, 'unit': 'Eur/MWh'}),
-                        Priceentry({'start_timestamp': 1670568400000, 'end_timestamp': 1670572000000, 'marketprice': 100.49, 'unit': 'Eur/MWh'})])
+                        Priceentry({'start_timestamp': 1670568400000, 'end_timestamp': 1670572000000, 'marketprice': 100.49, 'unit': 'Eur/MWh'})]
       until = datetime.fromtimestamp(1670472000)
       self.assertTrue(awattar.charge_now(3, until,
                                          now=datetime.fromtimestamp(1670446800)), "Charging in cheapest interval")
       self.assertTrue(awattar.charge_now(3, until,
                                          now=datetime.fromtimestamp(1670461200)), "Charging in 2nd cheapest interval")
       self.assertTrue(awattar.charge_now(3, until,
-                                         now=datetime.fromtimestamp(1670468400)), "Charging in 3rd cheapest interval")
+                                         now=datetime.fromtimestamp(1670450400)), "Charging in 3rd cheapest interval")
       self.assertFalse(awattar.charge_now(3, until,
-                                         now=datetime.fromtimestamp(1670450400)), "Not Charging in 4th cheapest interval")
+                                         now=datetime.fromtimestamp(1670457600)), "Not Charging in 4th cheapest interval")
+
+      self.assertEqual(awattar.get_pricechart(), "22:00,200.72\n23:00,280.56\n00:00,286.56\n01:00,280.78\n"
+                       + "02:00,267.67\n03:00,369.91\n07:00,100.49")
 
 if __name__ == '__main__':
    unittest.main()

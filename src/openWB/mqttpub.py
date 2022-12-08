@@ -221,6 +221,9 @@ class Mqttpublisher(object):
       ramdisk('speichersoc-live.graph', self.core.data.get('housebattery/%Soc'), 'a')
       self.logger.debug("Publish (done)")
 
+   def awattargraph(self, ):
+      """openWB/global/awattar/pricelist"""
+
    def bulk_config(self):
       """Sende Config als MQTT"""
       for k, v in self.configmapping.items():

@@ -269,16 +269,18 @@ class Regelgruppe:
       """Füge Ladepunkt hinzu"""
       self.regler[ladepunkt.id] = Regler(ladepunkt)
       if self.mode == 'awattar':
-         self.data.update(DataPackage({'global/awattar/boolAwattarEnabled': 1}))
+         self.logger.info("Enable global Awattar")
+         self.data.update(DataPackage(self.regler[ladepunkt.id], {'global/awattar/boolAwattarEnabled': 1}))
 
    def pop(self, id: int) -> "Ladepunkt":
       """Lösche Ladepunkt mit der ID <id>"""
       # TODO: Beibehaltung aktiver Lademodus
       if id in self.regler:
-         return self.regler.pop(id).wallbox
+         wb = self.regler.pop(id).wallbox
       if len(self.regler) == 0:  # Leer
          if self.mode == 'awattar':
-            self.data.update(DataPackage({'global/awattar/boolAwattarEnabled': 0}))
+            self.data.update(DataPackage(wb, {'global/awattar/boolAwattarEnabled': 0}))
+      return wb
 
    def __repr__(self):
       return "<Regelgruppe " + str(list(self.regler.keys())) + ">"
@@ -325,8 +327,11 @@ class Regelgruppe:
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
       elif self.mode == 'awattar':
-         self.data.update(DataPackage({'global/awattar/ActualPriceForCharging': self.awattarmodul.getprice(datetime.now())}))
-         # TODO: openWB/global/awattar/pricelist
+         package = DataPackage(self, {'global/awattar/ActualPriceForCharging': self.awattarmodul.getprice(datetime.now())})
+         chart = self.awattarmodul.get_pricechart()
+         if chart is not None:
+            package['global/awattar/pricelist'] = chart
+         self.data.update(package)
          for id, regler in self.regler.items():
             required = self.config.get('lademkwh%i' % id, 0) - self.data.get('lp/%i/kWhActualCharged' % id, 0)
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
