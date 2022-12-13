@@ -258,8 +258,6 @@ class Regelgruppe:
          """
          self.limit = 1
          self.awattarmodul = Awattar()
-         if self.awattarmodul.getprice(datetime.now()) is None:
-            self.awattarmodul.refresh()
          def get_delta(r: Request, deltaP: int) -> int:
             return 0
          self.get_increment = get_delta
@@ -275,11 +273,12 @@ class Regelgruppe:
    def pop(self, id: int) -> "Ladepunkt":
       """Lösche Ladepunkt mit der ID <id>"""
       # TODO: Beibehaltung aktiver Lademodus
+      wb = None
       if id in self.regler:
          wb = self.regler.pop(id).wallbox
       if len(self.regler) == 0:  # Leer
          if self.mode == 'awattar':
-            self.data.update(DataPackage(wb, {'global/awattar/boolAwattarEnabled': 0}))
+            self.data.update(DataPackage(self, {'global/awattar/boolAwattarEnabled': 0}))
       return wb
 
    def __repr__(self):
@@ -328,15 +327,17 @@ class Regelgruppe:
                regler.wallbox.set(power)
       elif self.mode == 'awattar':
          package = DataPackage(self, {'global/awattar/ActualPriceForCharging': self.awattarmodul.getprice(datetime.now())})
-         chart = self.awattarmodul.get_pricechart()
-         if chart is not None:
-            package['global/awattar/pricelist'] = chart
+         until = tomorrow_at_6()
+         if self.awattarmodul.getprice(until) is None:  # Preise nicht verfügbar
+            self.awattarmodul.refresh()
+            chart = self.awattarmodul.get_pricechart()
+            if chart is not None:
+               package['global/awattar/pricelist'] = chart
          self.data.update(package)
          for id, regler in self.regler.items():
             required = self.config.get('lademkwh%i' % id, 0) - self.data.get('lp/%i/kWhActualCharged' % id, 0)
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             # hard-code "Until" for 6:00 next day (if now is after 6:00)
-            until = tomorrow_at_6()
             hours_to_charge = ceil(required * 1000.0 / power)
 
             if required <= 0 or not self.awattarmodul.charge_now(hours_to_charge, until):
