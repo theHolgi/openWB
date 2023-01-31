@@ -39,10 +39,9 @@ class LP_FHEMSWITCH(Ladepunkt):
          self.blockcnt += 1
          if self.is_blocked:
             self.actP = 0
-      elif not self.is_blocked:
+      elif data.get('global/WHouseConsumption') > (self.power if self.is_blocked else 0):
          if self.blockcnt > 0:
             self.blockcnt -= 1
-         
       self.send({'W': self.actP})
 
    def powerproperties(self) -> PowerProperties:
