@@ -172,6 +172,7 @@ class Ladepunkt(DataProvider):
    """
    multiinstance = True
    type = "lp"
+   cycletime = 10  # default
 
    # Diese Properties hat ein Ladepunkt und werden von ihm selbst verändert:
    phasen = 1 # Anzahl Phasen
@@ -184,6 +185,7 @@ class Ladepunkt(DataProvider):
       self.charging = False
       self.offsets['chargedW'] = 0   # Kumulative Lademenge
       self.configprefix = f"lpmodul{self.id}"
+      Scheduler().registerTimer(self.cycletime, self.loop)
 
    @abstractmethod
    def powerproperties(self) -> PowerProperties:
@@ -234,7 +236,7 @@ class Ladepunkt(DataProvider):
          if "countPhasesInUse" not in data:
             data['countPhasesInUse'] = self.phasen
          if "kwh" not in data:
-            data['kwh'] = 0
+            data['kwh'] = data['kWhActualCharged']
 
          # Handle Ladung seit Plug / Ladung seit Chargestart
          plugged = data['boolPlugStat']
@@ -242,7 +244,7 @@ class Ladepunkt(DataProvider):
          chargedkwh = data['kwh']
          self.offsets['chargedW'] += data['W']
          data['kWhChargedSincePlugged'] = self.offsetted('plugged', 'kwh', chargedkwh) if plugged else 0
-         data['kWhActualCharged'] = self.offsets['chargedW'] / 720000  # Einheit: W*Zykluszeit => /(3600/t)/1000
+         data['kWhActualCharged'] = self.offsets['chargedW'] / (self.cycletime * 3600000)  # Einheit: W*Zykluszeit => /(3600/t)/1000
          #  self.offsetted('charge', 'kwh', chargedkwh)
          if plugged and not self.plugged:
             self.reset_offset('plugged', 'kwh')

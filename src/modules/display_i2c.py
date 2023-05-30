@@ -10,7 +10,7 @@ import logging
 
 from openWB.Scheduling import Scheduler
 from openWB.openWBlib import openWBValues
-from typing import Any
+from typing import Callable, TypeVar
 
 ch_grid = 15
 ch_pv = 12
@@ -37,11 +37,12 @@ mapping = {
    'evu/W': (ch_grid, 'grid')
 }
 
-def retry_i2c(callable) -> Any:
+T = TypeVar('T')
+
+def retry_i2c(callable: Callable[[], T]) -> T:
    while True:
       try:
          return callable()
-         break
       except OSError:
          time.sleep(1)
          continue
@@ -51,14 +52,14 @@ class I2CDISPLAY(Displaymodul):
    priority = 1000   # Display has lowest data dependency priority
 
    def setup(self, config):
-      self.pwm = retry_i2c(lambda : Ada.PCA9685(address=config.get(self.configprefix + '_address')))
-      retry_i2c(lambda : self.pwm.set_pwm_freq(100))
+      self.pwm = retry_i2c(lambda: Ada.PCA9685(address=config.get(self.configprefix + '_address')))
+      retry_i2c(lambda: self.pwm.set_pwm_freq(100))
       self.last = {'pv': 0, 'soc': 0, 'grid': -1000, 'batt': -1000, 'green': 0, 'red': 0}
       Scheduler().registerData(mapping.keys(), self)
       Scheduler().registerTimer(10, self.leds)
 
    def blink(self, port: int) -> None:
-      t = threading.currentThread()
+      t = threading.current_thread()
       t.do_run = True
       state = ON
       while t.do_run:
@@ -91,9 +92,9 @@ class I2CDISPLAY(Displaymodul):
             if abs(value - self.last[name]) > threshold:
                dc = self.scale(table[name], value)
                try:
-                  self.last[name] = value
                   self.pwm.set_pwm(channel, 0, dc)
                   logging.info("Successfully set %s to %i (%i)" % (name, value, dc))
+                  self.last[name] = value
                except OSError:
                   pass
 

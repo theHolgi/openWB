@@ -41,13 +41,13 @@ class GO_E_SET(Thread):
 
 class GO_E(Ladepunkt):
    """GO-E wallbox"""
+   cycletime = 5
    def setup(self, config):
       self.ip = config.get(self.configprefix + '_ip')
       self.timeout = config.get(self.configprefix + '_timeout', 2)
       self.laststate = {}
       self.setter = GO_E_SET('http://%s/mqtt' % self.ip, self.timeout, self)
       self.setter.start()
-      Scheduler().registerTimer(5, self.loop)
       super().setup(config)
 
    def loop(self):

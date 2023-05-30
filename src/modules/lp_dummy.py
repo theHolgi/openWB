@@ -5,13 +5,13 @@ from openWB.Scheduling import Scheduler
 class DUMMYLP(Ladepunkt):
    """Dummy Ladepunkt"""
    override_blocked = None
+   cycletime = 1
 
    def setup(self, config):
-      super().setup(config)
       self.kwh = 0
       self.minI = config['minimalstromstaerke']
       self.maxI = config['maximalstromstaerke']
-      Scheduler().registerTimer(1, self.loop)
+      super().setup(config)
 
    def loop(self):
       data = {
