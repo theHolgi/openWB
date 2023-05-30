@@ -7,11 +7,14 @@ import socket
 
 
 def fhem_send(ip: str, cmd: str) -> None:
-   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   s.connect((ip, 7072))
-   s.send((cmd + "\n").encode())
-   s.shutdown(1)
-   s.close()
+   try:
+      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      s.connect((ip, 7072))
+      s.send((cmd + "\n").encode())
+      s.shutdown(1)
+      s.close()
+   except:
+      pass
 
 ON_DELAY = 5
 
@@ -35,12 +38,15 @@ class LP_FHEMSWITCH(Ladepunkt):
       # Da wir den Verbrauch selber nicht messen können, erkenne wenigstens unplausiblen Hausverbrauch
       data = openWBValues()
       if data.get('global/WHouseConsumption') < 0:
-         self.blockcnt += 1
+         if self.blockcnt < 30:
+            self.blockcnt += 1
          if self.is_blocked:
             self.actP = 0
       elif data.get('global/WHouseConsumption') > (self.power if self.is_blocked else 0):
          if self.blockcnt > 0:
             self.blockcnt -= 1
+         else:
+            self.actP = self.setP
       self.send({'W': self.actP})
 
    def powerproperties(self) -> PowerProperties:
@@ -52,6 +58,8 @@ class LP_FHEMSWITCH(Ladepunkt):
       charging = power >= self.power
       update = {}
       self.logger.info("FHEM send %i W" % power)
+      if power > self.power:
+         power = self.power
       if charging and not self.is_charging and not self.is_blocked:
          if self.on_delay == 0:
             cmd = "set %s on" % self.swname
@@ -62,7 +70,7 @@ class LP_FHEMSWITCH(Ladepunkt):
          if self.on_delay < ON_DELAY:
             self.on_delay += 1
          else:
-            self.actP = power
+            self.actP = self.power
       elif not charging and self.setP > 0:
             cmd = "set %s off" % self.swname
             self.logger.info("FHEM cmd " + cmd)
