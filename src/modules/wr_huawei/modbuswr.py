@@ -8,16 +8,18 @@ class ModbusWR:
     Read values from SMA inverter via Modbus
     In order to work, Modbus must be enabled.
     """
-    def __init__(self, ip, instances: int):
+    def __init__(self, ip, instance: int = 1):
         self.host = ip
-        self.device = ModbusDevice(self.host, unit=1)
+        self.device = ModbusDevice(self.host, unit=instance)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.device.connect()
 
     def read(self):
         try:
             # pv watt
-            power = self.device.decode_s32(self.device.read_holding(self.REG_P))
+            self.logger.debug(f"Reading register {self.REG_P}")
+            regs = self.device.read_holding(self.REG_P)
+            power = self.device.decode_s32(regs)
             if power < 0:
                 power = 0
 

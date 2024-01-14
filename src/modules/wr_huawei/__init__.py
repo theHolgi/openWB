@@ -14,8 +14,8 @@ class HUAWEI(PVModul):
       super().setup(config)
       host = config[self.configprefix + '_ip']
       assert host is not None, "Host für %s notwenig! (Setting %s_ip)" % (self.configprefix, self.configprefix)
-      self.instances = config.get(self.configprefix + '_instances', 1)
-      self.instance = HUAWEIWR(host, self.instances)
+      self.instanceid = config.get(self.configprefix + '_id', 1)
+      self.instance = HUAWEIWR(host, self.instanceid)
 
       super().setup(config)
       Scheduler().registerTimer(15, self.loop)
