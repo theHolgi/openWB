@@ -12,7 +12,7 @@ class ModbusWR:
     """
     def __init__(self, ip, instances: int):
         self.host = ip
-        self.device = ModbusDevice(self.host)
+        self.device = ModbusDevice(self.host, unit=3)
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def read(self):

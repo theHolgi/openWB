@@ -23,14 +23,21 @@ class SMAREGISTERS(Enum):
 
 
 class ModbusDevice:
-   def __init__(self, ip: str, port:int=502):
-      self.client = ModbusTcpClient(ip, port=502)
+   def __init__(self, ip: str, port:int = 502, unit:int = 1):
+      self.client = ModbusTcpClient(ip, port=port)
+      self.unit = unit
+
+   def connect(self) -> None:
+      self.client.connect()
 
    def read(self, reg: Enum, count=2) -> List[int]:
-      return self.client.read_input_registers(reg.value, count, unit=3).registers
+      return self.client.read_input_registers(reg.value, count, unit=self.unit).registers
+
+   def read_holding(self, reg: Enum, count=2) -> List[int]:
+      return self.client.read_holding_registers(reg.value, count, unit=self.unit).registers
 
    def write(self, reg: Enum, value: int) -> None:
-      self.client.write_registers(reg.value, (value // 65536, value % 65536), unit=3)
+      self.client.write_registers(reg.value, (value // 65536, value % 65536), unit=self.unit)
 
    @staticmethod
    def decode_s32(value: List[int]) -> int:
