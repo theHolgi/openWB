@@ -22,6 +22,12 @@ class Priority(enum.IntEnum):
    high = 3
    forced = 4
 
+class ChargeLimit(enum.IntEnum):
+   unlimited = 0
+   bykWh = 1
+   bysoc = 2
+
+
 @dataclass
 class RequestPoint:
    key: str
@@ -306,19 +312,20 @@ class Regelgruppe:
          prefix = 'lp/%i/' % id
          limitierung = self.config.get('msmoduslp%i' % id)
          if self.mode != 'stop':
-            if limitierung == 1 and self.config.get('lademkwh%i' % id):  # Limitierung: kWh
+            if limitierung == ChargeLimit.bykWh and self.config.get('lademkwh%i' % id):  # Limitierung: kWh
+               charged = self.data.get(prefix + 'kWhChargedSincePlugged', 0)
                if self.data.get(prefix + 'W') == 0:
                   restzeit = "---"
                else:
-                  restzeit = int((self.config.get('lademkwh%i' % id) - self.data.get(prefix + 'kWhActualCharged', 0))*1000*60 / self.data.get('lp/%i/W' % id))
-               # print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {self.data.get(prefix + 'kWhActualCharged')} Leistung: {self.data.get(prefix + 'W')} Restzeit: {restzeit}")
+                  restzeit = int((self.config.get('lademkwh%i' % id) - charged)*1000*60 / self.data.get('lp/%i/W' % id))
+               print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {self.data.get(prefix + 'kWhActualCharged')} Leistung: {self.data.get(prefix + 'W')} Restzeit: {restzeit}")
                self.data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
-               if self.config.get('lademkwh%i' % id) <= self.data.get(prefix + 'kWhActualCharged'):
+               if self.config.get('lademkwh%i' % id) <= charged:
                   self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
                   from openWB.OpenWBCore import OpenWBCore
                   OpenWBCore().setconfig(regler.wallbox.configprefix + '_mode', "stop")
                   Scheduler().signalEvent(OpenWBEvent(EventType.resetEnergy, id))
-            elif limitierung == 2:  # Limitierung: SOC
+            elif limitierung == ChargeLimit.bysoc:  # Limitierung: SOC
                pass  # TODO
       if self.mode == 'sofort':
          for id, regler in self.regler.items():
