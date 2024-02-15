@@ -3,19 +3,20 @@ from .speedwiredecoder import decode_speedwire
 import socket
 import struct
 import threading
-
+import logging
 
 class SMASHM(EVUModul):
    """SMA Smart home Meter (or Energy Meter)"""
 
    def setup(self, config) -> None:
       self.serial = config.get(self.configprefix + '_serial')
+      self.bind = config.get(self.configprefix + '_bind', '0.0.0.0')
+      self.logger = logging.getLogger(self.__class__.__name__)
       super().setup(config)
       self.runner = threading.Thread(target=self.loop)
       self.runner.start()
 
    def loop(self):
-      ipbind = '0.0.0.0'
       MCAST_GRP = '239.12.255.254'
       MCAST_PORT = 9522
 
@@ -28,11 +29,12 @@ class SMASHM(EVUModul):
       sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
       sock.bind(('', MCAST_PORT))
       try:
-         mreq = struct.pack("4s4s", socket.inet_aton(MCAST_GRP), socket.inet_aton(ipbind))
+         mreq = struct.pack("4s4s", socket.inet_aton(MCAST_GRP), socket.inet_aton(self.bind))
          sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
       except BaseException:
          self.logger.warn('could not connect to mulicast group or bind to given interface')
          return
+      self.logger.info("Bound to interface " + self.bind)
       # processing received messages
       while True:
          emparts = decode_speedwire(sock.recv(608))
