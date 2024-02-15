@@ -70,12 +70,14 @@ function processPvConfigMessages(mqttmsg, mqttpayload) {
 				$('#batteryPriorityBtn').removeClass('btn-success');
 				$('#autoPriorityBtn').removeClass('btn-success');
 				$('#priorityEvBatteryIcon').removeClass('fa-car-battery').removeClass('fa-robot').addClass('fa-car')
-         case '2':
-            // auto priority
+				break;
+            case '2':
+                // auto priority
 				$('#evPriorityBtn').removeClass('btn-success');
 				$('#batteryPriorityBtn').removeClass('btn-success');
 				$('#autoPriorityBtn').addClass('btn-success');
 				$('#priorityEvBatteryIcon').removeClass('fa-car').removeClass('fa-car').addClass('fa-robot')
+				break;
 		}
 	}
 	else if ( mqttmsg == 'openWB/config/get/pv/nurpv70dynact' ) {

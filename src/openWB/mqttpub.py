@@ -238,7 +238,7 @@ class Mqttpublisher(object):
       """Handle incoming requests"""
       republish = False
       getter_topic = msg.topic.replace('openWB/', '').replace('/set/', '/get/')
- #     self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
+      self.logger.info("receive: %s = %s" % (repr(msg.topic), repr(msg.payload)))
       try:
          val = int(msg.payload)
  #        self.logger.info("Value: %i" % val)
@@ -329,7 +329,7 @@ class Mqttpublisher(object):
       except IOError as e:  # Exception
          self.logger.exception("BAMM!", exc_info=e)
       if republish:
-#         self.logger.info("Re-publish: %s = %s" % (getter_topic, msg.payload))
+         self.logger.info("Re-publish: %s = %s" % (getter_topic, msg.payload))
          self.publish_config(getter_topic, msg.payload)
 
 
