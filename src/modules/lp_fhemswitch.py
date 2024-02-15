@@ -55,7 +55,7 @@ class LP_FHEMSWITCH(Ladepunkt):
                              inc=0)
 
    def set(self, power: int) -> None:
-      charging = power >= self.power
+      charging = power >= self.power/2
       update = {}
       self.logger.info("FHEM send %i W" % power)
       if power > self.power:
