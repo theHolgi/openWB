@@ -231,20 +231,21 @@ class Ladepunkt(DataProvider):
       if 'W' in data:   # Only for normal data packages
          if "boolPlugStat" not in data:
             data["boolPlugStat"] = not self.is_blocked
+         plugged = data['boolPlugStat']
          if "boolChargeStat" not in data:
             data["boolChargeStat"] = self.is_charging
+         charging = data['boolChargeStat']
          if "countPhasesInUse" not in data:
             data['countPhasesInUse'] = self.phasen
-         if "kwh" not in data:
-            data['kwh'] = data['kWhActualCharged']
-
-         # Handle Ladung seit Plug / Ladung seit Chargestart
-         plugged = data['boolPlugStat']
-         charging = data['boolChargeStat']
-         chargedkwh = data['kwh']
          self.offsets['chargedW'] += data['W']
+         # Handle Ladung seit Plug / Ladung seit Chargestart
+         data['kWhActualCharged'] = self.offsets['chargedW'] * self.cycletime / 3600000  # Einheit: W*Zykluszeit => /(3600/t)/1000
+         # self.logger.info(f"Accu: {self.offsets['chargedW']} calib: {data['kWhActualCharged']}")
+
+         if "kwh" not in data:
+            data['kwh'] = data.get('kWhActualCharged', 0)
+         chargedkwh = data['kwh']
          data['kWhChargedSincePlugged'] = self.offsetted('plugged', 'kwh', chargedkwh) if plugged else 0
-         data['kWhActualCharged'] = self.offsets['chargedW'] / (self.cycletime * 3600000)  # Einheit: W*Zykluszeit => /(3600/t)/1000
          #  self.offsetted('charge', 'kwh', chargedkwh)
          if plugged and not self.plugged:
             self.reset_offset('plugged', 'kwh')
