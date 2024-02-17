@@ -2,6 +2,7 @@
 
 from ..modbusDevice import ModbusDevice
 import logging
+import time
 
 class ModbusWR:
     """
@@ -17,6 +18,10 @@ class ModbusWR:
     def read(self):
         try:
             # pv watt
+            if not self.device.connected:
+                self.logger.info("Re-connecting.")
+                self.device.connect()
+                time.sleep(10)
             self.logger.debug(f"Reading register {self.REG_P}")
             regs = self.device.read_holding(self.REG_P)
             power = self.device.decode_s32(regs)

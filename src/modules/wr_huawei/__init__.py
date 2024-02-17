@@ -5,7 +5,7 @@ from .modbuswr import ModbusWR
 class HUAWEIWR(ModbusWR):
    REG_P = 32080
    REG_TotWh = 37113 # unknown
-   REG_DCA = 37107  # Phase 1/2/3
+   REG_DCA = 37107   # Phase 1/2/3
 
 class HUAWEI(PVModul):
    """SMA Tripower"""

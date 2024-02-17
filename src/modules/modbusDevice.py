@@ -2,7 +2,7 @@ import struct
 from typing import List
 
 from enum import Enum
-from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.client.tcp import ModbusTcpClient
 
 
 class SMAREGISTERS(Enum):
@@ -30,11 +30,15 @@ class ModbusDevice:
    def connect(self) -> None:
       self.client.connect()
 
+   @property
+   def connected(self) -> bool:
+      return self.client.is_socket_open()
+
    def read(self, reg: Enum, count=2) -> List[int]:
       return self.client.read_input_registers(reg.value, count, unit=self.unit).registers
 
    def read_holding(self, reg: Enum, count=2) -> List[int]:
-      return self.client.read_holding_registers(reg.value, count, unit=self.unit).registers
+      return self.client.read_holding_registers(reg, count, unit=self.unit).registers
 
    def write(self, reg: Enum, value: int) -> None:
       self.client.write_registers(reg.value, (value // 65536, value % 65536), unit=self.unit)
