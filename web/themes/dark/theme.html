@@ -633,20 +633,56 @@
 			<div class="form-row form-group mb-1 vaRow regularTextSize" data-lp="2">
 				<label for="lp/2/current" class="col-3 col-form-label text-right"><span class="nameLp"></span>:</label>
 				<div class="col">
-
 					<input type="range" class="form-control-range rangeInput" id="lp/2/current" min="6" max="32" step="1" value="6" data-initialized="0" data-topicprefix="openWB/config/get/sofort/">
 				</div>
 				<label for="lp/2/current" class="col-3 col-form-label valueLabel" suffix="A"></label>
+				<div class="container">
+				   <div class="row">
+					  <div class='col-sm-6'>
+						 <div class="form-group">
+							<div class='input-group date' id='lp2_until'>
+							   <input type='text' class="form-control" />
+							   <span class="input-group-addon">
+							   <span class="glyphicon glyphicon-calendar"></span>
+							   </span>
+							</div>
+						 </div>
+					  </div>
+					  <script type="text/javascript">
+						 $(function () {
+							 $('#lp2_until').datetimepicker();
+						 });
+					  </script>
+				   </div>
+				</div>
 			</div>
 
 
 			<div class="form-row form-group mb-1 vaRow regularTextSize" data-lp="3">
 				<label for="lp/3/current" class="col-3 col-form-label text-right"><span class="nameLp"></span>:</label>
 				<div class="col">
-
 					<input type="range" class="form-control-range rangeInput" id="lp/3/current" min="6" max="32" step="1" value="6" data-initialized="0" data-topicprefix="openWB/config/get/sofort/">
 				</div>
 				<label for="lp/3/current" class="col-3 col-form-label valueLabel" suffix="A"></label>
+				<div class="container">
+				   <div class="row">
+					  <div class='col-sm-6'>
+						 <div class="form-group">
+							<div class='input-group date' id='lp3_until'>
+							   <input type='text' class="form-control" />
+							   <span class="input-group-addon">
+							   <span class="glyphicon glyphicon-calendar"></span>
+							   </span>
+							</div>
+						 </div>
+					  </div>
+					  <script type="text/javascript">
+						 $(function () {
+							 $('#lp3_until').datetimepicker();
+						 });
+					  </script>
+				   </div>
+				</div>
 			</div>
 
 			<div class="form-row form-group mb-1 vaRow regularTextSize" data-lp="4">
@@ -818,7 +854,7 @@
 			<div class="chargeLimitation" data-lp="3">
 				<hr color="white">
 				<div class="row justify-content-center">
-					<h3 class="font-weight-bold text-center text-lightgrey">Lademengenbegrenzung <span class="nameLp"></span></label></h3>
+					<h3 class="font-weight-bold text-center text-lightgrey">Lademengenbegrenzung <span class="nameLp"></span></h3>
 				</div>
 				<div class="form-row vaRow form-group mt-1 justify-content-center" data-lp="3">
 					<div class="col btn-group btn-group-toggle" id="lp/3/chargeLimitation" data-toggle="buttons" data-topicprefix="openWB/config/get/sofort/">
@@ -828,14 +864,26 @@
 						<label class="btn btn-sm btn-outline-info btn-toggle regularTextSize">
 							<input type="radio" name="lp/3/chargeLimitation" data-option="1"> Energiemenge
 						</label>
+						<label class="btn btn-sm btn-outline-info btn-toggle regularTextSize">
+							<input type="radio" name="lp/3/chargeLimitation" data-option="2"> EV-SoC
+						</label>
 					</div>
 				</div>
 				<div class="form-row form-group mb-1 vaRow regularTextSize" data-option="1">
 					<label for="lp/3/energyToCharge" class="col-3 col-form-label text-right">Energie:</label>
 					<div class="col">
-						<input type="range" class="form-control-range rangeInput" id="lp/3/energyToCharge" min="2" max="100" step="2" value="2" data-topicprefix="openWB/config/get/sofort/">
+						<input type="range" class="form-control-range rangeInput" id="lp/3/energyToCharge"
+						min="1" max="50" step="1"
+						value="1" data-topicprefix="openWB/config/get/sofort/">
 					</div>
 					<label for="lp/3/energyToCharge" class="col-3 col-form-label valueLabel" suffix="kWh"></label>
+				</div>
+				<div class="form-row form-group mb-1 vaRow regularTextSize" data-option="2">
+					<label for="lp/3/socToChargeTo" class="col-3 col-form-label text-right">SoC:</label>
+					<div class="col">
+						<input type="range" class="form-control-range rangeInput" id="lp/3/socToChargeTo" min="5" max="100" step="5" value="5" data-topicprefix="openWB/config/get/sofort/">
+					</div>
+					<label for="lp/3/socToChargeTo" class="col-3 col-form-label valueLabel" suffix="%"></label>
 				</div>
 				<div class="form-row mt-2 justify-content-center regularTextSize" data-option="1">
 					<div class="col col-sm-6">
