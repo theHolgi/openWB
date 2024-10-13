@@ -13,6 +13,7 @@ class ModbusWR:
         self.host = ip
         self.device = ModbusDevice(self.host, unit=instance)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
         self.device.connect()
 
     def read(self):
@@ -22,8 +23,8 @@ class ModbusWR:
                 self.logger.info("Re-connecting.")
                 self.device.connect()
                 time.sleep(10)
-            self.logger.debug(f"Reading register {self.REG_P}")
             regs = self.device.read_holding(self.REG_P)
+            # self.logger.debug(f"Reading register {self.REG_P} = {regs}")
             power = self.device.decode_s32(regs)
             if power < 0:
                 power = 0

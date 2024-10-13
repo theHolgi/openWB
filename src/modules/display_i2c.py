@@ -93,7 +93,7 @@ class I2CDISPLAY(Displaymodul):
                dc = self.scale(table[name], value)
                try:
                   self.pwm.set_pwm(channel, 0, dc)
-                  logging.info("Successfully set %s to %i (%i)" % (name, value, dc))
+                  # logging.info("Successfully set %s to %i (%i)" % (name, value, dc))
                   self.last[name] = value
                except OSError:
                   pass

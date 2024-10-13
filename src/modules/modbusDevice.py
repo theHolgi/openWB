@@ -2,7 +2,7 @@ import struct
 from typing import List
 
 from enum import Enum
-from pymodbus.client.tcp import ModbusTcpClient
+from pymodbus.client.sync import ModbusTcpClient
 
 
 class SMAREGISTERS(Enum):
