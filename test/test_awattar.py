@@ -40,5 +40,9 @@ class MyTestCase(unittest.TestCase):
       self.assertEqual(awattar.get_pricechart(), "22:00,20.07\n23:00,28.06\n00:00,28.66\n01:00,28.08\n"
                        + "02:00,26.97\n03:00,36.99\n07:00,10.05")
 
+      cheapest = awattar.cheapest_within(until)[:3]
+      cheapest.sort(key=lambda x: x.start)
+      self.assertEqual(cheapest, [])
+
 if __name__ == '__main__':
    unittest.main()

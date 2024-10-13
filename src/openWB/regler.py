@@ -339,18 +339,19 @@ class Regelgruppe:
             chart = self.awattarmodul.get_pricechart()
             if chart is not None:
                package['global/awattar/pricelist'] = chart
-         self.data.update(package)
          for id, regler in self.regler.items():
             required = self.config.get('lademkwh%i' % id, 0) - self.data.get('lp/%i/kWhActualCharged' % id, 0)
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             # hard-code "Until" for 6:00 next day (if now is after 6:00)
             hours_to_charge = ceil(required * 1000.0 / power)
+            activitychart = self.awattarmodul.cheapestchart(until, hours_to_charge)
+            package["global/awattar/%i/charge" % id] = activitychart
 
             if required <= 0 or not self.awattarmodul.charge_now(hours_to_charge, until):
                power = 0
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
-         # TODO: Charging chart to openWB/global/awattar/1/charge
+         self.data.update(package)
 
       elif self.mode == 'stop':
          for regler in self.regler.values():

@@ -66,7 +66,7 @@ class Awattar:
       if (hours_to_charge, until) in self.cache:
          cheapest_hours = self.cache.get((hours_to_charge, until))
       else:
-         cheapest_hours = sorted(self.cheapest_within(until))[:hours_to_charge]
+         cheapest_hours = self.cheapest_within(until)[:hours_to_charge]
          self.cache[(hours_to_charge, until)] = cheapest_hours
          logging.info(f"AWATTAR: Charging in the intervals {cheapest_hours}")
       return any(elem.covers(now) for elem in cheapest_hours)
@@ -75,6 +75,11 @@ class Awattar:
       """Get price chart for the frontend"""
       if self.new_prices:
          self.new_prices = False
-         return "\n".join(f'{price.start.strftime("%H:%M")},{price.price:.2f}' for price in self.prices)
+         return "".join(f'{price.start.strftime("%H:%M")},{price.price:.2f}\n' for price in self.prices)
       else:
          return None
+
+   def cheapestchart(self, until: datetime, hours_to_charge: int)-> Optional[str]:
+      """Get activity chart for the frontend, when x hours shall be charged"""
+      hours = self.cheapest_within(until)[:hours_to_charge]
+      return ''.join(f'{price.start.strftime("%H:%M")},{price.price:.2f}\n' for price in hours)

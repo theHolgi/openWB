@@ -48,6 +48,7 @@ var topicsToSubscribe = [
 	["openWB/global/awattar/MaxPriceForCharging", 1],
 	["openWB/global/awattar/ActualPriceForCharging", 1],
 	["openWB/global/awattar/pricelist", 1],
+	["openWB/global/awattar/1/charge", 1],
 	// graph topcis
 	//
 	["openWB/graph/lastlivevalues", 1],
