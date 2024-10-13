@@ -25,7 +25,8 @@ class MyTestCase(unittest.TestCase):
                         Priceentry({'start_timestamp': 1670457600000, 'end_timestamp': 1670461200000, 'marketprice': 280.78, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670461200000, 'end_timestamp': 1670464800000, 'marketprice': 269.67, 'unit': 'Eur/MWh'}),
                         Priceentry({'start_timestamp': 1670464800000, 'end_timestamp': 1670468400000, 'marketprice': 369.91, 'unit': 'Eur/MWh'}),
-                        Priceentry({'start_timestamp': 1670568400000, 'end_timestamp': 1670572000000, 'marketprice': 100.49, 'unit': 'Eur/MWh'})]
+                        Priceentry({'start_timestamp': 1670565600000, 'end_timestamp': 1670569200000, 'marketprice': 100.49, 'unit': 'Eur/MWh'})]
+      awattar.new_prices = True
       until = datetime.fromtimestamp(1670472000)
       self.assertTrue(awattar.charge_now(3, until,
                                          now=datetime.fromtimestamp(1670446800)), "Charging in cheapest interval")
@@ -34,10 +35,10 @@ class MyTestCase(unittest.TestCase):
       self.assertTrue(awattar.charge_now(3, until,
                                          now=datetime.fromtimestamp(1670450400)), "Charging in 3rd cheapest interval")
       self.assertFalse(awattar.charge_now(3, until,
-                                         now=datetime.fromtimestamp(1670457600)), "Not Charging in 4th cheapest interval")
+                                         now=datetime.fromtimestamp(1670565600)), "Not Charging in 4th cheapest interval")
 
-      self.assertEqual(awattar.get_pricechart(), "22:00,200.72\n23:00,280.56\n00:00,286.56\n01:00,280.78\n"
-                       + "02:00,267.67\n03:00,369.91\n07:00,100.49")
+      self.assertEqual(awattar.get_pricechart(), "22:00,20.07\n23:00,28.06\n00:00,28.66\n01:00,28.08\n"
+                       + "02:00,26.97\n03:00,36.99\n07:00,10.05")
 
 if __name__ == '__main__':
    unittest.main()

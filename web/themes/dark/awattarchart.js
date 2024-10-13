@@ -9,6 +9,11 @@ function loadawattargraph() {
 			fill: false,
 			data: graphawattarprice,
 			yAxisID: 'y-axis-1',
+		}, {
+		  label: "Charging",
+		  fill: true,
+		  yAsixID: 'y-axis-1',
+		  data: graphawattarcharge1
 		} ]
 	}
 

@@ -11,7 +11,7 @@ class Priceentry:
    def __init__(self, entry):
       self.start = datetime.fromtimestamp(entry.get('start_timestamp') // 1000)
       self.end = datetime.fromtimestamp(entry.get('end_timestamp') // 1000)
-      self.price = entry.get('marketprice') / 10
+      self.price = entry.get('marketprice') / 10        # e/MWh to ct/kWh
 
    def covers(self, timestamp: datetime) -> bool:
       """Tell if the entry is valid for the given timestamp"""
@@ -37,6 +37,7 @@ class Awattar:
    def __init__(self):
       self.prices = []
       self.cache = {}
+      self.new_prices = False
 
    def refresh(self) -> None:
       http = PoolManager()
@@ -53,8 +54,12 @@ class Awattar:
       except StopIteration:
          return None
 
-   def cheapest_within(self, timestamp: datetime) -> List[Priceentry]:
+   def prices_until(self, timestamp: datetime) -> List[Priceentry]:
       return [price for price in self.prices if price.start <= timestamp]
+
+   def cheapest_within(self, timestamp: datetime) -> List[Priceentry]:
+      prices = self.prices_until(timestamp)
+      return sorted(prices)
 
    def charge_now(self, hours_to_charge: int, until: datetime, now: datetime = datetime.now()) -> bool:
       """ Tell if we need to charge now, when <required> kwh with <power> charging power is required until <until>"""
@@ -70,6 +75,6 @@ class Awattar:
       """Get price chart for the frontend"""
       if self.new_prices:
          self.new_prices = False
-         return "\n".join(f'{price.start.strftime("%H:%M")},{price.price}' for price in self.prices)
+         return "\n".join(f'{price.start.strftime("%H:%M")},{price.price:.2f}' for price in self.prices)
       else:
          return None

@@ -350,6 +350,7 @@ class Regelgruppe:
                power = 0
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)
+         # TODO: Charging chart to openWB/global/awattar/1/charge
 
       elif self.mode == 'stop':
          for regler in self.regler.values():

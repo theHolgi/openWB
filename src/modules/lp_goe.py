@@ -51,6 +51,7 @@ class GO_E(Ladepunkt):
       self.laststate = {}
       self.setter = GO_E_SET('http://%s/mqtt' % self.ip, self.timeout, self)
       self.setter.start()
+      self.is_allowed = False
       super().setup(config)
 
    def loop(self):
@@ -77,7 +78,8 @@ class GO_E(Ladepunkt):
                'W': self.actP,
                'error': goe['err'] != '0'})
             # Aus ist aus
-            if int(goe['alw']) > 0 and self.setP == 0:
+            self.is_allowed = int(goe['alw']) > 0
+            if self.is_allowed and self.setP == 0:
                self.logger.info("Force off")
                self.set(0)
             # restzeitlp

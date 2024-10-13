@@ -413,6 +413,17 @@ function processGlobalMessages(mqttmsg, mqttpayload) {
 		graphawattarprice = getCol(csvaData, 1);
 
 		loadawattargraph();
+	} 	else if ( mqttmsg == 'openWB/global/awattar/1/charge' ) {
+		// read awattar charging and trigger graph creation
+		var csvaData = [];
+		var rawacsv = mqttpayload.split(/\r?\n|\r/);
+		for (var i = 0; i < rawacsv.length; i++) {
+			csvaData.push(rawacsv[i].split(','));
+		}
+		// awattartime = getCol(csvaData, 0);
+		graphawattarcharge1 = getCol(csvaData, 1);
+
+		loadawattargraph();
 	}
 	else if ( mqttmsg == 'openWB/global/awattar/MaxPriceForCharging' ) {
 		setInputValue('MaxPriceForCharging', mqttpayload);
