@@ -318,7 +318,6 @@ class Regelgruppe:
                   restzeit = "---"
                else:
                   restzeit = int((self.config.get('lademkwh%i' % id) - charged)*1000*60 / self.data.get('lp/%i/W' % id))
-               print(f"LP{id} Ziel: {self.config.get('lademkwh%i' % id)} Akt: {self.data.get(prefix + 'kWhActualCharged')} Leistung: {self.data.get(prefix + 'W')} Restzeit: {restzeit}")
                self.data.update(DataPackage(regler.wallbox, {prefix+'TimeRemaining': f"{restzeit} min"}))
                if self.config.get('lademkwh%i' % id) <= charged:
                   self.logger.info(f"Lademenge erreicht: LP{id} {self.config.get('lademkwh%i' % id)}kwh")
