@@ -28,17 +28,16 @@ class GO_E_SET(Thread):
       while True:
          key, value = self.requests.get()
          try:
-            if self.last.get(key) != value:
-               with request.urlopen(self.url + "?payload=%s=%s" % (key, value), timeout=self.timeout) as req:
-                  self.last[key] = value
-                  data = {}
-                  if key == 'alw':
-                     data['ChargeStatus'] = value
-                     if value == 0:
-                        data['Areq'] = value
-                  elif key == 'amx':
+            with request.urlopen(self.url + "?payload=%s=%s" % (key, value), timeout=self.timeout) as req:
+               self.last[key] = value
+               data = {}
+               if key == 'alw':
+                  data['ChargeStatus'] = value
+                  if value == 0:
                      data['Areq'] = value
-                  self.master.send(data)
+               elif key == 'amx':
+                  data['Areq'] = value
+               self.master.send(data)
          except Exception as e:
             logging.exception("GO-E say Bumm!", exc_info=e)
 
@@ -79,6 +78,7 @@ class GO_E(Ladepunkt):
                'error': goe['err'] != '0'})
             # Aus ist aus
             if int(goe['alw']) > 0 and self.setP == 0:
+               self.logger.info("Force off")
                self.set(0)
             # restzeitlp
 #      except socket.timeout: Not a BaseException
