@@ -1,0 +1,9 @@
+[Match]
+Name=enx00e04c680547
+
+[Network]
+Description=USB network adapter
+
+# Make it member of the VLANs
+VLAN=guestlan
+VLAN=energylan
