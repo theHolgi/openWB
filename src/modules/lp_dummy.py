@@ -1,5 +1,4 @@
 from openWB.Modul import Ladepunkt, power2amp, PowerProperties
-from openWB.Scheduling import Scheduler
 
 
 class DUMMYLP(Ladepunkt):

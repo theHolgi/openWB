@@ -21,6 +21,9 @@ class SMAREGISTERS(Enum):
    SOC = 30845          # Aktueller Ladezustand         [U32] FIX0 %       Batt
    P = 30775            # Leistung                      [S32] FIX0 W (>0: Laden)  alle
 
+class WPMREGISTERS(Enum):
+   Status = 2500
+
 
 class ModbusDevice:
    def __init__(self, ip: str, port:int = 502, unit:int = 1):
