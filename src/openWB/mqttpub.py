@@ -108,7 +108,7 @@ class Mqttpublisher(object):
       self.core = core
       self.name = "MQTT"
       self.logger = logging.getLogger('MQTT')
-      self.client = mqtt.Client(client_id + "-" + str(os.getpid()))
+      self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id + "-" + str(os.getpid()))
       self.client.on_message = lambda client, userdata, msg: self.messagehandler(msg)
       self.client.connect(hostname)
       self.client.loop_start()
