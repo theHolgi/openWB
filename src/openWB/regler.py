@@ -264,6 +264,7 @@ class Regelgruppe:
          """
          self.limit = 1
          self.awattarmodul = Awattar()
+         self.activitychart = {}
          def get_delta(r: Request, deltaP: int) -> int:
             return 0
          self.get_increment = get_delta
@@ -344,8 +345,14 @@ class Regelgruppe:
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
             # hard-code "Until" for 6:00 next day (if now is after 6:00)
             hours_to_charge = ceil(required * 1000.0 / power)
+            self.logger.info(f"{id} needs to charge {hours_to_charge} still until {until}")
+            # debug: Get prices
+            cheapest = self.awattarmodul.cheapest_within(until)[:hours_to_charge]
+            self.logger.info(f"Cheapest hours: {cheapest}")
             activitychart = self.awattarmodul.cheapestchart(until, hours_to_charge)
-            package["global/awattar/%i/charge" % id] = activitychart
+            if self.activitychart.get(id) != activitychart:
+               self.activitychart[id] = activitychart
+               package["global/awattar/%i/charge" % id] = activitychart
 
             if required <= 0 or not self.awattarmodul.charge_now(hours_to_charge, until):
                power = 0
