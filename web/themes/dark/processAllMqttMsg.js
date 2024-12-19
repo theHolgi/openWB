@@ -413,7 +413,7 @@ function processGlobalMessages(mqttmsg, mqttpayload) {
 		graphawattarprice = getCol(csvaData, 1);
 
 		loadawattargraph();
-	} 	else if ( mqttmsg == 'openWB/global/awattar/1/charge' ) {
+	} else if ( mqttmsg == 'openWB/global/awattar/1/charge' ) {
 		// read awattar charging and trigger graph creation
 		var csvaData = new Map();
 		mqttpayload.split(/\r?\n|\r/).forEach (x => {
