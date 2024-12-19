@@ -1,0 +1,6 @@
+[NetDev]
+Name=guestlan
+Kind=vlan
+
+[VLAN]
+Id=3

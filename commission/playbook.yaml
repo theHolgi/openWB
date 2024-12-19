@@ -1,0 +1,30 @@
+- name: Commission
+  hosts: openwb
+  remote_user: pi
+  become: yes
+  tasks:
+    - name: Install packages
+      ansible.builtin.apt:
+        name: git, apache2, mosquitto, python3-pip, php, libapache2-mod-php, jq, tmux, joe
+    - name: Mosquitto
+      copy:
+        src: mosquitto.conf
+        dest: /etc/mosquitto/conf.d/openwb.conf
+        owner: root
+        group: root
+        backup: no
+    - name: IP
+      copy:
+        src: ststemd
+        dest: /etc/systemd/network
+    - name: logfile
+      file:
+        path: /var/log/openWB.log
+        owner: pi
+        state: touch
+    - name: Pip
+      become: yes
+      become_user: pi
+      pip:
+        name: Adafruit_PCA9685, Adafruit-GPIO, paho-mqtt, pymodbus
+        extra_args: --break-system-packages

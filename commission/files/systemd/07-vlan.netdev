@@ -1,0 +1,6 @@
+[NetDev]
+Name=energylan
+Kind=vlan
+
+[VLAN]
+Id=7
