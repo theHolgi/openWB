@@ -265,6 +265,8 @@ class Regelgruppe:
          self.limit = 1
          self.awattarmodul = Awattar()
          self.activitychart = {}
+         # hard-code "Until" for 6:00 next day (if now is after 6:00)
+         self.until = tomorrow_at_6()
          def get_delta(r: Request, deltaP: int) -> int:
             return 0
          self.get_increment = get_delta
@@ -334,8 +336,7 @@ class Regelgruppe:
                regler.wallbox.set(power)
       elif self.mode == 'awattar':
          package = DataPackage(self, {'global/awattar/ActualPriceForCharging': self.awattarmodul.getprice(datetime.now())})
-         until = tomorrow_at_6()
-         if self.awattarmodul.getprice(until) is None:  # Preise nicht verfügbar
+         if self.awattarmodul.getprice(self.until) is None:  # Preise nicht verfügbar
             self.awattarmodul.refresh()
             chart = self.awattarmodul.get_pricechart()
             if chart is not None:
@@ -343,18 +344,17 @@ class Regelgruppe:
          for id, regler in self.regler.items():
             required = self.config.get('lademkwh%i' % id, 0) - self.data.get('lp/%i/kWhActualCharged' % id, 0)
             power = amp2power(self.config.get("lpmodul%i_sofortll" % id, 6), regler.wallbox.phasen)
-            # hard-code "Until" for 6:00 next day (if now is after 6:00)
             hours_to_charge = ceil(required * 1000.0 / power)
-            self.logger.info(f"{id} needs to charge {hours_to_charge} still until {until}")
+            self.logger.info(f"{id} needs to charge {hours_to_charge} still until {self.until}")
             # debug: Get prices
-            cheapest = self.awattarmodul.cheapest_within(until)[:hours_to_charge]
-            self.logger.info(f"Cheapest hours: {cheapest}")
-            activitychart = self.awattarmodul.cheapestchart(until, hours_to_charge)
+            cheapest = self.awattarmodul.cheapest_within(self.until)[:hours_to_charge]
+            activitychart = self.awattarmodul.cheapestchart(self.until, hours_to_charge)
             if self.activitychart.get(id) != activitychart:
                self.activitychart[id] = activitychart
                package["global/awattar/%i/charge" % id] = activitychart
+               self.logger.info(f"Cheapest hours: {cheapest}")
 
-            if required <= 0 or not self.awattarmodul.charge_now(hours_to_charge, until):
+            if required <= 0 or (datetime.now() < self.until and not self.awattarmodul.charge_now(hours_to_charge, self.until)):
                power = 0
             if regler.wallbox.setP != power:
                regler.wallbox.set(power)

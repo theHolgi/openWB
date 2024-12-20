@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 from json import JSONDecoder
 from typing import Optional, Iterable, List
 
-from urllib3 import PoolManager
-
+from urllib import request
 
 class Priceentry:
    def __init__(self, entry):
@@ -40,11 +39,13 @@ class Awattar:
       self.new_prices = False
 
    def refresh(self) -> None:
-      http = PoolManager()
-      r = http.request('GET', self.url)
-      prices = JSONDecoder().decode(r.data.decode())
-      self.prices = list(map(Priceentry, prices.get("data", [])))
-      self.new_prices = True
+      try:
+         r = request.urlopen(self.url)
+         prices = JSONDecoder().decode(r.read().decode())
+         self.prices = list(map(Priceentry, prices.get("data", [])))
+         self.new_prices = True
+      except OSError:
+         self.new_prices = False
       self.cache = {}
 
    def getprice(self, timestamp: datetime) -> Optional[float]:
