@@ -1,5 +1,6 @@
 import struct
 from typing import List
+import logging
 
 from enum import Enum
 from pymodbus.client import ModbusTcpClient
@@ -23,6 +24,9 @@ class SMAREGISTERS(Enum):
 
 class WPMREGISTERS(Enum):
    Status = 2500
+   
+class HUAWEIREGISTERS(Enum):
+   P = 32080
 
 
 class ModbusDevice:
@@ -38,23 +42,27 @@ class ModbusDevice:
       return self.client.is_socket_open()
 
    def read(self, reg: Enum, count=2) -> List[int]:
-      return self.client.read_input_registers(reg.value, count=count, slave=self.unit).registers
+      r = reg.value
+      if 30000 <= r < 40000:
+         method = self.client.read_holding_registers
+         name = "holding"
+      elif 40000 <= r < 50000:
+         method = self.client.read_input_registers
+         name = "input"
+      return method(r, count=count, slave=self.unit).registers
 
    def read_holding(self, reg: Enum, count=2) -> List[int]:
       return self.client.read_holding_registers(reg.value, count=count, slave=self.unit).registers
 
    def write(self, reg: Enum, value: int) -> None:
-      self.client.write_registers(reg.value, (value // 65536, value % 65536), slave=self.unit)
+      self.client.write_registers(reg, (value // 65536, value % 65536), slave=self.unit)
 
-   @staticmethod
-   def decode_s32(value: List[int]) -> int:
+   def decode_s32(self, value: List[int]) -> int:
       if value[0] == 32768 and value[1] == 0:
           return 0
-      # To enforce signed decoding, there seems to be no better way.
-      return struct.unpack('>i', bytes.fromhex(format(value[0], '04x') + format(value[1], '04x')))[0]
+      return self.client.convert_from_registers(value, self.client.DATATYPE.INT32)
 
-   @staticmethod
-   def decode_u32(value: List[int]) -> int:
+   def decode_u32(self, value: List[int]) -> int:
       if value[0] == 32768 and value[1] == 0:
           return 0
-      return int(format(value[0], '04x') + format(value[1], '04x'), 16)
+      return self.client.convert_from_registers(value, self.client.DATATYPE.UINT32)

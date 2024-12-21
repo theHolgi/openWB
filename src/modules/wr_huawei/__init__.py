@@ -1,21 +1,19 @@
 from openWB.Modul import PVModul
 from openWB.Scheduling import Scheduler
 from .modbuswr import ModbusWR
+import logging
 
-class HUAWEIWR(ModbusWR):
-   REG_P = 32080
-   REG_TotWh = 37113 # unknown
-   REG_DCA = 37107   # Phase 1/2/3
 
 class HUAWEI(PVModul):
-   """SMA Tripower"""
+   """Huawei SUN2000"""
 
    def setup(self, config):
       super().setup(config)
       host = config[self.configprefix + '_ip']
       assert host is not None, "Host für %s notwenig! (Setting %s_ip)" % (self.configprefix, self.configprefix)
       self.instanceid = config.get(self.configprefix + '_id', 1)
-      self.instance = HUAWEIWR(host, self.instanceid)
+      self.logger = logging.getLogger()
+      self.instance = ModbusWR(host, self.instanceid)
 
       super().setup(config)
       Scheduler().registerTimer(15, self.loop)
