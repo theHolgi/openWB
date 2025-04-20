@@ -26,8 +26,13 @@ class WPMREGISTERS(Enum):
    Status = 2500
    
 class HUAWEIREGISTERS(Enum):
-   P = 32080
-
+   P = 32080   # Active power [I32] (W)
+   F = 32085   # Grid frequency [U16] (1/100 Hz)
+   DCU1 = 32016  # PV1 voltage [I16] (1/10 V)
+   DCI1 = 32017  # PV1 current [I16] (1/100 A)
+   DCU2 = 32018  # PV2 voltage [I16]
+   DCI2 = 32019  # PV2 current [I16]
+   # ...
 
 class ModbusDevice:
    def __init__(self, ip: str, port:int = 502, unit:int = 1):
@@ -36,6 +41,9 @@ class ModbusDevice:
 
    def connect(self) -> None:
       self.client.connect()
+
+   def disconnect(self) -> None:
+      self.client.close()
 
    @property
    def connected(self) -> bool:

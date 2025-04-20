@@ -10,7 +10,7 @@ class SUNNYISLAND(Speichermodul):
 
    def setup(self, config) -> None:
       self.ip = config.get(self.configprefix + '_ip')
-      self.device = ModbusDevice(self.ip)
+      self.device = ModbusDevice(self.ip, unit=3)
       if config.get(self.configprefix + '_bms') == "batrium":
          from .bms_batrium import BATRIUM
          self.bms = BATRIUM(1)

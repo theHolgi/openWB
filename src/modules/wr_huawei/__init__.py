@@ -16,11 +16,13 @@ class HUAWEI(PVModul):
       self.instance = ModbusWR(host, self.instanceid)
 
       super().setup(config)
-      Scheduler().registerTimer(15, self.loop)
+      Scheduler().registerTimer(60, self.loop)
 
    def loop(self):
       try:
+         self.logger.info("Start read")
          power, generation = self.instance.read()
+         self.logger.info(f"Read: {power}")
          self.send({'W': power, 'kwh': generation})
       except ConnectionError:
          self.send({})

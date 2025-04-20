@@ -18,11 +18,9 @@ class ModbusWR:
     def read(self):
         try:
             # pv watt
-            if not self.device.connected:
-                self.logger.info("Re-connecting.")
-                self.device.connect()
-                time.sleep(10)
+            self.device.connect()
             regs = self.device.read(HUAWEIREGISTERS.P)
+            self.device.disconnect()
             power = self.device.decode_s32(regs)
             if power < 0:
                 power = 0

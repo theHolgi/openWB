@@ -21,8 +21,9 @@ def readregister(client, reg: int, unit: int, length: int) -> int:
    resp = method(reg, count=length, slave=unit)
    print(f"Read: {resp}")
 
-   all = bytes.fromhex(format(resp.registers[0], '04x') + format(resp.registers[1], '04x'))
-   return struct.unpack('>i', all)[0]
+   for n in resp.registers:
+     print(f"{reg} = {n}")
+     reg += 1
 
 parser = argparse.ArgumentParser()
 parser.add_argument('host', type=str)
@@ -33,5 +34,4 @@ parser.add_argument('-u', '--unit', type=int, default=1)
 args = parser.parse_args()
 
 client = ModbusTcpClient(args.host, port=502)
-
-print("%i = %i" %(args.register, readregister(client, args.register, args.unit, args.length)))
+readregister(client, args.register, args.unit, args.length)
