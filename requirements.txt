@@ -1,0 +1,4 @@
+Adafruit_PCA9685
+Adafruit-GPIO
+paho-mqtt
+pymodbus

@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import paho.mqtt.client as mqtt
 
 mqtt_broker_ip = "openwb.garnix.de"
@@ -16,11 +18,11 @@ def on_message(client, userdata, msg):
    print("Message for you! Topic %s payload %s" % (msg.topic, msg.payload.decode()))
 
 
-client = mqtt.Client("openWB-mqttsub-" + getserial())
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "openWB-mqttsub-" + getserial())
 client.on_message = on_message
 client.connect(mqtt_broker_ip, 1883)
 
-client.subscribe("openWB/config/#", 2)
+client.subscribe("openWB/lp/#", 2)
 print("Subscribed.")
 
 client.loop_forever()

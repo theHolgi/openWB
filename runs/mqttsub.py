@@ -64,7 +64,7 @@ def getserial():
         return "0000000000000000"
 
 mqtt_broker_ip = "localhost"
-client = mqtt.Client("openWB-mqttsub-" + getserial())
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "openWB-mqttsub-" + getserial())
 ipallowed='^[0-9.]+$'
 nameallowed='^[a-zA-Z ]+$'
 namenumballowed='^[0-9a-zA-Z ]+$'
