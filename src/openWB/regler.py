@@ -301,10 +301,24 @@ class Regelgruppe:
       """
       return len(self.regler) == 0
 
-   def schieflast_nicht_erreicht(self, wallbox_id: int) -> bool:
-      return self.regler[wallbox_id].wallbox.phasen == 3 or \
-         self.data.get('lp/%i/AConfigured' % wallbox_id) < 20 or \
-         self.data.get('evu/ASchieflast') < int(self.config.get('schieflastmaxa'))
+   def maxlast_erreicht(self, wallbox_id: int) -> bool:
+      # TODO: Phasenzuordnung
+      schieflast = self.regler[wallbox_id].wallbox.phasen < 3 and \
+         self.data.get('lp/%i/AConfigured' % wallbox_id) > 20 and \
+         self.data.get('evu/ASchieflast') > int(self.config.get('schieflastmaxa'))
+      if schieflast:
+         self.logger.info(f"Schieflast erreicht: {self.data.get('evu/ASchieflast')}")
+      max_i = False
+      if self.data.get('evu/APhase1') >= self.config.get('maxlastap1', 32):
+         self.logger.info(f"Max-Strom L1 erreicht: {self.data.get('evu/APhase1')}")
+         max_i = True
+      if self.data.get('evu/APhase2') >= self.config.get('maxlastap2', 32):
+         self.logger.info(f"Max-Strom L2 erreicht: {self.data.get('evu/APhase2')}")
+         max_i = True
+      if self.data.get('evu/APhase3') >= self.config.get('maxlastap3', 32):
+         self.logger.info(f"Max-Strom L3 erreicht: {self.data.get('evu/APhase3')}")
+         max_i = True
+      return schieflast or max_i
 
    def loop(self) -> None:
       properties = [lp.get_props() for lp in self.regler.values()]
@@ -370,8 +384,7 @@ class Regelgruppe:
          # Erhöhe eingeschaltete LPs
          for r in sorted(filter(lambda r: 'min+P' in r and 'on' in r.flags, properties), key=lambda r: r['min+P'].priority):
             p = self.get_increment(r, deltaP)
-            if p is not None and self.schieflast_nicht_erreicht(r.id):
-               # Erhöhe bei Asymmetrie nur 3-phasen-Boxen
+            if p is not None and not self.maxlast_erreicht(r.id):
                self.logger.debug(f"LP {r.id} bekommt +{p}W von {deltaP}W")
                arbitriert[r.id] = p
                deltaP -= p
@@ -389,7 +402,7 @@ class Regelgruppe:
             # Zusätzliches Budget kommt vom Regelpotential eingeschalteter LPs gleicher oder niedrigerer Prio
             budget += sum(r['max-P'].value for r in filter(lambda r: 'max-P' in r and 'min' not in r.flags and r['max-P'].priority <= highest_prio, properties))
             for r in candidates:
-               if self.get_increment(r, budget) is not None and self.schieflast_nicht_erreicht(r.id):
+               if self.get_increment(r, budget) is not None and not self.maxlast_erreicht(r.id):
                   self.logger.info(f"Budget: {budget}; LP {r.id} min+P {r['min+P'].value} passt noch")  
                   arbitriert[r.id] = r['min+P'].value
                   budget -= r['min+P'].value
