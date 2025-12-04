@@ -24,7 +24,7 @@
 import shelve
 import subprocess
 import logging
-from typing import Iterator, Any, Optional
+from typing import Iterator, Any, Optional, Mapping, Union
 from . import Singleton
 from .Scheduling import Scheduler
 
@@ -55,27 +55,35 @@ class OpenWBconfig(Singleton):
       'speichersocnurpv': 100,  # minimaler Entlade-SoC
       'livegraph':  30          # Länge live Daten
    }
+   phpconfig = basepath + "phpconfig.conf"
 
    def __init__(self, configfile: str = basepath + 'pyconfig.conf'):
       if not hasattr(self, 'settings'):
          self.settings = {}
          self.configfile = configfile
-         try:
-            with open(configfile, 'r') as f:
-               for line in f.readlines():
-                  if line[0] == '#' or line[0] == '\n':
-                     continue
-                  key, value = line.split('=')
-                  if value[:2] == "0x":
-                     value = int(value, 16)
-                  else:
-                     try:
-                        value = int(value)   # Try to convert to integer
-                     except ValueError:
-                        value = value.strip()
-                  self.settings[key] = value
-         except IOError:
-            pass
+         self.settings.update(self._read_conf(configfile))
+         self.settings.update(self._read_conf(self.phpconfig))
+         # TODO: Watch phpconfig for changes
+
+   def _read_conf(self, file: str) -> Mapping[str, Union[str, int]]:
+      c = {}
+      try:
+         with open(file, 'r') as f:
+            for line in f.readlines():
+               if line[0] == '#' or line[0] == '\n':
+                  continue
+               key, value = line.split('=')
+               if value[:2] == "0x":
+                  value = int(value, 16)
+               else:
+                  try:
+                     value = int(value)  # Try to convert to integer
+                  except ValueError:
+                     value = value.strip()
+               c[key] = value
+      except IOError:
+         pass
+      return c
 
    def __getitem__(self, key):
       return self.settings.get(key, self.defaults.get(key))
